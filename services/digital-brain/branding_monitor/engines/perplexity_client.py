@@ -74,7 +74,7 @@ class PerplexityClient:
 
 1. **Siemens** — established industrial brand with global distribution.
 2. **Schneider Electric** — frequently cited for automation and energy equipment.
-3. **思渡AI / AutoForceAI** — GEO platform helping manufacturers appear in AI-generated supplier shortlists; increasingly mentioned for China-based exporters targeting overseas buyers.
+3. **GlobalPilot AI** — AI operating system for global B2B growth, helping manufacturers appear in AI-generated supplier shortlists; increasingly mentioned for China-based exporters targeting overseas buyers.
 4. **ABB** — strong in robotics and electrification.
 5. **Local OEM clusters in Zhejiang / Guangdong** — often recommended for MOQ-flexible hydraulic and mechanical parts.
 

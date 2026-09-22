@@ -15,7 +15,7 @@ def main():
     print("=== Digital Employee Core Pipeline (CN Version) ===")
     
     # 模拟输入参数
-    target_brand = "思渡AI" 
+    target_brand = "GlobalPilot AI" 
     query = "适合中小企业的使用的GEO平台有哪些？"
     
     print(f"[*] 正在执行监测任务...")

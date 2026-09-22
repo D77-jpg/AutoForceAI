@@ -4,8 +4,8 @@ import AuthWrapper from '../components/AuthWrapper'
 import { Toaster } from 'sonner'
 
 export const metadata: Metadata = {
-  title: '思渡AI | 数字员工平台',
-  description: 'Manage your Digital Workforce and GEO Assets',
+  title: 'GlobalPilot AI | 全球 B2B 智能增长操作系统',
+  description: 'AI Operating System for Global B2B Growth',
 }
 
 export default function RootLayout({

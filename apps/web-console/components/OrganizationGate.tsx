@@ -290,7 +290,7 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
                             <div className="mx-auto w-16 h-16 bg-[#0a84ff]/10 rounded-2xl flex items-center justify-center mb-4 border border-[#0a84ff]/20">
                                 <Building2 size={32} className="text-[#0a84ff]" />
                             </div>
-                            <h1 className="text-2xl font-bold text-white mb-2">欢迎加入数字员工平台</h1>
+                            <h1 className="text-2xl font-bold text-white mb-2">欢迎加入 GlobalPilot AI</h1>
                             <p className="text-slate-400">为了更好地协作，您需要加入一个企业组织</p>
                         </div>
 

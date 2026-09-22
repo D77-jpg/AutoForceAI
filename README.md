@@ -1,14 +1,14 @@
-# AutoForceAI (Digital Employee Platform)
+# GlobalPilot AI
 
 [English](README.md) | [中文](README_CN.md)
 
-> **"Empower Every Enterprise with Intelligent Digital Workforce"**
+> **"AI Operating System for Global B2B Growth"**
 >
-> **"Not just Digital Employees, but your Automated Business Empire"**
+> **"全球 B2B 智能增长操作系统"**
 
-**AutoForceAI** 思渡AI (sdosoft.com) is an **AI-native, full-stack, enterprise-grade** digital employees platform. Even without deep AI development background, you can use this project to build a complete AI business intelligence system **out of the box**.
+**GlobalPilot AI** is an **AI-native, full-stack** operating system for global B2B growth. Even without deep AI development background, you can use this project to build a complete AI business intelligence system **out of the box**.
 
-It is more than just a simple Agent framework; it is a comprehensive solution that deeply integrates **Large Language Models (LLM)**, **Robotic Process Automation (RPA)**, **Enterprise Knowledge Brain (RAG)**, and **Business Systems (BI/ERP/CRM)**. By simulating the learning, thinking, and executing capabilities of human employees, AutoForceAI helps enterprises achieve an **AI-driven closed loop of automated business processes**.
+It is more than just a simple Agent framework; it is a comprehensive solution that deeply integrates **Large Language Models (LLM)**, **Robotic Process Automation (RPA)**, **Enterprise Knowledge Brain (RAG)**, and **Business Systems (BI/ERP/CRM)**. By simulating the learning, thinking, and executing capabilities of human employees, GlobalPilot AI helps enterprises achieve an **AI-driven closed loop of automated business processes**.
 
 ## 🌟 Product Matrix
 
@@ -62,9 +62,9 @@ This project delivers a complete AI business solution, covering the full spectru
 
 ## �📊 Editions & Comparison
 
-AutoForceAI adopts a **"Core Open Source + Commercial Enhancement"** dual-model strategy. While our long-term vision is full open source, to ensure sustainable development and meet enterprise needs, we will gradually release high-value modules to the Community Edition.
+GlobalPilot AI adopts a **"Core Open Source + Commercial Enhancement"** dual-model strategy. While our long-term vision is full open source, to ensure sustainable development and meet enterprise needs, we will gradually release high-value modules to the Community Edition.
 
-| Modules | Community Edition <br> *AutoForceAI* | Professional Edition <br> *Powered by SDOSOFT* |
+| Modules | Community Edition <br> *GlobalPilot AI* | Professional Edition <br> *Powered by SDOSOFT* |
 | :--- | :--- | :--- |
 | **Infrastructure** | ✅ Full Standalone/Docker | ✅ HA Cluster / K8s Operator |
 | **🧠 AI Middle Platform** | ✅ Multi-Model / Basic RAG | ✅ Enterprise RAG (Complex Parsing / Hybrid Search) / Audit Logs |
@@ -175,7 +175,7 @@ To enable the Digital Brain to think, you need to configure the LLM API Keys:
 
 We welcome contributions from the community! To ensure the project's long-term development and legal compliance, all code contributors must agree to the following **Contributor License Agreement (CLA)**:
 
-1.  **Copyright Grant**: You agree to grant the project maintainers (**SDOSOFT AI Team**) the right to use, modify, and distribute your contributed code.
+1.  **Copyright Grant**: You agree to grant the project maintainers (**GlobalPilot AI Team**) the right to use, modify, and distribute your contributed code.
 2.  **Protocol Adjustment**: You authorize the project maintainers to adjust the open-source license in future versions (e.g., changing to a more permissive or stricter license).
 3.  **Commercial Use**: You explicitly allow your contributions to be included in commercial products or cloud services provided by the project maintainers.
 
@@ -185,7 +185,7 @@ Detailed guidelines can be found in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## 🙏 Acknowledgments
 
-AutoForceAI is built on the shoulders of giants. Special thanks to these amazing open-source projects:
+GlobalPilot AI is built on the shoulders of giants. Special thanks to these amazing open-source projects:
 - [LangChain](https://github.com/langchain-ai/langchain)
 - [FastAPI](https://github.com/tiangolo/fastapi)
 - [Next.js](https://github.com/vercel/next.js)
@@ -209,6 +209,6 @@ AutoForceAI is built on the shoulders of giants. Special thanks to these amazing
 
 This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
 
-- **AutoForceAI** is an open-source project initiated and maintained by **[SDOSOFT (思渡AI)](https://www.sdosoft.com)**.
+- **GlobalPilot AI** is an open-source project for building an AI operating system for global B2B growth.
 - If you **modify** or **secondary develop** this project and use it for **online services** (i.e., providing software functionality via a network), you must **open source your complete source code** in accordance with the AGPL-3.0 agreement.
 - For full license text, please refer to the [LICENSE](LICENSE) file.

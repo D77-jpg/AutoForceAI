@@ -172,8 +172,8 @@ export default function Sidebar() {
       };
     } else if (pathname?.startsWith('/workforce')) {
       return {
-        appName: '思渡数字员工',
-        appEnName: '企业级数字劳动力管理平台',
+        appName: 'GlobalPilot AI',
+        appEnName: '全球 B2B 智能增长操作系统',
         homeLink: '/workforce',
         groups: [
           {
@@ -336,10 +336,10 @@ export default function Sidebar() {
         ]
       };
     } else {
-      // Default: ThinkGo GEO (formerly Digital Employee)
+      // Default: GEO workspace
       return {
-        appName: '思渡AI | GEO',
-        appEnName: 'AI 驱动的品牌搜索增长引擎',
+        appName: 'GlobalPilot AI | GEO',
+        appEnName: 'AI Operating System for Global B2B Growth',
         homeLink: '/geo',
         groups: [
           {

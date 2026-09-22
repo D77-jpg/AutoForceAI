@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Digital Employee - 自动化助手",
+  "name": "GlobalPilot AI - 自动化助手",
   "version": "1.0.0",
   "description": "配合 Web Console 实现在用户浏览器本地进行自动化操作（发布、评论等），无需下载客户端。",
   "permissions": [

@@ -31,7 +31,7 @@ export default function BookmarkletSetup() {
                 onClick={(e) => e.preventDefault()} // 防止点击跳转
                 title="拖动我到书签栏"
               >
-                🤖思渡RPA助手
+                GlobalPilot RPA
               </a>
             </div>
             <p className="text-sm text-gray-400">
@@ -49,7 +49,7 @@ export default function BookmarkletSetup() {
               <li>在任务中心点击 <b>“一键发布”</b> 按钮。</li>
               <li>系统会自动并在新标签页打开 <b>小红书创作中心</b>。</li>
               <li>等待页面加载完毕（如有登录弹窗，请先登录）。</li>
-              <li>点击浏览器书签栏上的 <b>🤖思渡RPA助手</b>。</li>
+              <li>点击浏览器书签栏上的 <b>GlobalPilot RPA</b>。</li>
               <li>见证奇迹：标题和正文会自动填充！</li>
             </ol>
           </CardContent>

@@ -336,7 +336,7 @@ const DepartmentCard = ({ dept, className = "" }: { dept: any, className?: strin
 
 // --- Main Layout ---
 
-export default function SiduDigitalPlatform() {
+export default function HomePage() {
   const [mounted, setMounted] = useState(false);
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -361,10 +361,10 @@ export default function SiduDigitalPlatform() {
               </Link>
               <div className="mr-6">
                   <h1 className="text-[17px] font-semibold tracking-tight text-white leading-none mb-0.5">
-                      思渡AI
+                      GlobalPilot AI
                   </h1>
-                  <p className="text-[11px] text-[#86868b] tracking-[0.08em]">
-                      数字员工平台
+                  <p className="text-[11px] text-[#86868b] tracking-[0.04em]">
+                      全球 B2B 智能增长操作系统
                   </p>
               </div>
 
@@ -402,7 +402,7 @@ export default function SiduDigitalPlatform() {
                             ))}
                         </div>
                         <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center px-2">
-                             <span className="text-[10px] text-slate-500 uppercase tracking-widest">sdosoft AI Platform © 2026</span>
+                             <span className="text-[10px] text-slate-500 uppercase tracking-widest">GlobalPilot AI © 2026</span>
                              <Link href="/solution" className="text-xs text-[#0a84ff] hover:text-white flex items-center gap-1 group/link">
                                  查看全景图 <ArrowUpRight size={12} className="group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform"/>
                              </Link>

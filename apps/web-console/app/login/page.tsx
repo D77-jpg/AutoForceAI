@@ -103,7 +103,7 @@ export default function LoginPage() {
             invite_code: data.invite_code // Add invite code
         });
 
-        showToast("登录成功！欢迎登录数字员工平台", "success");
+        showToast("登录成功！欢迎登录 GlobalPilot AI", "success");
         // Login function handles redirection
         
       } catch (error: any) {
@@ -184,27 +184,27 @@ export default function LoginPage() {
                 <div className="relative w-10 h-10 rounded-2xl overflow-hidden bg-[#1c1c1e]">
                     <Image 
                         src="/logo.png" 
-                        alt="Digital Employee Logo" 
+                        alt="GlobalPilot AI" 
                         fill
                         className="object-contain"
                     />
                 </div>
                 <span className="text-[17px] font-semibold tracking-tight text-[#f5f5f7]">
-                    思渡数字员工
+                    GlobalPilot AI
                 </span>
             </Link>
 
             <div className="mb-10">
                 <h1 className="text-[52px] font-semibold leading-[1.08] mb-5 tracking-tight">
-                    构建属于您的<br/>
+                    全球 B2B<br/>
                     <span className="text-[#86868b]">
-                         AI 数字员工集群
+                         智能增长操作系统
                     </span>
                 </h1>
                 <p className="text-[17px] text-[#86868b] leading-relaxed max-w-lg">
-                    企业级 AI 中台。统一管理您的 <span className="text-[#f5f5f7]">数字员工</span>、<span className="text-[#f5f5f7]">知识资产</span> 与 <span className="text-[#f5f5f7]">品牌内容</span>。
+                    <span className="text-[#f5f5f7]">AI Operating System for Global B2B Growth</span>
                     <br/>
-                    让 AI 成为真正的生产力。
+                    统一编排获客、内容、知识与成交，让全球增长成为可操作系统。
                 </p>
             </div>
 
@@ -228,7 +228,7 @@ export default function LoginPage() {
             </div>
             
             <div className="mt-14 text-[12px] text-[#6e6e73] border-t border-white/8 pt-5 w-full">
-                © 2026 思渡数字员工 (sdosoft.com)  ·  为企业提供下一代数字员工解决方案
+                © 2026 GlobalPilot AI  ·  AI Operating System for Global B2B Growth
             </div>
         </div>
       </div>
@@ -239,7 +239,7 @@ export default function LoginPage() {
             <div className="bg-[#1c1c1e]/90 backdrop-blur-2xl rounded-[28px] p-9 shadow-apple-lg border border-white/8 relative overflow-hidden">
 
                 <h2 className="text-[22px] font-semibold text-white mb-1.5 text-center tracking-tight">欢迎回来</h2>
-                <p className="text-[#86868b] text-[13px] mb-7 text-center">企业级 AI 中台 · 数字员工 · GEO</p>
+                <p className="text-[#86868b] text-[13px] mb-7 text-center">全球 B2B 智能增长操作系统</p>
 
                 <div className="flex rounded-full bg-[#2c2c2e] p-1 mb-7">
                     <button

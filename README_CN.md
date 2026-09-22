@@ -1,12 +1,14 @@
-# AutoForceAI (数字员工平台)
+# GlobalPilot AI
 
 [English](README.md) | [中文](README_CN.md)
 
-> **"让每个企业都拥有自己的数字化超级员工"** 
+> **"AI Operating System for Global B2B Growth"**
+>
+> **"全球 B2B 智能增长操作系统"**
 
-**AutoForceAI** 思渡AI (sdosoft.com) 是一个 **AI 原生、全栈式、企业级** 的数字员工平台。即使您没有深厚的 AI 开发背景，也可以通过本项目**开箱即用**地构建一套完整的业务智能系统，不仅是数字员工，更是您的自动化商业帝国。
+**GlobalPilot AI** 是一个 **AI 原生、全栈式** 的全球 B2B 智能增长操作系统。即使您没有深厚的 AI 开发背景，也可以通过本项目**开箱即用**地构建一套完整的业务智能系统。
 
-它不仅仅是一个简单的 Agent 框架，而是一个深度融合了 **大语言模型 (LLM)**、**机器人流程自动化 (RPA)**、**企业知识库 (RAG)** 与 **业务系统 (BI/ERP/CRM/电商)** 的完整解决方案。通过模拟人类员工的学习、思考与执行能力，AutoForceAI 能够帮助企业实现**由AI驱动的全业务流程自动化闭环**。
+它不仅仅是一个简单的 Agent 框架，而是一个深度融合了 **大语言模型 (LLM)**、**机器人流程自动化 (RPA)**、**企业知识库 (RAG)** 与 **业务系统 (BI/ERP/CRM/电商)** 的完整解决方案。通过模拟人类员工的学习、思考与执行能力，GlobalPilot AI 能够帮助企业实现**由AI驱动的全业务流程自动化闭环**。
 
 ## 🌟 产品全景 (Product Stack)
 
@@ -62,7 +64,7 @@
 
 ## 📊 版本对比 (Editions)
 
-AutoForceAI 采用 **"核心开源 + 商业增强"** 的双模策略。
+GlobalPilot AI 采用 **"核心开源 + 商业增强"** 的双模策略。
 
 | 功能模块 (Modules) | 社区版 (Community) | 专业版 (Professional) <br> |
 | :--- | :--- | :--- |
@@ -178,7 +180,7 @@ python worker_main.py
 
 我们欢迎社区贡献！为了确保项目的长期发展和法律合规性，所有代码贡献者需同意以下 **贡献者许可协议 (CLA)**：
 
-1.  **版权授权**：您同意授权项目维护方（Sdosoft 思渡AI团队）使用、修改和分发您贡献的代码。
+1.  **版权授权**：您同意授权项目维护方（GlobalPilot AI 团队）使用、修改和分发您贡献的代码。
 2.  **协议调整权**：您授权项目维护方有权在未来版本中调整开源协议（例如更改为更宽松或更严格的协议）。
 3.  **商业使用**：您明确允许您的贡献被包含在项目维护方提供的商业产品或云服务中。
 
@@ -188,7 +190,7 @@ python worker_main.py
 
 ## 🙏 致谢 (Acknowledgments)
 
-AutoForceAI 的诞生离不开以下优秀的开源项目：
+GlobalPilot AI 的诞生离不开以下优秀的开源项目：
 - [LangChain](https://github.com/langchain-ai/langchain) - LLM 应用开发框架
 - [FastAPI](https://github.com/tiangolo/fastapi) - 现代高性能 Web 框架
 - [Next.js](https://github.com/vercel/next.js) - React 框架
@@ -211,6 +213,6 @@ AutoForceAI 的诞生离不开以下优秀的开源项目：
 ## 📄 开源协议 (License)
 
 本项目基于 **GNU Affero General Public License v3.0 (AGPL-3.0)** 许可协议开源。
-- **AutoForceAI** 是由 **[思渡AI (SDOSOFT)](https://www.sdosoft.com)** 开发并维护的开源项目。
+- **GlobalPilot AI** 是面向全球 B2B 增长的开源智能操作系统项目。
 - 如果您在本项目的基础上进行**修改**、**二次开发**用于**线上服务**，必须按照 AGPL-3.0 协议的要求**开源您的完整源代码**。
 - 完整协议内容请参阅 [LICENSE](LICENSE) 文件。

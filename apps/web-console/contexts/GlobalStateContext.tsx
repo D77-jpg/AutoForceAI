@@ -105,7 +105,7 @@ const GlobalStateContext = createContext<GlobalState | undefined>(undefined);
 
 export function GlobalStateProvider({ children }: { children: ReactNode }) {
   // Dashboard State
-  const [brand, setBrand] = useState('思渡AI');
+  const [brand, setBrand] = useState('GlobalPilot AI');
   const [query, setQuery] = useState('GEO平台有哪些？');
 
   // Enterprise Brain State
@@ -123,7 +123,7 @@ export function GlobalStateProvider({ children }: { children: ReactNode }) {
   const [solSelectedTemplateId, setSolSelectedTemplateId] = useState<string>('');
 
   // Diagnosis State
-  const [diagBrand, setDiagBrand] = useState('思渡 AI');
+  const [diagBrand, setDiagBrand] = useState('GlobalPilot AI');
   const [diagCompetitor, setDiagCompetitor] = useState('');
   const [diagUserQueries, setDiagUserQueries] = useState("适合中小企业的使用的GEO平台有哪些？");
   const [diagSelectedModel, setDiagSelectedModel] = useState('auto');

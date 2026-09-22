@@ -105,7 +105,7 @@ export default function MissionPage() {
                         <div className="relative">
                             <textarea 
                                 className="w-full bg-black border border-white/10 rounded-lg p-3 pr-12 text-sm focus:ring-2 focus:ring-[#0a84ff] focus:outline-none resize-none h-32"
-                                placeholder="E.g. Conduct a competitive analysis of '思渡AI' product pricing..."
+                                placeholder="E.g. Conduct a competitive analysis of 'GlobalPilot AI' product pricing..."
                                 value={objective}
                                 onChange={(e) => setObjective(e.target.value)}
                             />

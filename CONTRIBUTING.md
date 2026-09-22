@@ -1,4 +1,4 @@
-# Contributing to Digital Employee Platform
+# Contributing to GlobalPilot AI
 
 Thank you for your interest in contributing!
 
