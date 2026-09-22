@@ -89,3 +89,49 @@
 - 375px 下侧边栏仍为固定 248px 常驻（不横滚但内容区较窄）；如需真正的移动端体验（可折叠抽屉式侧边栏）建议另行立项，超出本次展示层范围。
 
 **子应用共用组件迁移情况**：无迁移——10 个子应用（AI知识库/GEO/AI客服/AI电商/AI营销/AI CRM/数字人/数字员工/系统运维/AI中台）及次级页面全部已经使用共享 `AuthWrapper + Sidebar` 外壳，本次仅统一其内部页面的标题/空状态/弹窗/表格组件。
+
+---
+
+# 第二轮精修报告（2026-09-22）
+
+提交：主题切换 `（前一轮收尾）` + 本轮 `88ff98a`（33 文件，+489/-429）。全程仅展示层，未动业务逻辑/API/状态/路由/数据结构/判空条件。
+
+## 一、产品矩阵菜单（1–3）
+
+| # | 条目 | 修改文件与方式 |
+|---|---|---|
+| 1 | 毛玻璃失效根因排查 | **检查结果**：菜单祖先链 `header(fixed, backdrop-blur-2xl) → div(flex) → div.relative.h-16`——无 overflow:hidden/transform/filter/will-change/opacity<1 的祖先。真正的原因有两个且都在菜单自身与父级 header：① 菜单自身常驻 `translate-y-0` transform 类 + `transition-all`（opacity/transform 动画使元素被提升为独立合成层）；② 父级 header 自带 `backdrop-blur-2xl`，**嵌套 backdrop-filter 时子级无法建立自己的 backdrop root**。两者叠加，Chromium 会静默丢弃子级的 backdrop-filter，只剩 85% 半透明底色，故下层文字清晰可见 |
+| 2 | 近不透明背景 | `app/globals.css` 的 `.menu-glass`：浅色 `rgba(255,255,255,0.97)`、深色 `rgba(28,28,30,0.95)`（双通道：media query + `[data-theme="dark"]`），保留 `blur(40px) saturate(180%)` 作为增强；`app/page.tsx` 菜单改为条件渲染，移除自身 transform/opacity 动画类（消除合成层问题，让 blur 有机会生效） |
+| 3 | 浅色边框与阴影 | `.menu-glass` 浅色态自带 `1px solid rgba(0,0,0,0.08)` 边框 + `var(--ui-shadow-popover)`；深色态用 separator 令牌边框 |
+
+## 二、首页（4–6）—— 文件：apps/web-console/app/page.tsx
+
+| # | 条目 | 方式 |
+|---|---|---|
+| 4 | 员工信息去胶囊 | 模块卡片的员工标签由胶囊背景改为「Bot 小图标 + 名字」纯文字行（text-[11px] text-text-secondary），与右上角分类标签胶囊拉开层级 |
+| 5 | 分区标题去前置图标 | DepartmentSection 标题行移除 tint 色图标方块，只保留文字标题 + 淡色英文副标题；标题与副标题改为 items-baseline 对齐 |
+| 6 | 网格最多 3 列 | `grid-cols-2 lg:grid-cols-3 xl:grid-cols-4` → `grid-cols-2 lg:grid-cols-3` |
+
+## 三、子应用通用规则（7–17）
+
+| # | 条目 | 修改文件（仅列有改动的） |
+|---|---|---|
+| 7 | 选中态统一 accent 蓝 | optimize（平台/语气选择、focus 环、主按钮、进度点、编辑/发布按钮、selection 色，原 danger 红全改 accent）；distribution（平台筛选标签）；marketing/distribution（渠道卡）；image-gen（预设卡 + 生成按钮去 destructive）；text-gen（模板/类型选择，原 warning 橙改 accent）；workforce/create（技能卡 border-accent/40）；platform/models（筛选按钮、启用勾选 text-success→text-accent）；platform/skills（TabsTrigger 补 text-on-accent）；ops（服务状态卡去装饰色，仅超阈值才 warning）；ops/users（管理员徽标 danger→accent、禁用状态改中性灰、状态开关 accent/中性）；ops/enterprises（成员选择器 bg-accent/10+border-accent/40、待保存标记 text-success→text-accent）；monitor（RPA 队列装饰橙→中性）；login（Tab 选中不可见修复 bg-surface+shadow-card）；crm（占位图标误用 danger→accent）；marketing/page（KPI 下行徽标 danger→中性）。**红色现仅存于错误/删除语义** |
+| 8 | emoji → lucide 细线图标 | diagnosis（insights 文案 ✅⚠️❌💡 前缀删除、⚡自动选择→自动选择（推荐））；optimize（平台/语气 emoji 与符号图标全删、❤→lucide Heart）；ops/users（「●」字符→真实圆点 span）；全部改动文件的 lucide 图标统一补 strokeWidth={1.75}（knowledge、workforce 3 页、ops 3 页、monitor、marketing 等） |
+| 9 | 第三方平台图标 | distribution（表格平台列 9 个彩色圆点全删，只留平台名文字）；marketing/distribution（LinkedIn/WordPress/X 统一 lucide 细线单色 text-text-secondary 同尺寸）；optimize（平台图标随 R8 移除，只显示文字）；login/settings 已是单色细线 |
+| 10 | 双语标题/大字距清理 | optimize（「Leo 神经网络处理进程 (Neural Process)」→「生成进度」、「实机预览 (Live Preview)」→「实时预览」）；marketing 4 页标题去英文括注（文生文/文生图/海外投放/获客漏斗）+ marketing 看板 6 处双语后缀 +「内容产出 (30d)」→「内容产出/近 30 天」；geo（「GEO 健康度评分」大字距、Modal「品牌名称 (Brand)」）；diagnosis（10 处中文标签去 uppercase tracking）；distribution（8 处）；ops（统计卡大字距）；settings/profile（4 个表单标签）；platform/page（KPI tracking-wider）；workforce/create（3 个区块标题）；monitor（再扫）；**侧边栏**：`总览 Dashboard`→`总览`、`概览 Dashboard`→`概览`、`内容创作 (AIGC)`→`内容创作`、`文生文 (Copy)`→`文生文`、`文生图 (Image)`→`文生图`、组标题去 uppercase tracking-[0.12em]；**首页**：产品矩阵分隔标签去大字距。技术缩写 API/RPA/GEO/Token/CSV/QPS 保留 |
+| 11 | 手机预览 | optimize 设备标签「iPhone 15 Pro Max • 5G」→「手机预览」 |
+| 12 | 装饰背景 | optimize（中栏 radial-gradient 点阵删除）；monitor（StatCard 大图标水印删除）；全量扫描确认其余页面无点阵/网格背景 |
+| 13 | 多栏布局统一 | optimize（三栏底色与 backdrop-blur 全删，统一透明+hairline 分割线）；knowledge（左栏列表包进与右栏一致的 bg-surface 卡片容器）；workforce/mission（右栏 bg-surface/70 混用底色删除，两栏统一卡片）；workforce/create（模板侧栏补 shadow 对齐卡片语言）；marketing/image-gen（右栏改 glass-panel 卡片与左栏一致）；distribution（展开详情左右栏统一 bg-bg）；monitor/ops/ops/users/ops/enterprises（全部面板统一 bg-surface rounded-lg shadow-card） |
+| 14 | 标题区遮挡/裁切 | marketing 5 页 PageHeader 补 shrink-0 防 flex 压缩；workforce/mission、knowledge/brain、knowledge/solution、monitor、ops 逐一检查无遮挡（报告见各子代理明细） |
+| 15 | 空/等待态统一 EmptyState | diagnosis（「等待分析数据」双空态合并、「AI 深度思考」spinner→EmptyState）；optimize（「等待任务指令」→EmptyState sm）；distribution（表格加载态）；workforce（加载态、mission「等待任务指令」+planning 骨架屏→EmptyState）；platform/models/monitor/skills/traffic（加载态→EmptyState sm + Loader2）；settings/profile（加载态）；marketing/analytics（漏斗加载）、rpa（同步 Worker 状态）；monitor（「暂无用量数据」） |
+| 16 | 侧边栏顶部命名 | components/sidebar.tsx：`/workforce`「GlobalPilot AI」→「数字员工」+「企业级 AI 劳动力编排」；GEO 默认「GlobalPilot AI \| GEO」+ 英文说明→「GEO 全域洞察」+「品牌舆情与心智份额追踪」；应用名与说明由 truncate 改为完整换行（break-words + leading-snug） |
+| 17 | 名称统一（首页卡片 ↔ 侧边栏菜单 ↔ 页面标题） | **统一清单**（→ 后为统一名）：①「内容工场」：侧边栏 内容构建→内容工场、页面标题 内容工厂→内容工场（app/optimize/page.tsx）；②「全域洞察」：侧边栏 品牌资产→全域洞察、页面标题 GEO 优化引擎→全域洞察（app/geo/page.tsx）；③「竞争诊断」：侧边栏 品牌洞察→竞争诊断（页面标题本已一致）；④「投放参谋」：侧边栏 营销看板→投放参谋、页面标题 AI 营销云看板→投放参谋（app/marketing/page.tsx）；⑤「数字人直播」：侧边栏 视频生成→数字人直播、应用名 数字人梦工厂→数字人、页面标题→数字人直播（app/digital-human/page.tsx）；⑥「系统运维」：侧边栏 控制台→系统运维、应用名 智能运维→系统运维、页面标题 运维控制台→系统运维（app/ops/page.tsx）；⑦「智能接待」：侧边栏 实时会话监控→智能接待；⑧「服务质检」：侧边栏 服务质量报表→服务质检；⑨「质检规则」：侧边栏 质检规则配置→质检规则；⑩「组织编排」：应用名 虚拟组织→组织编排、菜单项 团队概览→组织编排；⑪ AI CRM 页标题「AI 客户关系管理 CRM」→「AI CRM」（app/crm/page.tsx）；⑫ AI 营销应用名「AI 营销云」→「AI 营销」。已一致的（企业知识库/本地线索池/营销矩阵/AI 中台等）未动 |
+
+## 四、验收（18–20）
+
+- **18 lint + build**：`tsc --noEmit` 0 错误；eslint **11 errors = 基线 11 errors（零新增）**（均为未改动文件的历史遗留 react-hooks 规则）；`npm run build` ✓ Compiled successfully，39 静态页全部生成；全局扫描 mojibake=0（无编码损坏）。
+- **19 深浅色检查**：构建产物 CSS 确认 `.menu-glass` 浅（rgba(255,255,255,.97)+1px 边框）与深（rgba(28,28,30,.95)）双变体均编译在内，且受 `[data-theme]`/prefers-color-scheme 双通道控制；全部子应用页面已令牌化（本轮再次扫描无 hex/调色板色/硬编码黑白残留），切换按钮在侧边栏底部与首页头部。运行时冒烟：6 条代表路由（含 optimize、marketing/text-gen、ops、monitor）全部 200。
+- **20 本报告**：条目-文件对照如上；毛玻璃根因见条目 1；名称统一清单见条目 17。
+
+**附带说明**：optimize 页中图片遮罩 `from-black/60`→`from-overlay`、ops/monitor 的 `rounded-full`→`rounded-pill`、recharts 图表 `#666/#fff`→令牌色等硬编码顺手清理；未触碰 toast 文案、console.error、POST 数据体等数据层字符串。
