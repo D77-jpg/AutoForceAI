@@ -102,15 +102,10 @@ export default function ClientDownloadPage() {
                             <AlertDescription className="text-xs text-white-700">
                                 环境要求：Windows 10/11, 建议 8G 内存以上
                             </AlertDescription>
-                            <AlertDescription className="text-xs text-white-700">
+                            <AlertDescription className="text-xs text-text-secondary">
                                 下载后点击运行的下载文件：DigitalEmployeeRPA.exe
                             </AlertDescription>
                         </Alert>
-                        {/* <div className="p-3 bg-accent/10/50 rounded border border-blue-100/50">
-                            <p className="text-xs text-blue-800 font-medium text-center">
-                                下载后点击运行的下载文件：DigitalEmployeeRPA.exe
-                            </p>
-                        </div> */}
                     </CardContent>
                     <CardFooter>
                         <Button 

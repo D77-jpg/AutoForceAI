@@ -27,7 +27,7 @@ export default function AuthWrapper({ children }: { children: React.ReactNode })
                 <div className="flex h-screen overflow-hidden text-text bg-bg">
                     {!isFullScreen && <Sidebar />}
 
-                <main className={`flex-1 relative ${isImmersive ? 'overflow-hidden p-0' : 'overflow-auto p-3'} ${isFullScreen ? 'w-full p-0 flex flex-col' : ''}`}>
+                <main className={`flex-1 min-w-0 relative ${isImmersive ? 'overflow-hidden p-0' : 'overflow-auto p-3'} ${isFullScreen ? 'w-full p-0 flex flex-col' : ''}`}>
                     <GlobalStateProvider>
                         <div className={`h-full ${isImmersive ? 'overflow-hidden p-0' : 'px-1 overflow-y-auto pb-10'} ${isFullScreen ? 'p-0 px-0 pb-0' : ''}`}>
                             {children}
