@@ -1,2 +1,2 @@
 "use client";
-export default function Page(){ return <div className="min-h-screen bg-black text-slate-200 p-8"><h1 className="text-2xl font-bold">方案生成</h1><p className="text-slate-400 mt-2">请使用工作台里的方案生成（solution_router），本页为入口占位。</p></div>; }
+export default function Page(){ return <div className="min-h-screen bg-bg text-text p-8"><h1 className="text-2xl font-bold">方案生成</h1><p className="text-text-secondary mt-2">请使用工作台里的方案生成（solution_router），本页为入口占位。</p></div>; }

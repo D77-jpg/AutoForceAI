@@ -25,18 +25,18 @@ export default function LeadsPage() {
     });
   };
   return (
-    <div className="min-h-screen bg-black text-slate-200 p-8">
+    <div className="min-h-screen bg-bg text-text p-8">
       <div className="flex justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">本地线索池</h1>
-          <p className="text-sm text-slate-400">AI 客服识别的询盘先落在这里。CRM 就绪后由投递器同步，无需返工。</p>
+          <p className="text-sm text-text-secondary">AI 客服识别的询盘先落在这里。CRM 就绪后由投递器同步，无需返工。</p>
         </div>
-        <button onClick={exportCsv} className="bg-white/10 px-3 py-2 rounded-full text-sm">导出 CSV</button>
+        <button onClick={exportCsv} className="bg-text/10 px-3 py-2 rounded-full text-sm">导出 CSV</button>
       </div>
       <div className="flex gap-2 mb-4">
-        <input value={q} onChange={e=>setQ(e.target.value)} placeholder="搜索邮箱/公司/产品" className="bg-black/40 border border-white/10 rounded px-3 py-2 text-sm"/>
-        <button onClick={load} className="bg-[#0071e3] px-3 rounded text-sm">搜索</button>
-        <select value={status} onChange={e=>setStatus(e.target.value)} className="bg-black/40 border border-white/10 rounded px-2 text-sm">
+        <input value={q} onChange={e=>setQ(e.target.value)} placeholder="搜索邮箱/公司/产品" className="bg-bg/40 border border-separator rounded px-3 py-2 text-sm"/>
+        <button onClick={load} className="bg-accent px-3 rounded text-sm">搜索</button>
+        <select value={status} onChange={e=>setStatus(e.target.value)} className="bg-bg/40 border border-separator rounded px-2 text-sm">
           <option value="">全部状态</option>
           <option value="new">new</option>
           <option value="contacted">contacted</option>
@@ -45,10 +45,10 @@ export default function LeadsPage() {
         </select>
       </div>
       <table className="w-full text-sm">
-        <thead className="text-slate-500"><tr><th className="text-left py-2">公司/联系人</th><th>邮箱</th><th>产品</th><th>来源</th><th>状态</th><th></th></tr></thead>
+        <thead className="text-text-secondary"><tr><th className="text-left py-2">公司/联系人</th><th>邮箱</th><th>产品</th><th>来源</th><th>状态</th><th></th></tr></thead>
         <tbody>
           {items.map(it=>(
-            <tr key={it.id} className="border-t border-white/5">
+            <tr key={it.id} className="border-t border-separator">
               <td className="py-2">{it.company || "-"} / {it.name || "-"}</td>
               <td>{it.email || "-"}</td>
               <td>{it.products || (it.intent_json && it.intent_json.intent) || "-"}</td>
@@ -56,14 +56,14 @@ export default function LeadsPage() {
               <td>{it.status}</td>
               <td className="text-right space-x-1">
                 {["contacted","converted","dropped"].map(s=>(
-                  <button key={s} onClick={()=>setSt(it.id,s)} className="text-xs px-2 py-1 bg-white/5 rounded">{s}</button>
+                  <button key={s} onClick={()=>setSt(it.id,s)} className="text-xs px-2 py-1 bg-text/5 rounded">{s}</button>
                 ))}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      {!items.length && <p className="text-slate-500 mt-8">暂无线索。嵌入独立站聊天插件或在检索测试后产生询盘即可入库。</p>}
+      {!items.length && <p className="text-text-secondary mt-8">暂无线索。嵌入独立站聊天插件或在检索测试后产生询盘即可入库。</p>}
     </div>
   );
 }

@@ -35,13 +35,13 @@ export default function RPAPage() {
   const running = jobs.filter((j) => j.status === "claimed" || j.status === "queued").length;
 
   return (
-    <div className="h-full w-full p-6 text-slate-100 flex flex-col gap-4">
+    <div className="h-full w-full p-6 text-text flex flex-col gap-4">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-white">RPA 执行</h1>
-          <p className="text-sm text-slate-400">Worker 认领队列与海外渠道任务状态。详情请到营销矩阵。</p>
+          <p className="text-sm text-text-secondary">Worker 认领队列与海外渠道任务状态。详情请到营销矩阵。</p>
         </div>
-        <button onClick={load} className="px-3 py-2 text-xs rounded bg-white/10 hover:bg-white/20 flex items-center gap-1">
+        <button onClick={load} className="px-3 py-2 text-xs rounded bg-text/10 hover:bg-text/15 flex items-center gap-1">
           <RefreshCw size={12} /> 刷新
         </button>
       </div>
@@ -55,12 +55,12 @@ export default function RPAPage() {
 
       <div className="glass-panel flex-1 overflow-y-auto">
         {loading ? (
-          <div className="p-10 text-center text-slate-500">同步 Worker 状态...</div>
+          <div className="p-10 text-center text-text-secondary">同步 Worker 状态...</div>
         ) : jobs.length === 0 ? (
-          <div className="p-10 text-center text-slate-500">暂无任务。从「海外投放」创建 LinkedIn / WordPress / X 任务。</div>
+          <div className="p-10 text-center text-text-secondary">暂无任务。从「海外投放」创建 LinkedIn / WordPress / X 任务。</div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="text-xs text-slate-500 uppercase">
+            <thead className="text-xs text-text-secondary uppercase">
               <tr>
                 <th className="p-3 text-left">ID</th>
                 <th className="p-3 text-left">平台</th>
@@ -71,12 +71,12 @@ export default function RPAPage() {
             </thead>
             <tbody>
               {jobs.map((j) => (
-                <tr key={j.id} className="border-t border-white/5">
+                <tr key={j.id} className="border-t border-separator">
                   <td className="p-3 font-mono text-xs">#{j.id}</td>
                   <td className="p-3">{j.platform}</td>
                   <td className="p-3">{j.status}</td>
                   <td className="p-3 truncate max-w-xs">{j.payload?.title || "—"}</td>
-                  <td className="p-3 text-right text-xs text-slate-500">
+                  <td className="p-3 text-right text-xs text-text-secondary">
                     {j.created_at ? new Date(j.created_at).toLocaleString() : ""}
                   </td>
                 </tr>
@@ -85,7 +85,7 @@ export default function RPAPage() {
           </table>
         )}
       </div>
-      <Link href="/distribution" className="text-xs text-blue-400 hover:underline">
+      <Link href="/distribution" className="text-xs text-accent hover:underline">
         打开营销矩阵查看实时日志 →
       </Link>
     </div>
@@ -95,7 +95,7 @@ export default function RPAPage() {
 function Kpi({ icon: Icon, label, value }: any) {
   return (
     <div className="glass-panel p-4">
-      <div className="text-[10px] uppercase text-slate-500 flex items-center gap-1">
+      <div className="text-[10px] uppercase text-text-secondary flex items-center gap-1">
         <Icon size={12} /> {label}
       </div>
       <div className="text-2xl font-bold mt-1">{value}</div>

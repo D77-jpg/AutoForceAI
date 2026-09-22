@@ -104,31 +104,31 @@ export default function CreateEmployeePage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-slate-200 p-6 flex justify-center selection:bg-[#0a84ff]/20">
+    <div className="min-h-screen bg-bg text-text p-6 flex justify-center selection:bg-accent/20">
       <div className="w-full max-w-6xl">
         
         {/* Header - More Compact & Action Oriented */}
-        <div className="mb-6 flex items-center justify-between border-b border-white/8/60 pb-4">
+        <div className="mb-6 flex items-center justify-between border-b border-separator pb-4">
              <div className="flex items-center gap-3">
-                <Link href="/workforce" className="p-2 hover:bg-[#2c2c2e] rounded-lg transition-colors text-slate-400 hover:text-white group">
+                <Link href="/workforce" className="p-2 hover:bg-surface-2 rounded-lg transition-colors text-text-secondary hover:text-white group">
                     <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
                 </Link>
                 <div>
                     <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-                        <Bot className="text-[#0a84ff]" size={24}/> 
+                        <Bot className="text-accent" size={24}/> 
                         设计新员工 (New Employee)
                     </h1>
-                    <p className="text-slate-400 text-xs mt-0.5">配置数字员工的角色、性格与核心能力。</p>
+                    <p className="text-text-secondary text-xs mt-0.5">配置数字员工的角色、性格与核心能力。</p>
                 </div>
              </div>
              <div className="flex gap-3">
-                 <Link href="/workforce" className="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors flex items-center">
+                 <Link href="/workforce" className="px-4 py-2 text-sm text-text-secondary hover:text-white transition-colors flex items-center">
                     取消
                  </Link>
                  <button 
                     onClick={handleSubmit} 
                     disabled={loading}
-                    className="flex items-center gap-2 bg-[#0071e3] hover:bg-[#0077ed] text-white px-5 py-2.5 rounded-full text-sm font-medium transition-all shadow-apple active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-apple"
+                    className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-white px-5 py-2.5 rounded-full text-sm font-medium transition-all shadow-card active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-card"
                 >
                     {loading ? '创建中...' : (
                         <>
@@ -145,45 +145,45 @@ export default function CreateEmployeePage() {
              <div className="lg:col-span-8 flex flex-col gap-6">
                 
                 {/* Identity Section */}
-                <div className="bg-[#1c1c1e] border border-white/8 rounded-xl p-5 shadow-sm hover:border-[#0a84ff]/30 transition-colors">
-                    <h2 className="text-sm font-bold text-[#0a84ff] uppercase tracking-wider mb-5 flex items-center gap-2 border-b border-white/8 pb-2">
+                <div className="bg-surface border border-separator rounded-xl p-5 shadow-sm hover:border-accent/30 transition-colors">
+                    <h2 className="text-sm font-bold text-accent uppercase tracking-wider mb-5 flex items-center gap-2 border-b border-separator pb-2">
                         <User size={16}/> 基础身份 (Identity)
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div className="md:col-span-1">
-                            <label className="block text-xs font-semibold text-slate-300 mb-1.5 pl-1">员工姓名</label>
+                            <label className="block text-xs font-semibold text-text mb-1.5 pl-1">员工姓名</label>
                             <input 
                                 type="text" 
                                 value={formData.name}
                                 onChange={(e) => setFormData({...formData, name: e.target.value})}
-                                className="w-full bg-black border border-white/10 rounded-lg px-3 py-2.5 text-white placeholder-slate-600 focus:border-[#0a84ff] focus:ring-1 focus:ring-[#0a84ff] outline-none transition-all text-sm font-medium"
+                                className="w-full bg-bg border border-separator rounded-lg px-3 py-2.5 text-white placeholder-text-tertiary focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all text-sm font-medium"
                                 placeholder="例如：Arthur"
                             />
                         </div>
                         <div className="md:col-span-1">
-                            <label className="block text-xs font-semibold text-slate-300 mb-1.5 pl-1">职能角色</label>
+                            <label className="block text-xs font-semibold text-text mb-1.5 pl-1">职能角色</label>
                             <div className="relative">
                                 <select
                                     value={formData.role}
                                     onChange={(e) => setFormData({...formData, role: e.target.value})}
-                                    className="w-full bg-black border border-white/10 rounded-lg px-3 py-2.5 text-white focus:border-[#0a84ff] outline-none appearance-none text-sm font-medium cursor-pointer hover:border-white/20 transition-colors"
+                                    className="w-full bg-bg border border-separator rounded-lg px-3 py-2.5 text-white focus:border-accent outline-none appearance-none text-sm font-medium cursor-pointer hover:border-separator transition-colors"
                                 >
                                     <option value="strategist">Strategist (策略专家)</option>
                                     <option value="executor">Executor (执行专员)</option>
                                     <option value="archivist">Archivist (档案管理员)</option>
                                 </select>
-                                <div className="absolute right-3 top-3 pointer-events-none text-slate-500">
+                                <div className="absolute right-3 top-3 pointer-events-none text-text-secondary">
                                     <LayoutTemplate size={14} />
                                 </div>
                             </div>
                         </div>
                         <div className="md:col-span-2">
-                            <label className="block text-xs font-semibold text-slate-300 mb-1.5 pl-1">一句话描述</label>
+                            <label className="block text-xs font-semibold text-text mb-1.5 pl-1">一句话描述</label>
                             <input 
                                 type="text" 
                                 value={formData.description}
                                 onChange={(e) => setFormData({...formData, description: e.target.value})}
-                                className="w-full bg-black border border-white/10 rounded-lg px-3 py-2.5 text-white placeholder-slate-600 focus:border-[#0a84ff] outline-none transition-all text-sm"
+                                className="w-full bg-bg border border-separator rounded-lg px-3 py-2.5 text-white placeholder-text-tertiary focus:border-accent outline-none transition-all text-sm"
                                 placeholder="描述该员工的主要职责..."
                             />
                         </div>
@@ -191,27 +191,27 @@ export default function CreateEmployeePage() {
                 </div>
 
                 {/* Cognition Section */}
-                <div className="bg-[#1c1c1e] border border-white/8 rounded-xl p-5 shadow-sm hover:border-[#0a84ff]/30 transition-colors">
-                    <h2 className="text-sm font-bold text-[#0a84ff] uppercase tracking-wider mb-5 flex items-center gap-2 border-b border-white/8 pb-2">
+                <div className="bg-surface border border-separator rounded-xl p-5 shadow-sm hover:border-accent/30 transition-colors">
+                    <h2 className="text-sm font-bold text-accent uppercase tracking-wider mb-5 flex items-center gap-2 border-b border-separator pb-2">
                         <Brain size={16} /> 认知设定 (System Prompt)
                     </h2>
                     <div>
                         <div className="flex justify-between items-center mb-1.5 pl-1">
-                            <label className="block text-xs font-semibold text-slate-300">角色指令 (Persona & Instructions)</label>
-                            <span className="text-[10px] text-[#64d2ff] bg-[#0a84ff]/10 border border-[#0a84ff]/20 px-2 py-0.5 rounded font-mono">System Prompt</span>
+                            <label className="block text-xs font-semibold text-text">角色指令 (Persona & Instructions)</label>
+                            <span className="text-[10px] text-accent bg-accent/10 border border-accent/20 px-2 py-0.5 rounded font-mono">System Prompt</span>
                         </div>
                         <textarea 
                             value={formData.system_prompt}
                             onChange={(e) => setFormData({...formData, system_prompt: e.target.value})}
-                            className="w-full bg-black border border-white/10 rounded-lg px-4 py-3 text-slate-200 text-sm font-mono h-[180px] focus:border-[#0a84ff] focus:ring-1 focus:ring-[#0a84ff] outline-none transition-all leading-relaxed resize-none placeholder-slate-700"
+                            className="w-full bg-bg border border-separator rounded-lg px-4 py-3 text-text text-sm font-mono h-[180px] focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all leading-relaxed resize-none placeholder-text-tertiary"
                             placeholder="你是一个经验丰富的商业分析师，擅长使用 SWOT 分析法..."
                         />
                     </div>
                 </div>
 
                 {/* Skills Section */}
-                <div className="bg-[#1c1c1e] border border-white/8 rounded-xl p-5 shadow-sm hover:border-[#0a84ff]/30 transition-colors">
-                    <h2 className="text-sm font-bold text-[#0a84ff] uppercase tracking-wider mb-5 flex items-center gap-2 border-b border-white/8 pb-2">
+                <div className="bg-surface border border-separator rounded-xl p-5 shadow-sm hover:border-accent/30 transition-colors">
+                    <h2 className="text-sm font-bold text-accent uppercase tracking-wider mb-5 flex items-center gap-2 border-b border-separator pb-2">
                         <Wrench size={16} /> 能力工具箱 (Skills)
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -223,21 +223,21 @@ export default function CreateEmployeePage() {
                                     onClick={() => toggleSkill(skill.id)}
                                     className={`relative p-3 rounded-lg border cursor-pointer transition-all flex flex-col gap-2 group select-none ${
                                         isSelected 
-                                        ? 'bg-[#0a84ff]/10 border-[#0a84ff]/50 shadow-none' 
-                                        : 'bg-black border-white/8 hover:border-white/20 hover:bg-[#2c2c2e]'
+                                        ? 'bg-accent/10 border-accent/50 shadow-none' 
+                                        : 'bg-bg border-separator hover:border-separator hover:bg-surface-2'
                                     }`}
                                 >
                                     <div className="flex justify-between items-start">
-                                        <div className={`text-sm font-bold ${isSelected ? 'text-[#64d2ff]' : 'text-slate-300'}`}>
+                                        <div className={`text-sm font-bold ${isSelected ? 'text-accent' : 'text-text'}`}>
                                             {skill.name}
                                         </div>
                                         <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-                                            isSelected ? 'bg-[#0a84ff] border-[#0a84ff]' : 'border-white/10 bg-[#1c1c1e]'
+                                            isSelected ? 'bg-accent border-accent' : 'border-separator bg-surface'
                                         }`}>
                                             {isSelected && <Check size={10} className="text-white" />}
                                         </div>
                                     </div>
-                                    <div className={`text-xs leading-snug ${isSelected ? 'text-[#7dc1ff]/70' : 'text-slate-500'}`}>
+                                    <div className={`text-xs leading-snug ${isSelected ? 'text-accent/70' : 'text-text-secondary'}`}>
                                         {skill.desc}
                                     </div>
                                 </div>
@@ -250,9 +250,9 @@ export default function CreateEmployeePage() {
 
              {/* Right: Templates Sidebar (4 cols) */}
              <div className="lg:col-span-4 space-y-4">
-                <div className="bg-[#1c1c1e] border border-white/8 rounded-xl p-5 sticky top-6">
+                <div className="bg-surface border border-separator rounded-xl p-5 sticky top-6">
                     <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-                        <Sparkles size={16} className="text-yellow-500"/> 
+                        <Sparkles size={16} className="text-warning"/> 
                         快速模板 (Templates)
                     </h3>
                     <div className="space-y-3">
@@ -260,29 +260,29 @@ export default function CreateEmployeePage() {
                             <div 
                                 key={i} 
                                 onClick={() => loadPreset(preset)}
-                                className="group relative bg-black border border-white/8 hover:border-[#0a84ff]/40 p-3 rounded-lg cursor-pointer transition-all hover:shadow-lg hover:shadow-apple"
+                                className="group relative bg-bg border border-separator hover:border-accent/40 p-3 rounded-lg cursor-pointer transition-all hover:shadow-lg hover:shadow-card"
                             >
                                 <div className="flex items-center gap-3 mb-2">
-                                    <div className="w-10 h-10 rounded-md bg-[#1c1c1e] border border-white/8 flex items-center justify-center text-[#0a84ff] group-hover:bg-[#0077ed] group-hover:text-white group-hover:border-[#0a84ff] transition-all">
+                                    <div className="w-10 h-10 rounded-md bg-surface border border-separator flex items-center justify-center text-accent group-hover:bg-accent-hover group-hover:text-white group-hover:border-accent transition-all">
                                         <Bot size={20} />
                                     </div>
                                     <div>
-                                        <div className="font-bold text-slate-200 text-sm group-hover:text-white">{preset.name}</div>
-                                        <div className="text-[10px] text-slate-500 uppercase font-semibold tracking-wider group-hover:text-[#64d2ff] transition-colors">{preset.role}</div>
+                                        <div className="font-bold text-text text-sm group-hover:text-white">{preset.name}</div>
+                                        <div className="text-[10px] text-text-secondary uppercase font-semibold tracking-wider group-hover:text-accent transition-colors">{preset.role}</div>
                                     </div>
                                 </div>
-                                <p className="text-xs text-slate-400 leading-relaxed mb-2 line-clamp-2">
+                                <p className="text-xs text-text-secondary leading-relaxed mb-2 line-clamp-2">
                                     {preset.description}
                                 </p>
                                 {/* Mini tags */}
                                 <div className="flex flex-wrap gap-1">
                                     {preset.skills.slice(0, 3).map((s, idx) => (
-                                        <span key={idx} className="text-[9px] bg-[#1c1c1e] text-slate-500 border-white/8 px-1.5 py-0.5 rounded border group-hover:border-white/16 group-hover:text-slate-400 transition-colors">
+                                        <span key={idx} className="text-[9px] bg-surface text-text-secondary border-separator px-1.5 py-0.5 rounded border group-hover:border-separator group-hover:text-text-secondary transition-colors">
                                             {AVAILABLE_SKILLS.find(as => as.id === s)?.name || s}
                                         </span>
                                     ))}
                                     {preset.skills.length > 3 && (
-                                        <span className="text-[9px] text-slate-600 px-1">+ {preset.skills.length - 3}</span>
+                                        <span className="text-[9px] text-text-tertiary px-1">+ {preset.skills.length - 3}</span>
                                     )}
                                 </div>
                             </div>

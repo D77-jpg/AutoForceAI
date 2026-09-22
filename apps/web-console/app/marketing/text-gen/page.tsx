@@ -82,16 +82,16 @@ export default function TextGenPage() {
   };
 
   return (
-    <div className="h-full w-full p-6 text-slate-100 flex flex-col gap-4 overflow-hidden">
+    <div className="h-full w-full p-6 text-text flex flex-col gap-4 overflow-hidden">
       <div className="flex justify-between items-center shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-white">文生文 · 外贸获客</h1>
-          <p className="text-sm text-slate-400">英文产品软文 / LinkedIn / SEO 博客 / 开发信，接入企业大脑默认模型。</p>
+          <p className="text-sm text-text-secondary">英文产品软文 / LinkedIn / SEO 博客 / 开发信，接入企业大脑默认模型。</p>
         </div>
         <button
           onClick={generate}
           disabled={loading}
-          className="px-4 py-2 bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white rounded-full text-sm font-medium flex items-center gap-2"
+          className="px-4 py-2 bg-warning hover:bg-warning disabled:opacity-50 text-white rounded-full text-sm font-medium flex items-center gap-2"
         >
           {loading ? <RefreshCw size={16} className="animate-spin" /> : <Wand2 size={16} />}
           {loading ? "生成中..." : "开始创作"}
@@ -107,8 +107,8 @@ export default function TextGenPage() {
                 onClick={() => setContentType(t.id)}
                 className={`text-left p-3 rounded-lg border text-xs ${
                   contentType === t.id
-                    ? "border-orange-500 bg-orange-500/10 text-white"
-                    : "border-white/10 text-slate-400 hover:bg-white/5"
+                    ? "border-warning bg-warning/10 text-white"
+                    : "border-separator text-text-secondary hover:bg-text/5"
                 }`}
               >
                 <div className="font-bold mb-1">{t.label}</div>
@@ -116,40 +116,40 @@ export default function TextGenPage() {
               </button>
             ))}
           </div>
-          <label className="text-xs text-slate-400">
+          <label className="text-xs text-text-secondary">
             产品名
             <input
-              className="mt-1 w-full bg-black/30 border border-white/10 rounded p-2 text-sm text-white"
+              className="mt-1 w-full bg-bg/30 border border-separator rounded p-2 text-sm text-white"
               value={productName}
               onChange={(e) => setProductName(e.target.value)}
             />
           </label>
-          <label className="text-xs text-slate-400">
+          <label className="text-xs text-text-secondary">
             目标受众
             <input
-              className="mt-1 w-full bg-black/30 border border-white/10 rounded p-2 text-sm text-white"
+              className="mt-1 w-full bg-bg/30 border border-separator rounded p-2 text-sm text-white"
               value={audience}
               onChange={(e) => setAudience(e.target.value)}
             />
           </label>
-          <label className="text-xs text-slate-400 flex-1">
+          <label className="text-xs text-text-secondary flex-1">
             卖点 / 规格
             <textarea
-              className="mt-1 w-full h-32 bg-black/30 border border-white/10 rounded p-2 text-sm text-white resize-none"
+              className="mt-1 w-full h-32 bg-bg/30 border border-separator rounded p-2 text-sm text-white resize-none"
               value={sellingPoints}
               onChange={(e) => setSellingPoints(e.target.value)}
             />
           </label>
           <div>
-            <div className="text-xs text-slate-500 mb-2">最近生成</div>
+            <div className="text-xs text-text-secondary mb-2">最近生成</div>
             <div className="space-y-1 max-h-40 overflow-y-auto">
               {history.map((h) => (
                 <button
                   key={h.id}
                   onClick={() => setResult(h)}
-                  className="w-full text-left text-xs p-2 rounded bg-white/5 hover:bg-white/10 truncate"
+                  className="w-full text-left text-xs p-2 rounded bg-text/5 hover:bg-text/10 truncate"
                 >
-                  <span className="text-slate-500 mr-2">{h.content_type}</span>
+                  <span className="text-text-secondary mr-2">{h.content_type}</span>
                   {h.title}
                 </button>
               ))}
@@ -159,7 +159,7 @@ export default function TextGenPage() {
 
         <div className="glass-panel p-5 flex flex-col min-h-0">
           {!result ? (
-            <div className="flex-1 flex items-center justify-center text-slate-500">
+            <div className="flex-1 flex items-center justify-center text-text-secondary">
               <div className="text-center">
                 <PenTool size={48} className="mx-auto mb-4 opacity-40" />
                 <p>填写产品与卖点，生成可直接发布的英文内容</p>
@@ -169,37 +169,37 @@ export default function TextGenPage() {
             <>
               <div className="flex items-start justify-between gap-3 mb-3 shrink-0">
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-orange-300 mb-1">
+                  <div className="text-[10px] uppercase tracking-wider text-warning mb-1">
                     {result.content_type} · {result.word_count || 0} words
                     {result.mock ? " · template fallback" : ""}
                   </div>
                   <h2 className="text-xl font-bold text-white">{result.title}</h2>
                   {result.subject && (
-                    <p className="text-sm text-slate-400 mt-1">Subject: {result.subject}</p>
+                    <p className="text-sm text-text-secondary mt-1">Subject: {result.subject}</p>
                   )}
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={copyBody} className="px-3 py-1.5 text-xs rounded bg-white/10 hover:bg-white/20 flex items-center gap-1">
+                  <button onClick={copyBody} className="px-3 py-1.5 text-xs rounded bg-text/10 hover:bg-text/15 flex items-center gap-1">
                     {copied ? <Check size={12} /> : <Copy size={12} />} 复制
                   </button>
-                  <button onClick={() => sendTo("linkedin")} className="px-3 py-1.5 text-xs rounded bg-blue-600 hover:bg-blue-500 flex items-center gap-1">
+                  <button onClick={() => sendTo("linkedin")} className="px-3 py-1.5 text-xs rounded bg-accent hover:bg-accent flex items-center gap-1">
                     <Share2 size={12} /> LinkedIn
                   </button>
-                  <button onClick={() => sendTo("wordpress")} className="px-3 py-1.5 text-xs rounded bg-[#0071e3] hover:bg-[#0077ed] flex items-center gap-1">
+                  <button onClick={() => sendTo("wordpress")} className="px-3 py-1.5 text-xs rounded bg-accent hover:bg-accent-hover flex items-center gap-1">
                     WordPress
                   </button>
-                  <button onClick={() => sendTo("x")} className="px-3 py-1.5 text-xs rounded bg-slate-700 hover:bg-slate-600 flex items-center gap-1">
+                  <button onClick={() => sendTo("x")} className="px-3 py-1.5 text-xs rounded bg-surface-2 hover:bg-text/10 flex items-center gap-1">
                     X
                   </button>
                 </div>
               </div>
-              <pre className="flex-1 overflow-y-auto whitespace-pre-wrap text-sm text-slate-200 leading-relaxed font-sans bg-black/20 rounded-lg p-4 border border-white/5">
+              <pre className="flex-1 overflow-y-auto whitespace-pre-wrap text-sm text-text leading-relaxed font-sans bg-bg/20 rounded-lg p-4 border border-separator">
                 {result.body}
               </pre>
               {result.tags?.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-3 shrink-0">
                   {result.tags.map((t: string, i: number) => (
-                    <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/15 text-orange-200">
+                    <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-warning/15 text-warning">
                       #{t}
                     </span>
                   ))}

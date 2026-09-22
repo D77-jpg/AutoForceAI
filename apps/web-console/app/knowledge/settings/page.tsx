@@ -11,16 +11,16 @@ export default function KnowledgeSettings() {
     setMsg("已保存");
   };
   return (
-    <div className="min-h-screen bg-black text-slate-200 p-8">
+    <div className="min-h-screen bg-bg text-text p-8">
       <div className="max-w-xl space-y-4">
         <h1 className="text-2xl font-bold">知识库参数</h1>
         {["top_k","score_threshold","chunk_size","chunk_overlap"].map(k=>(
           <label key={k} className="block text-sm">{k}
-            <input className="mt-1 w-full bg-black/40 border border-white/10 rounded px-3 py-2" value={cfg[k]??""} onChange={e=>setCfg({...cfg,[k]: Number(e.target.value)})}/>
+            <input className="mt-1 w-full bg-bg/40 border border-separator rounded px-3 py-2" value={cfg[k]??""} onChange={e=>setCfg({...cfg,[k]: Number(e.target.value)})}/>
           </label>
         ))}
-        <button onClick={save} className="bg-[#0071e3] px-4 py-2 rounded">保存</button>
-        {msg && <span className="ml-3 text-green-400 text-sm">{msg}</span>}
+        <button onClick={save} className="bg-accent px-4 py-2 rounded">保存</button>
+        {msg && <span className="ml-3 text-success text-sm">{msg}</span>}
       </div>
     </div>
   );

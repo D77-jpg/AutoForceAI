@@ -78,9 +78,9 @@ const DEPARTMENTS = [
         description: "品牌声量与获客流量引擎",
         icon: Megaphone, // Abstract icon
         apps: [
-            { href: "/optimize", label: "内容工场", agent: "Leo (首席内容官)", icon: PenTool, color: "text-[#ff375f]", desc: "全平台爆款内容批量生产", tag: "AI中台" },
-            { href: "/geo", label: "全域洞察", agent: "Sophie (品牌经理)", icon: Radar, color: "text-[#ff375f]", desc: "品牌舆情与心智份额追踪", tag: "GEO" },
-            { href: "/marketing", label: "投放参谋", agent: "Max (投放专员)", icon: Target, color: "text-[#ff375f]", desc: "广告投放ROI实时优化", tag: "数字员工" },
+            { href: "/optimize", label: "内容工场", agent: "Leo (首席内容官)", icon: PenTool, color: "text-danger", desc: "全平台爆款内容批量生产", tag: "AI中台" },
+            { href: "/geo", label: "全域洞察", agent: "Sophie (品牌经理)", icon: Radar, color: "text-danger", desc: "品牌舆情与心智份额追踪", tag: "GEO" },
+            { href: "/marketing", label: "投放参谋", agent: "Max (投放专员)", icon: Target, color: "text-danger", desc: "广告投放ROI实时优化", tag: "数字员工" },
         ]
     },
     {
@@ -90,11 +90,11 @@ const DEPARTMENTS = [
         description: "全渠道转化与客户服务中枢",
         icon: Coins,
         apps: [
-            { href: "/digital-human", label: "数字人直播", agent: "Emma (金牌主播)", icon: Mic2, color: "text-[#64d2ff]", desc: "7x24小时不间断带货直播", tag: "数字人" },
-            { href: "/service/sessions", label: "智能接待", agent: "Ray (销售代表)", icon: MessageSquare, color: "text-[#64d2ff]", desc: "全渠道客户自动接待转化", tag: "AI客服" },
-            { href: "/leads", label: "本地线索池", agent: "Outbox", icon: Briefcase, color: "text-[#64d2ff]", desc: "询盘入库、去重、导出，待 CRM 对接", tag: "线索" },
-            { href: "/service/stats", label: "服务质检", agent: "AI Judge (裁判)", icon: Activity, color: "text-[#64d2ff]", desc: "AI 自动评分与问题诊断大屏", tag: "质量监控" },
-            { href: "/service/rules", label: "质检规则", agent: "SOP Manager", icon: ShieldCheck, color: "text-[#64d2ff]", desc: "配置服务标准与评分SOP", tag: "配置" },
+            { href: "/digital-human", label: "数字人直播", agent: "Emma (金牌主播)", icon: Mic2, color: "text-accent", desc: "7x24小时不间断带货直播", tag: "数字人" },
+            { href: "/service/sessions", label: "智能接待", agent: "Ray (销售代表)", icon: MessageSquare, color: "text-accent", desc: "全渠道客户自动接待转化", tag: "AI客服" },
+            { href: "/leads", label: "本地线索池", agent: "Outbox", icon: Briefcase, color: "text-accent", desc: "询盘入库、去重、导出，待 CRM 对接", tag: "线索" },
+            { href: "/service/stats", label: "服务质检", agent: "AI Judge (裁判)", icon: Activity, color: "text-accent", desc: "AI 自动评分与问题诊断大屏", tag: "质量监控" },
+            { href: "/service/rules", label: "质检规则", agent: "SOP Manager", icon: ShieldCheck, color: "text-accent", desc: "配置服务标准与评分SOP", tag: "配置" },
         ]
     },
     {
@@ -104,9 +104,9 @@ const DEPARTMENTS = [
         description: "竞争情报与战略决策大脑",
         icon: Crown,
         apps: [
-            { href: "/diagnosis", label: "竞争诊断", agent: "Arthur (行业分析师)", icon: Compass, color: "text-[#0a84ff]", desc: "竞品策略拆解与红黑榜", tag: "GEO" },
-            { href: "/diagnosis", label: "市场扫描", agent: "Data Scout (情报员)", icon: Globe, color: "text-[#0a84ff]", desc: "全球前沿市场信号捕捉", tag: "数字员工" },
-            { href: "/diagnosis", label: "深度调研", agent: "Insight Bot (研究员)", icon: Activity, color: "text-[#0a84ff]", desc: "定制化行业深度研报生成", tag: "数字员工" },
+            { href: "/diagnosis", label: "竞争诊断", agent: "Arthur (行业分析师)", icon: Compass, color: "text-accent", desc: "竞品策略拆解与红黑榜", tag: "GEO" },
+            { href: "/diagnosis", label: "市场扫描", agent: "Data Scout (情报员)", icon: Globe, color: "text-accent", desc: "全球前沿市场信号捕捉", tag: "数字员工" },
+            { href: "/diagnosis", label: "深度调研", agent: "Insight Bot (研究员)", icon: Activity, color: "text-accent", desc: "定制化行业深度研报生成", tag: "数字员工" },
         ]
     },
     {
@@ -116,9 +116,9 @@ const DEPARTMENTS = [
         description: "组织资产与系统效能保障",
         icon: LayersIcon,
         apps: [
-            { href: "/knowledge", label: "企业知识库", agent: "Doc (知识总管)", icon: Brain, color: "text-[#ff9f0a]", desc: "核心知识资产沉淀与分发", tag: "AI知识库" },
-            { href: "/organization", label: "组织编排", agent: "Monica (HRBP)", icon: Network, color: "text-[#ff9f0a]", desc: "数字员工权限与团队管理", tag: "AI中台" },
-            { href: "/ops", label: "系统运维", agent: "System (工程师)", icon: Terminal, color: "text-[#ff9f0a]", desc: "全平台运行状态监控", tag: "智能运维" },
+            { href: "/knowledge", label: "企业知识库", agent: "Doc (知识总管)", icon: Brain, color: "text-warning", desc: "核心知识资产沉淀与分发", tag: "AI知识库" },
+            { href: "/organization", label: "组织编排", agent: "Monica (HRBP)", icon: Network, color: "text-warning", desc: "数字员工权限与团队管理", tag: "AI中台" },
+            { href: "/ops", label: "系统运维", agent: "System (工程师)", icon: Terminal, color: "text-warning", desc: "全平台运行状态监控", tag: "智能运维" },
         ]
     }
 ];
@@ -132,7 +132,7 @@ const SYSTEM_PRODUCTS = [
         icon: Library,
         keyData: "1.2TB Data",
         href: "/knowledge",
-        color: "text-[#ff9f0a]"
+        color: "text-warning"
     },
     {
         id: "geo",
@@ -142,7 +142,7 @@ const SYSTEM_PRODUCTS = [
         icon: Radar,
         keyData: "32.4% Share",
         href: "/geo",
-        color: "text-[#0a84ff]"
+        color: "text-accent"
     },
     {
         id: "service",
@@ -152,7 +152,7 @@ const SYSTEM_PRODUCTS = [
         icon: MessageSquare,
         keyData: "99% Resp",
         href: "/service/sessions",
-        color: "text-[#64d2ff]"
+        color: "text-accent"
     },     
     {
         id: "ecommerce",
@@ -162,7 +162,7 @@ const SYSTEM_PRODUCTS = [
         icon: ShoppingBag,
         keyData: "2024 Collection",
         href: "/ecommerce", 
-        color: "text-[#ffd60a]"
+        color: "text-warning"
     },
     {
         id: "marketing",
@@ -172,7 +172,7 @@ const SYSTEM_PRODUCTS = [
         icon: Megaphone,
         keyData: "ROI +30%",
         href: "/marketing",
-        color: "text-[#ff453a]"
+        color: "text-danger"
     },
     {
         id: "crm",
@@ -182,7 +182,7 @@ const SYSTEM_PRODUCTS = [
         icon: Briefcase,
         keyData: "Leads +45%",
         href: "/crm",
-        color: "text-[#ff453a]"
+        color: "text-danger"
     },
     {
         id: "digital-human",
@@ -192,7 +192,7 @@ const SYSTEM_PRODUCTS = [
         icon: Mic2,
         keyData: "24h Live",
         href: "/digital-human",
-        color: "text-[#ff375f]"
+        color: "text-danger"
     },
     {
         id: "workforce",
@@ -202,7 +202,7 @@ const SYSTEM_PRODUCTS = [
         icon: Users,
         keyData: "14 Active",
         href: "/workforce",
-        color: "text-[#bf5af2]"
+        color: "text-accent-hover"
     },
     {
         id: "ops",
@@ -212,7 +212,7 @@ const SYSTEM_PRODUCTS = [
         icon: Terminal,
         keyData: "99.9% Up",
         href: "/ops",
-        color: "text-[#30d158]"
+        color: "text-success"
     },
     {
         id: "mid-platform",
@@ -222,7 +222,7 @@ const SYSTEM_PRODUCTS = [
         icon: Cpu,
         keyData: "API Gateway",
         href: "/platform",
-        color: "text-[#64d2ff]"
+        color: "text-accent"
     }
 ];
 
@@ -237,17 +237,17 @@ function LayersIcon(props: any) { return <Database {...props} /> }
 
 const HudPanel = ({ title, icon: Icon, color, children, href }: any) => {
     const Content = (
-      <div className={`relative h-full group overflow-hidden bg-[#1c1c1e] border border-white/8 rounded-[22px] p-5 hover:bg-[#2c2c2e] transition-all duration-300 shadow-apple ${href ? 'cursor-pointer' : ''}`}>
+      <div className={`relative h-full group overflow-hidden bg-surface border border-separator rounded-[22px] p-5 hover:bg-surface-2 transition-all duration-300 shadow-card ${href ? 'cursor-pointer' : ''}`}>
           <div className="absolute top-0 right-0 p-4 opacity-[0.08]">
                <Icon size={48} className={color} />
           </div>
           
           <div className="flex items-center gap-2 mb-4 relative z-10">
-              <div className={`p-1.5 rounded-xl bg-white/6 ${color}`}>
+              <div className={`p-1.5 rounded-xl bg-text/5 ${color}`}>
                   <Icon size={16} />
               </div>
-              <h3 className="text-sm font-semibold text-[#f5f5f7] tracking-tight">{title}</h3>
-              {href && <ArrowUpRight size={12} className="text-[#6e6e73] opacity-0 group-hover:opacity-100 transition-opacity" />}
+              <h3 className="text-sm font-semibold text-text tracking-tight">{title}</h3>
+              {href && <ArrowUpRight size={12} className="text-text-tertiary opacity-0 group-hover:opacity-100 transition-opacity" />}
           </div>
           <div className="relative z-10">
               {children}
@@ -261,26 +261,26 @@ const HudPanel = ({ title, icon: Icon, color, children, href }: any) => {
 const IconButton = ({ icon: Icon, onClick, badge }: any) => (
   <button 
     onClick={onClick}
-    className="relative w-9 h-9 rounded-full bg-white/6 hover:bg-white/10 flex items-center justify-center text-[#86868b] hover:text-white transition-colors"
+    className="relative w-9 h-9 rounded-full bg-text/5 hover:bg-text/10 flex items-center justify-center text-text-secondary hover:text-white transition-colors"
   >
     <Icon size={16} />
-    {badge && <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-[#ff453a] rounded-full" />}
+    {badge && <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-danger rounded-full" />}
   </button>
 );
 
 const DepartmentCard = ({ dept, className = "" }: { dept: any, className?: string }) => {
     return (
-        <div className={`relative overflow-hidden bg-[#1c1c1e] border border-white/8 rounded-[24px] p-6 hover:bg-[#242426] transition-all duration-300 group/card ${className}`}>
+        <div className={`relative overflow-hidden bg-surface border border-separator rounded-2xl p-6 hover:bg-surface-2 transition-all duration-300 group/card ${className}`}>
             
-            <div className="relative z-10 flex items-start justify-between mb-6 pb-4 border-b border-white/8">
+            <div className="relative z-10 flex items-start justify-between mb-6 pb-4 border-b border-separator">
                 <div>
                     <div className="flex items-center gap-3 mb-1">
-                        <div className={`p-2 rounded-2xl bg-white/6 ${dept.apps[0].color}`}>
+                        <div className={`p-2 rounded-2xl bg-text/5 ${dept.apps[0].color}`}>
                              <dept.icon size={20} />
                         </div>
                         <div>
                             <h3 className="text-lg font-semibold text-white tracking-tight">{dept.title}</h3>
-                            <div className="text-[11px] text-[#6e6e73] tracking-[0.12em] uppercase">
+                            <div className="text-[11px] text-text-tertiary tracking-[0.12em] uppercase">
                                 {dept.enTitle}
                             </div>
                         </div>
@@ -293,36 +293,36 @@ const DepartmentCard = ({ dept, className = "" }: { dept: any, className?: strin
                     <Link 
                         key={idx} 
                         href={app.href}
-                        className="flex flex-col p-3 rounded-[16px] bg-[#2c2c2e]/70 border border-white/6 hover:bg-[#3a3a3c] transition-all duration-300 group/item relative overflow-hidden"
+                        className="flex flex-col p-3 rounded-[16px] bg-surface-2/70 border border-separator hover:bg-surface-2 transition-all duration-300 group/item relative overflow-hidden"
                     >
                         <div className="flex items-start justify-between mb-2">
                              <div className="flex items-center gap-2">
-                                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center bg-black/40 ${app.color} group-hover/item:scale-105 transition-transform`}>
+                                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center bg-bg/40 ${app.color} group-hover/item:scale-105 transition-transform`}>
                                      <app.icon size={16} />
                                  </div>
                                  <div>
-                                     <div className="text-sm font-semibold text-[#f5f5f7] flex items-center gap-1">
+                                     <div className="text-sm font-semibold text-text flex items-center gap-1">
                                          {app.label}
                                      </div>
                                  </div>
                              </div>
-                             <ChevronRight size={14} className="text-[#6e6e73] group-hover/item:text-white -translate-x-2 opacity-0 group-hover/item:translate-x-0 group-hover/item:opacity-100 transition-all" />
+                             <ChevronRight size={14} className="text-text-tertiary group-hover/item:text-white -translate-x-2 opacity-0 group-hover/item:translate-x-0 group-hover/item:opacity-100 transition-all" />
                         </div>
                         
                         <div className="mt-1 mb-2">
-                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-black/30 text-[10px] text-[#86868b]">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-bg/30 text-[10px] text-text-secondary">
                                 <Bot size={10} className={app.color} />
                                 <span>{app.agent}</span>
                             </span>
                         </div>
 
-                        <div className="text-[11px] text-[#86868b] leading-normal line-clamp-1 border-t border-white/6 pt-2 mt-auto">
+                        <div className="text-[11px] text-text-secondary leading-normal line-clamp-1 border-t border-separator pt-2 mt-auto">
                             {app.desc}
                         </div>
                         
                         {app.tag && (
                              <div className="absolute bottom-0 right-0">
-                                 <span className="inline-block px-1.5 py-0.5 bg-white/10 text-[#f5f5f7] text-[9px] font-medium rounded-tl-xl">
+                                 <span className="inline-block px-1.5 py-0.5 bg-text/10 text-text text-[9px] font-medium rounded-tl-xl">
                                      {app.tag}
                                  </span>
                              </div>
@@ -348,13 +348,13 @@ export default function HomePage() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-black text-[#f5f5f7] font-sans w-full overflow-x-hidden">
+    <div className="min-h-screen bg-bg text-text font-sans w-full overflow-x-hidden">
       
       <div className="fixed inset-0 z-0 pointer-events-none">
-          <div className="absolute top-[-18%] left-[12%] w-[720px] h-[420px] bg-[#0a84ff]/10 blur-[140px]" />
+          <div className="absolute top-[-18%] left-[12%] w-[720px] h-[420px] bg-accent/10 blur-[140px]" />
       </div>
 
-      <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-white/8 bg-black/70 backdrop-blur-2xl px-6 flex justify-between items-center">
+      <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-separator bg-bg/70 backdrop-blur-2xl px-6 flex justify-between items-center">
           <div className="flex items-center gap-4">
               <Link href={process.env.NEXT_PUBLIC_OFFICIAL_SITE_URL || "#"} className="w-8 h-8 relative cursor-pointer hover:opacity-80 transition-opacity">
                    <Image src="/logo.png" alt="Logo" fill className="object-contain" />
@@ -363,21 +363,21 @@ export default function HomePage() {
                   <h1 className="text-[17px] font-semibold tracking-tight text-white leading-none mb-0.5">
                       GlobalPilot AI
                   </h1>
-                  <p className="text-[11px] text-[#86868b] tracking-[0.04em]">
+                  <p className="text-[11px] text-text-secondary tracking-[0.04em]">
                       全球 B2B 智能增长操作系统
                   </p>
               </div>
 
               {/* Product Menu */}
               <div className="relative group h-16 flex items-center">
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#d2d2d7] hover:text-white hover:bg-white/6 rounded-full transition-colors">
-                      <LayoutGrid size={16} className="text-[#0a84ff]"/>
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-text-secondary hover:text-white hover:bg-text/5 rounded-full transition-colors">
+                      <LayoutGrid size={16} className="text-accent"/>
                       <span>产品矩阵</span>
                       <ChevronRight size={12} className="group-hover:rotate-90 transition-transform duration-300" />
                   </button>
                   
                   {/* Mega Menu Dropdown */}
-                  <div className="absolute top-full left-0 w-[800px] bg-[#1c1c1e]/95 backdrop-blur-2xl border border-white/10 rounded-[24px] shadow-apple-lg p-6 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300 z-50 overflow-hidden">
+                  <div className="absolute top-full left-0 w-[800px] bg-surface/95 backdrop-blur-2xl border border-separator rounded-2xl shadow-popover p-6 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300 z-50 overflow-hidden">
                         
                         <div className="relative z-10 grid grid-cols-2 gap-4">
                             {SYSTEM_PRODUCTS.map((prod) => (
@@ -385,25 +385,25 @@ export default function HomePage() {
                                     key={prod.id} 
                                     href={prod.href} 
                                     target={prod.href.startsWith('http') ? '_blank' : undefined}
-                                    className="flex items-start gap-4 p-4 rounded-2xl hover:bg-white/6 border border-transparent transition-all group/card"
+                                    className="flex items-start gap-4 p-4 rounded-2xl hover:bg-text/5 border border-transparent transition-all group/card"
                                 >
-                                    <div className={`p-3 rounded-2xl bg-[#2c2c2e] ${prod.color} group-hover/card:scale-105 transition-transform duration-300`}>
+                                    <div className={`p-3 rounded-2xl bg-surface-2 ${prod.color} group-hover/card:scale-105 transition-transform duration-300`}>
                                         <prod.icon size={24} />
                                     </div>
                                     <div className="flex-1">
                                         <div className="flex justify-between items-start mb-1">
-                                            <h4 className="font-bold text-slate-200 group-hover/card:text-white transition-colors">{prod.name}</h4>
-                                            <span className="text-[10px] font-medium bg-white/6 px-1.5 py-0.5 rounded-full text-[#86868b]">{prod.keyData}</span>
+                                            <h4 className="font-bold text-text group-hover/card:text-white transition-colors">{prod.name}</h4>
+                                            <span className="text-[10px] font-medium bg-text/5 px-1.5 py-0.5 rounded-full text-text-secondary">{prod.keyData}</span>
                                         </div>
-                                        <p className="text-[11px] font-medium text-[#0a84ff] mb-1">{prod.slogan}</p>
-                                        <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">{prod.desc}</p>
+                                        <p className="text-[11px] font-medium text-accent mb-1">{prod.slogan}</p>
+                                        <p className="text-xs text-text-secondary leading-relaxed line-clamp-2">{prod.desc}</p>
                                     </div>
                                 </Link>
                             ))}
                         </div>
-                        <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center px-2">
-                             <span className="text-[10px] text-slate-500 uppercase tracking-widest">GlobalPilot AI © 2026</span>
-                             <Link href="/solution" className="text-xs text-[#0a84ff] hover:text-white flex items-center gap-1 group/link">
+                        <div className="mt-4 pt-3 border-t border-separator flex justify-between items-center px-2">
+                             <span className="text-[10px] text-text-secondary uppercase tracking-widest">GlobalPilot AI © 2026</span>
+                             <Link href="/solution" className="text-xs text-accent hover:text-white flex items-center gap-1 group/link">
                                  查看全景图 <ArrowUpRight size={12} className="group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform"/>
                              </Link>
                         </div>
@@ -413,15 +413,15 @@ export default function HomePage() {
 
           <div className="flex items-center gap-5">
                {/* Search Bar */}
-               <div className="hidden lg:flex items-center bg-[#1c1c1e] border border-white/8 rounded-full h-9 px-4 w-[320px] mr-2 focus-within:border-[#0a84ff]/40 focus-within:bg-[#2c2c2e] transition-all">
-                   <Search size={14} className="text-slate-500 mr-2" />
-                   <input type="text" placeholder="呼叫数字员工 / 搜索业务数据..." className="bg-transparent border-none outline-none text-xs text-slate-200 placeholder:text-slate-600 flex-1" />
-                   <div className="flex items-center gap-1 text-[10px] text-slate-600 font-mono">
-                    <span className="bg-white/10 px-1.5 py-0.5 rounded border border-white/5">⌘ K</span>
+               <div className="hidden lg:flex items-center bg-surface border border-separator rounded-full h-9 px-4 w-[320px] mr-2 focus-within:border-accent/40 focus-within:bg-surface-2 transition-all">
+                   <Search size={14} className="text-text-secondary mr-2" />
+                   <input type="text" placeholder="呼叫数字员工 / 搜索业务数据..." className="bg-transparent border-none outline-none text-xs text-text placeholder:text-text-tertiary flex-1" />
+                   <div className="flex items-center gap-1 text-[10px] text-text-tertiary font-mono">
+                    <span className="bg-text/10 px-1.5 py-0.5 rounded border border-separator">⌘ K</span>
                    </div>
                </div>
 
-               <div className="h-4 w-px bg-white/10" />
+               <div className="h-4 w-px bg-text/10" />
                
                <div className="flex gap-2">
                    <IconButton icon={Bell} badge />
@@ -429,34 +429,34 @@ export default function HomePage() {
                </div>
                
                <div 
-                  className="flex items-center gap-3 pl-4 border-l border-white/5 cursor-pointer group relative"
+                  className="flex items-center gap-3 pl-4 border-l border-separator cursor-pointer group relative"
                   onClick={() => setShowUserMenu(!showUserMenu)}
                >
                    <div className="text-right hidden sm:block">
-                       <div className="text-xs font-bold text-slate-200 group-hover:text-white transition-colors">{user?.nickname || user?.username || 'GUEST'}</div>
-                       <div className="text-[10px] text-slate-500 uppercase">
+                       <div className="text-xs font-bold text-text group-hover:text-white transition-colors">{user?.nickname || user?.username || 'GUEST'}</div>
+                       <div className="text-[10px] text-text-secondary uppercase">
                           {user?.role === 'admin' ? '系统管理员' : (user?.role === 'enterprise_admin' ? '企业管理员' : '普通成员')}
                        </div>
                    </div>
-                   <div className="w-9 h-9 rounded-full bg-[#2c2c2e] overflow-hidden relative">
+                   <div className="w-9 h-9 rounded-full bg-surface-2 overflow-hidden relative">
                       {(user?.avatar || user?.headimgurl) ? (
                           <img src={user?.headimgurl || user?.avatar} alt="Avatar" className="w-full h-full object-cover" />
                       ) : (
-                          <UserIcon className="w-5 h-5 m-2 text-[#86868b]" />
+                          <UserIcon className="w-5 h-5 m-2 text-text-secondary" />
                       )}
                    </div>
 
                    {/* User Dropdown */}
                    {showUserMenu && (
-                        <div className="absolute top-full right-0 mt-2 w-56 bg-[#1c1c1e] border border-white/10 rounded-2xl shadow-apple-lg overflow-hidden animate-fade-in-up z-50">
-                            <div className="p-3 border-b border-white/5">
-                                <p className="text-xs text-slate-400">当前账号</p>
+                        <div className="absolute top-full right-0 mt-2 w-56 bg-surface border border-separator rounded-2xl shadow-popover overflow-hidden animate-fade-in-up z-50">
+                            <div className="p-3 border-b border-separator">
+                                <p className="text-xs text-text-secondary">当前账号</p>
                                 <div className="text-sm font-bold text-white truncate flex items-center gap-1">
                                     {user?.nickname || user?.username || 'Guest'}
                                     {user?.org_name && (
                                         <>
-                                            <span className="text-slate-500 mx-0.5">|</span>
-                                            <span className="text-[#0a84ff] font-normal truncate max-w-[100px]" title={user.org_name}>
+                                            <span className="text-text-secondary mx-0.5">|</span>
+                                            <span className="text-accent font-normal truncate max-w-[100px]" title={user.org_name}>
                                                 {user.org_name}
                                             </span>
                                         </>
@@ -464,16 +464,16 @@ export default function HomePage() {
                                 </div>
                             </div>
                             <div className="p-1">
-                                <Link href="/settings/profile" className="flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+                                <Link href="/settings/profile" className="flex items-center gap-2 px-3 py-2 text-xs text-text hover:text-white hover:bg-text/5 rounded-lg transition-colors">
                                     <UserIcon size={14} /> 用户中心
                                 </Link>
-                                <Link href="/ops" className="flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+                                <Link href="/ops" className="flex items-center gap-2 px-3 py-2 text-xs text-text hover:text-white hover:bg-text/5 rounded-lg transition-colors">
                                     <Settings size={14} /> 系统配置
                                 </Link>
-                                <div className="h-px bg-white/5 my-1" />
+                                <div className="h-px bg-text/5 my-1" />
                                 <button 
                                     onClick={logout}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors text-left"
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-danger hover:text-danger hover:bg-danger/10 rounded-lg transition-colors text-left"
                                 >
                                     <LogOut size={14} /> 退出登录
                                 </button>
@@ -491,16 +491,16 @@ export default function HomePage() {
           <div className="flex justify-between items-end mb-8">
                <div>
                    <h2 className="text-2xl font-bold text-white mb-2">数字人调度中心</h2>
-                   <p className="text-sm text-[#86868b] max-w-2xl">
-                       全天候运行中。当前系统健康度 <span className="text-[#30d158]">98.2%</span>，在线数字员工 <span className="text-[#0a84ff]">14</span> 名。
+                   <p className="text-sm text-text-secondary max-w-2xl">
+                       全天候运行中。当前系统健康度 <span className="text-success">98.2%</span>，在线数字员工 <span className="text-accent">14</span> 名。
                    </p>
                </div>
                <div className="hidden md:flex gap-3">
-                   <Link href="/knowledge/brain" className="px-4 py-2 bg-[#2c2c2e] hover:bg-[#3a3a3c] text-white text-xs font-medium rounded-full transition-colors flex items-center gap-2">
+                   <Link href="/knowledge/brain" className="px-4 py-2 bg-surface-2 hover:bg-surface-2 text-white text-xs font-medium rounded-full transition-colors flex items-center gap-2">
                        <Brain size={14} />
                        企业知识大脑
                    </Link>
-                   <Link href="/workforce/create" className="px-4 py-2.5 bg-[#0071e3] hover:bg-[#0077ed] text-white text-xs font-medium rounded-full transition-colors flex items-center gap-2">
+                   <Link href="/workforce/create" className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-white text-xs font-medium rounded-full transition-colors flex items-center gap-2">
                        <Bot size={14} />
                        新建数字员工
                    </Link>
@@ -509,34 +509,34 @@ export default function HomePage() {
 
           {/* HUD Widgets - Strategic Overview */}
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-              <HudPanel title="市场态势" icon={Radar} color="text-emerald-400" href="/diagnosis">
+              <HudPanel title="市场态势" icon={Radar} color="text-success" href="/diagnosis">
                    <div className="space-y-4">
-                       <div className="flex justify-between items-end pb-2 border-b border-white/5">
-                            <span className="text-xs text-slate-400">品牌心智份额</span>
+                       <div className="flex justify-between items-end pb-2 border-b border-separator">
+                            <span className="text-xs text-text-secondary">品牌心智份额</span>
                             <div className="text-right">
                                 <span className="text-xl font-bold text-white font-mono">32.4%</span>
-                                <span className="text-[10px] text-emerald-400 ml-2">▲ 2.1%</span>
+                                <span className="text-[10px] text-success ml-2">▲ 2.1%</span>
                             </div>
                        </div>
                        <div className="h-10 flex items-end gap-1">
                           {[30, 45, 35, 60, 50, 70, 55, 80, 65, 75, 60, 90].map((h, i) => (
-                              <div key={i} className="flex-1 bg-emerald-500/30 rounded-[1px] hover:bg-emerald-400 transition-colors" style={{ height: `${h}%` }} />
+                              <div key={i} className="flex-1 bg-success/30 rounded-[1px] hover:bg-success transition-colors" style={{ height: `${h}%` }} />
                           ))}
                        </div>
                    </div>
               </HudPanel>
 
-              <HudPanel title="任务流水线" icon={Factory} color="text-blue-400" href="/ops">
+              <HudPanel title="任务流水线" icon={Factory} color="text-accent" href="/ops">
                    <div className="space-y-3 pt-1">
                        {TASKS.map(task => (
                            <div key={task.id} className="group/item">
                                <div className="flex justify-between text-xs mb-1">
-                                   <span className="text-slate-300 font-medium">{task.name}</span>
-                                   <span className="text-[10px] text-blue-300 bg-blue-500/10 px-1.5 rounded">{task.status}</span>
+                                   <span className="text-text font-medium">{task.name}</span>
+                                   <span className="text-[10px] text-accent bg-accent/10 px-1.5 rounded">{task.status}</span>
                                </div>
-                               <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
-                                   <div className="h-full bg-blue-500 rounded-full relative" style={{ width: `${task.progress}%` }}>
-                                       <div className="absolute right-0 top-0 bottom-0 w-2 bg-white/50 blur-[2px]" />
+                               <div className="h-1 w-full bg-text/10 rounded-full overflow-hidden">
+                                   <div className="h-full bg-accent rounded-full relative" style={{ width: `${task.progress}%` }}>
+                                       <div className="absolute right-0 top-0 bottom-0 w-2 bg-text/15 blur-[2px]" />
                                    </div>
                                </div>
                            </div>
@@ -544,17 +544,17 @@ export default function HomePage() {
                    </div>
               </HudPanel>
 
-              <HudPanel title="员工状态" icon={Users} color="text-[#0a84ff]" href="/workforce">
+              <HudPanel title="员工状态" icon={Users} color="text-accent" href="/workforce">
                    <div className="space-y-3">
                        {AGENTS.map((agent, i) => (
-                           <div key={i} className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-white/6 transition-colors cursor-pointer">
-                               <div className="w-8 h-8 rounded-xl bg-[#2c2c2e] flex items-center justify-center relative">
-                                   <Bot size={16} className={agent.status === 'busy' ? "text-[#0a84ff]" : "text-[#6e6e73]"} />
-                                   {agent.status === 'busy' && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#ffd60a] rounded-full" />}
+                           <div key={i} className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-text/5 transition-colors cursor-pointer">
+                               <div className="w-8 h-8 rounded-xl bg-surface-2 flex items-center justify-center relative">
+                                   <Bot size={16} className={agent.status === 'busy' ? "text-accent" : "text-text-tertiary"} />
+                                   {agent.status === 'busy' && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-warning rounded-full" />}
                                </div>
                                <div className="min-w-0 flex-1">
-                                   <div className="text-xs font-bold text-slate-200">{agent.name}</div>
-                                   <div className="text-[10px] text-slate-400 truncate">{agent.task}</div>
+                                   <div className="text-xs font-bold text-text">{agent.name}</div>
+                                   <div className="text-[10px] text-text-secondary truncate">{agent.task}</div>
                                </div>
                            </div>
                        ))}
@@ -567,12 +567,12 @@ export default function HomePage() {
              
              {/* Section Header */}
              <div className="flex items-center gap-4 mb-6">
-                 <div className="h-px flex-1 bg-white/8" />
-                 <span className="text-[11px] text-[#6e6e73] uppercase tracking-[0.16em] flex items-center gap-2">
+                 <div className="h-px flex-1 bg-text/10" />
+                 <span className="text-[11px] text-text-tertiary uppercase tracking-[0.16em] flex items-center gap-2">
                      <Grid size={12} />
                      产品矩阵
                  </span>
-                 <div className="h-px flex-1 bg-white/8" />
+                 <div className="h-px flex-1 bg-text/10" />
              </div>
 
              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">

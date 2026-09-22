@@ -20,21 +20,21 @@ export default function BookmarkletSetup() {
             <CardTitle>步骤 1：安装助手</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-gray-600">
+            <p className="text-text-tertiary">
               请将下方的蓝色按钮，用鼠标 <b>拖拽</b> 到浏览器的 <b>书签收藏栏</b> 中。
             </p>
-            <div className="flex justify-center p-6 border-2 border-dashed rounded-lg bg-gray-50">
+            <div className="flex justify-center p-6 border-2 border-dashed rounded-lg bg-surface-2">
               {/* 这是一个特殊的链接，拖动它就是添加书签 */}
               <a 
                 href={bookmarkHref}
-                className="px-6 py-3 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 shadow-lg cursor-grab active:cursor-grabbing"
+                className="px-6 py-3 bg-accent text-white font-bold rounded-full hover:bg-accent shadow-lg cursor-grab active:cursor-grabbing"
                 onClick={(e) => e.preventDefault()} // 防止点击跳转
                 title="拖动我到书签栏"
               >
                 GlobalPilot RPA
               </a>
             </div>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-text-secondary">
               注意：如果您的浏览器没有显示书签栏，请按 <kbd>Ctrl+Shift+B</kbd> (Windows) 或 <kbd>Cmd+Shift+B</kbd> (Mac) 打开。
             </p>
           </CardContent>
@@ -45,7 +45,7 @@ export default function BookmarkletSetup() {
             <CardTitle>步骤 2：如何使用</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <ol className="list-decimal list-inside space-y-2 text-gray-700">
+            <ol className="list-decimal list-inside space-y-2 text-text-tertiary">
               <li>在任务中心点击 <b>“一键发布”</b> 按钮。</li>
               <li>系统会自动并在新标签页打开 <b>小红书创作中心</b>。</li>
               <li>等待页面加载完毕（如有登录弹窗，请先登录）。</li>
@@ -56,7 +56,7 @@ export default function BookmarkletSetup() {
         </Card>
       </div>
 
-      <div className="mt-8 p-4 bg-yellow-50 text-yellow-800 rounded border border-yellow-200">
+      <div className="mt-8 p-4 bg-warning/10 text-warning rounded border border-warning">
         <h3 className="font-bold">为什么使用书签脚本？</h3>
         <p className="text-sm mt-1">
           由于浏览器安全限制，网页无法直接操作其他网站。书签脚本是最安全的“轻量级辅助”方案，

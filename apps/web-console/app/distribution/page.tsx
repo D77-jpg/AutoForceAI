@@ -19,10 +19,10 @@ interface RPAJob {
 }
 
 const statusConfig = {
-  queued: { label: "排队中", color: "bg-slate-500/10 text-slate-400 border-slate-500/20", icon: Clock },
-  claimed: { label: "执行中", color: "bg-blue-500/10 text-blue-400 border-blue-500/20", icon: RefreshCw },
-  success: { label: "发布成功", color: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", icon: CheckCircle },
-  failed: { label: "执行失败", color: "bg-red-500/10 text-red-400 border-red-500/20", icon: AlertTriangle }
+  queued: { label: "排队中", color: "bg-surface-2 text-text-secondary border-separator", icon: Clock },
+  claimed: { label: "执行中", color: "bg-accent/10 text-accent border-accent/20", icon: RefreshCw },
+  success: { label: "发布成功", color: "bg-success/10 text-success border-success/20", icon: CheckCircle },
+  failed: { label: "执行失败", color: "bg-danger/10 text-danger border-danger/20", icon: AlertTriangle }
 };
 
 
@@ -315,56 +315,56 @@ export default function Distribution() {
     <div className="h-full flex flex-col p-4 animate-fade-in-up space-y-4">
       {/* 1. Header & Stats Section */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 shrink-0">
-         <div className="glass-card p-4 flex items-center justify-between border-l-4 border-l-[#0a84ff]">
+         <div className="glass-card p-4 flex items-center justify-between border-l-4 border-l-accent">
             <div>
-               <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">投放任务总数</p>
+               <p className="text-xs text-text-secondary uppercase font-bold tracking-wider">投放任务总数</p>
                <h3 className="text-2xl font-bold text-white mt-1">{stats.total}</h3>
             </div>
-            <div className="p-3 bg-[#0a84ff]/10 rounded-lg text-[#0a84ff]">
+            <div className="p-3 bg-accent/10 rounded-lg text-accent">
                <Layers size={20}/>
             </div>
          </div>
          <div className="glass-card p-4 flex items-center justify-between border-l-4 border-l-blue-500">
             <div>
-               <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">正在执行/排队</p>
+               <p className="text-xs text-text-secondary uppercase font-bold tracking-wider">正在执行/排队</p>
                <h3 className="text-2xl font-bold text-white mt-1">{stats.running}</h3>
             </div>
-            <div className="p-3 bg-blue-500/10 rounded-lg text-blue-400 animate-pulse">
+            <div className="p-3 bg-accent/10 rounded-lg text-accent animate-pulse">
                <RefreshCw size={20} className={stats.running > 0 ? "animate-spin" : ""}/>
             </div>
          </div>
          <div className="glass-card p-4 flex items-center justify-between border-l-4 border-l-emerald-500">
             <div>
-               <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">投放成功率</p>
+               <p className="text-xs text-text-secondary uppercase font-bold tracking-wider">投放成功率</p>
                <h3 className="text-2xl font-bold text-white mt-1">{stats.successRate}%</h3>
             </div>
-            <div className="p-3 bg-emerald-500/10 rounded-lg text-emerald-400">
+            <div className="p-3 bg-success/10 rounded-lg text-success">
                <CheckCircle size={20}/>
             </div>
          </div>
          <div className="glass-card p-4 flex items-center justify-between border-l-4 border-l-orange-500">
             <div>
-               <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">今日新增</p>
+               <p className="text-xs text-text-secondary uppercase font-bold tracking-wider">今日新增</p>
                <h3 className="text-2xl font-bold text-white mt-1">+{stats.today}</h3>
             </div>
-            <div className="p-3 bg-orange-500/10 rounded-lg text-orange-400">
+            <div className="p-3 bg-warning/10 rounded-lg text-warning">
                <Clock size={20}/>
             </div>
          </div>
       </div>
 
       {/* 2. Main Content Area */}
-      <div className="glass-card flex-1 flex flex-col min-h-0 overflow-hidden border border-white/5">
+      <div className="glass-card flex-1 flex flex-col min-h-0 overflow-hidden border border-separator">
         {/* Toolbar */}
-        <div className="p-2 border-b border-white/5 flex gap-2 shrink-0 bg-[#1c1c1e]/60">
+        <div className="p-2 border-b border-separator flex gap-2 shrink-0 bg-surface/60">
             {PLATFORMS.map(p => (
                <button
                   key={p.id}
                   onClick={() => setFilterPlatform(p.id)}
                   className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
                      filterPlatform === p.id 
-                     ? 'bg-white/10 text-white shadow-sm border border-white/10' 
-                     : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent'
+                     ? 'bg-text/10 text-white shadow-sm border border-separator' 
+                     : 'text-text-secondary hover:text-text hover:bg-text/5 border border-transparent'
                   }`}
                >
                   {p.label}
@@ -372,20 +372,20 @@ export default function Distribution() {
             ))}
             <div className="flex-1"></div>
             <Link href="/settings/client">
-                <button className="mr-2 p-1.5 hover:bg-white/5 rounded text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 text-xs border border-blue-500/20 bg-blue-500/10 px-3">
+                <button className="mr-2 p-1.5 hover:bg-text/5 rounded text-accent hover:text-accent transition-colors flex items-center gap-1 text-xs border border-accent/20 bg-accent/10 px-3">
                     <Monitor size={12} /> 下载客户端
                 </button>
             </Link>
             <button 
                 onClick={() => fetchJobs(page, pageSize)}
-                className="p-1.5 hover:bg-white/5 rounded text-slate-400 hover:text-white transition-colors flex items-center gap-1 text-xs">
+                className="p-1.5 hover:bg-text/5 rounded text-text-secondary hover:text-white transition-colors flex items-center gap-1 text-xs">
                 <RefreshCw size={12} /> 刷新列表
             </button>
         </div>
         
         <div className="flex-1 overflow-y-auto custom-scrollbar">
-          <table className="w-full text-left text-sm text-slate-400">
-            <thead className="bg-black/80 backdrop-blur sticky top-0 z-10 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-white/5">
+          <table className="w-full text-left text-sm text-text-secondary">
+            <thead className="bg-bg/80 backdrop-blur sticky top-0 z-10 text-xs font-bold text-text-secondary uppercase tracking-wider border-b border-separator">
                             <tr>
                                 <th className="px-6 py-3 w-20">ID</th>
                                 <th className="px-6 py-3 w-32">平台</th>
@@ -394,10 +394,10 @@ export default function Distribution() {
                                 <th className="px-6 py-3 text-right w-48">创建时间</th>
                             </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-separator">
               {loading && jobs.length === 0 ? (
                  <tr>
-                    <td colSpan={5} className="px-6 py-20 text-center text-slate-500">
+                    <td colSpan={5} className="px-6 py-20 text-center text-text-secondary">
                         <div className="flex flex-col items-center gap-3">
                            <RefreshCw className="animate-spin opacity-50" size={24}/>
                            <p>正在同步全网投放数据...</p>
@@ -406,7 +406,7 @@ export default function Distribution() {
                  </tr>
               ) : filteredJobs.length === 0 ? (
                  <tr>
-                    <td colSpan={5} className="px-6 py-20 text-center text-slate-500">
+                    <td colSpan={5} className="px-6 py-20 text-center text-text-secondary">
                         <div className="flex flex-col items-center gap-3">
                            <Layers className="opacity-20" size={32}/>
                            <p>暂无符合条件的任务记录</p>
@@ -423,28 +423,28 @@ export default function Distribution() {
                   <React.Fragment key={job.id}>
                     <tr 
                         onClick={() => setExpandedJobId(isExpanded ? null : job.id)}
-                        className={`transition-colors cursor-pointer group ${isExpanded ? 'bg-white/[0.04]' : 'hover:bg-white/[0.02]'}`}
+                        className={`transition-colors cursor-pointer group ${isExpanded ? 'bg-text/[0.04]' : 'hover:bg-text/[0.02]'}`}
                     >
-                        <td className="px-6 py-4 font-mono text-xs text-slate-500">#{job.id}</td>
+                        <td className="px-6 py-4 font-mono text-xs text-text-secondary">#{job.id}</td>
                         <td className="px-6 py-4">
                             {(job.platform === 'redbook' || job.platform === 'xiaohongshu') ? (
-                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-red-500"></span> 小红书</div>
+                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-danger"></span> 小红书</div>
                             ) : (job.platform === 'tiktok' || job.platform === 'douyin') ? (
-                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-black border border-white/10"></span> 抖音</div>
+                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-bg border border-separator"></span> 抖音</div>
                             ) : (job.platform === 'zhihu' || job.platform === 'social_qa') ? (
-                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-blue-500"></span> 知乎</div>
+                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-accent"></span> 知乎</div>
                             ) : (job.platform === 'baidu_baike' || job.platform === 'baike' || job.platform === 'wiki') ? (
-                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-blue-600"></span> 百度词条</div>
+                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-accent"></span> 百度词条</div>
                             ) : (job.platform === 'media' || job.platform === 'wechat') ? (
-                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-green-500"></span> 媒体通稿</div>
+                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-success"></span> 媒体通稿</div>
                             ) : (job.platform === 'website' || job.platform === 'wordpress' || job.platform === 'wp') ? (
-                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#0a84ff]"></span> WordPress</div>
+                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-accent"></span> WordPress</div>
                             ) : job.platform === 'linkedin' ? (
-                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-sky-500"></span> LinkedIn</div>
+                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-accent"></span> LinkedIn</div>
                             ) : (job.platform === 'x' || job.platform === 'twitter') ? (
-                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-slate-200"></span> X</div>
+                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-surface-2"></span> X</div>
                             ) : (
-                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-slate-500"></span> {job.platform}</div>
+                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-text-tertiary"></span> {job.platform}</div>
                             )}
                         </td>
                         <td className="px-6 py-4">
@@ -455,15 +455,15 @@ export default function Distribution() {
                         </td>
                         <td className="px-6 py-4 max-w-md">
                             <div className="flex flex-col gap-1">
-                                <span className="text-slate-200 font-medium truncate" title={job.payload?.title}>
+                                <span className="text-text font-medium truncate" title={job.payload?.title}>
                                    {job.payload?.title || "无标题任务"}
                                 </span>
                             </div>
                         </td>
-                        <td className="px-6 py-4 text-right text-xs text-slate-500 font-mono whitespace-nowrap">
+                        <td className="px-6 py-4 text-right text-xs text-text-secondary font-mono whitespace-nowrap">
                           <div className="flex items-center justify-end gap-2">
                             <span>{new Date(job.created_at).toLocaleString('zh-CN')}</span>
-                            <button onClick={(e) => { e.stopPropagation(); setExpandedJobId(isExpanded ? null : job.id); }} className="p-1 rounded hover:bg-white/5">
+                            <button onClick={(e) => { e.stopPropagation(); setExpandedJobId(isExpanded ? null : job.id); }} className="p-1 rounded hover:bg-text/5">
                               {isExpanded ? <ChevronUp size={14}/> : <ChevronDown size={14}/>} 
                             </button>
                           </div>
@@ -472,39 +472,39 @@ export default function Distribution() {
                     
                     {/* Expanded Detail Panel */}
                     {isExpanded && (
-                        <tr className="bg-[#1c1c1e]/50 border-b border-white/5 shadow-inner">
+                        <tr className="bg-surface/50 border-b border-separator shadow-inner">
                             <td colSpan={6} className="p-0">
-                                <div className={maximizeLogs ? "fixed inset-4 z-50 bg-[#1c1c1e] border border-white/10 rounded-xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-6 p-6 animate-fade-in hidden-scrollbar" : "animate-fade-in p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 h-[500px]"}>
+                                <div className={maximizeLogs ? "fixed inset-4 z-50 bg-surface border border-separator rounded-xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-6 p-6 animate-fade-in hidden-scrollbar" : "animate-fade-in p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 h-[500px]"}>
                                     
                                     {/* Left Column: Content & Controls - Always Visible now */}
                                     <div className="flex flex-col h-full overflow-hidden">
                                       <div className="flex items-center justify-between mb-3 shrink-0">
-                                        <div className="text-xs text-slate-500 font-bold uppercase tracking-wider">任务详情与控制</div>
+                                        <div className="text-xs text-text-secondary font-bold uppercase tracking-wider">任务详情与控制</div>
                                         <div className="flex items-center gap-2">
                                           {(job.status === 'claimed' || job.status === 'queued') && (
                                             <button 
                                                 onClick={(e) => handleAction(e, job.id, 'cancel')}
-                                                className="px-2 py-1 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/20 rounded text-xs flex items-center gap-1 transition-all"
+                                                className="px-2 py-1 bg-warning/10 hover:bg-warning/20 text-warning border border-warning/20 rounded text-xs flex items-center gap-1 transition-all"
                                             >
                                                 <StopCircle size={14}/> 停止
                                             </button>
                                           )}
                                           <button 
                                             onClick={(e) => handleEdit(e, job)}
-                                            className="px-2 py-1 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-600/20 rounded text-xs flex items-center gap-1 transition-all"
+                                            className="px-2 py-1 bg-accent/10 hover:bg-accent/20 text-accent border border-accent/20 rounded text-xs flex items-center gap-1 transition-all"
                                           >
                                             <Edit size={14}/> 编辑
                                           </button>
                                           <button 
                                             onClick={(e) => handleAction(e, job.id, 'retry')}
-                                            className="px-2 py-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded text-xs flex items-center gap-1 transition-all"
+                                            className="px-2 py-1 bg-text/5 hover:bg-text/10 text-white border border-separator rounded text-xs flex items-center gap-1 transition-all"
                                           >
                                             <RotateCcw size={14}/> 重试
                                           </button>
                                           <button 
                                             onClick={(e) => handleAction(e, job.id, 'delete')}
                                             disabled={deletingIds.includes(job.id)}
-                                            className="px-2 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded text-xs flex items-center gap-1 transition-all disabled:opacity-60"
+                                            className="px-2 py-1 bg-danger/10 hover:bg-danger/20 text-danger border border-danger/20 rounded text-xs flex items-center gap-1 transition-all disabled:opacity-60"
                                           >
                                             {deletingIds.includes(job.id) ? <RefreshCw size={14} className="animate-spin"/> : <Trash2 size={14}/>} 删除
                                           </button>
@@ -512,7 +512,7 @@ export default function Distribution() {
                                               ['xiaohongshu', 'redbook'].includes(job.platform?.toLowerCase()) ? (
                                                 <button
                                                   onClick={(e) => handleTriggerView(e, job.result_log!.match(/\|\|\|LINK:(.+?)\|\|\|/)?.[1] || '', job.platform)}
-                                                  className="px-2 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded text-xs font-bold flex items-center gap-1 transition-colors"
+                                                  className="px-2 py-1 bg-accent hover:bg-accent text-white rounded text-xs font-bold flex items-center gap-1 transition-colors"
                                                   title="在RPA浏览器中查看（用于访问草稿箱）"
                                                 >
                                                   <Monitor size={12}/> RPA预览
@@ -521,7 +521,7 @@ export default function Distribution() {
                                                 <a 
                                                   href={job.result_log.match(/\|\|\|LINK:(.+?)\|\|\|/)?.[1]} 
                                                   target="_blank" 
-                                                  className="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-bold flex items-center gap-1 transition-colors"
+                                                  className="px-2 py-1 bg-accent hover:bg-accent text-white rounded text-xs font-bold flex items-center gap-1 transition-colors"
                                                 >
                                                   <ExternalLink size={12}/> 预览/编辑
                                                 </a>
@@ -530,9 +530,9 @@ export default function Distribution() {
                                         </div>
                                       </div>
                                       
-                                      <div className="flex-1 bg-black/20 rounded-lg p-4 border border-white/5 flex flex-col min-h-0">
+                                      <div className="flex-1 bg-bg/20 rounded-lg p-4 border border-separator flex flex-col min-h-0">
                                          <h4 className="text-sm font-bold text-white mb-2 shrink-0">{job.payload?.title || "无标题"}</h4>
-                                         <div className="text-slate-400 font-mono text-xs whitespace-pre-wrap break-words leading-relaxed overflow-y-auto custom-scrollbar flex-1 min-h-0">
+                                         <div className="text-text-secondary font-mono text-xs whitespace-pre-wrap break-words leading-relaxed overflow-y-auto custom-scrollbar flex-1 min-h-0">
                                            {job.payload?.content || "无内容"}
                                          </div>
                                       </div>
@@ -541,44 +541,44 @@ export default function Distribution() {
                                     {/* Right Column: Logs */}
                                     <div className="flex flex-col h-full overflow-hidden">
                                         <div className="flex justify-between items-center mb-3 shrink-0">
-                                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                            <h4 className="text-xs font-bold text-text-secondary uppercase tracking-wider flex items-center gap-2">
                                                 <Share2 size={12}/> 实时执行日志
                                             </h4>
                                             <div className="flex items-center gap-2">
                                                 {job.status === 'claimed' && (
-                                                    <span className="text-[10px] text-blue-400 animate-pulse flex items-center gap-1 mr-2">
-                                                        <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
+                                                    <span className="text-[10px] text-accent animate-pulse flex items-center gap-1 mr-2">
+                                                        <div className="w-1.5 h-1.5 bg-accent rounded-full"></div>
                                                         LIVE
                                                     </span>
                                                 )}
-                                                <button onClick={() => setMaximizeLogs(!maximizeLogs)} className="text-slate-500 hover:text-white transition-colors" title={maximizeLogs ? "还原" : "最大化详情页"}>
+                                                <button onClick={() => setMaximizeLogs(!maximizeLogs)} className="text-text-secondary hover:text-white transition-colors" title={maximizeLogs ? "还原" : "最大化详情页"}>
                                                     {maximizeLogs ? <Minimize2 size={14}/> : <Maximize2 size={14}/>}
                                                 </button>
                                             </div>
                                         </div>
-                                        <div className={`flex-1 font-mono text-xs space-y-1.5 overflow-y-auto p-4 bg-black rounded-lg border border-white/10 shadow-inner custom-scrollbar h-full`}>
+                                        <div className={`flex-1 font-mono text-xs space-y-1.5 overflow-y-auto p-4 bg-bg rounded-lg border border-separator shadow-inner custom-scrollbar h-full`}>
                                             {((jobDetails[job.id] && jobDetails[job.id].execution_logs) || job.execution_logs) && (((jobDetails[job.id] && jobDetails[job.id].execution_logs) || job.execution_logs)?.length ?? 0) > 0 ? (
                                               (((jobDetails[job.id] && jobDetails[job.id].execution_logs) || job.execution_logs) || []).slice().reverse().map((log, i) => (
-                                                    <div key={i} className="flex gap-3 group/log border-b border-white/[0.02] pb-1 mb-1 last:border-0">
-                                                        <span className="text-slate-600 shrink-0 select-none w-16 text-[10px] pt-0.5">
+                                                    <div key={i} className="flex gap-3 group/log border-b border-separator pb-1 mb-1 last:border-0">
+                                                        <span className="text-text-tertiary shrink-0 select-none w-16 text-[10px] pt-0.5">
                                                     {new Date((log.timestamp || 0) * 1000).toLocaleTimeString('zh-CN')}
                                                         </span>
                                                         <div className="flex-1 min-w-0">
                                                             <div className={`font-bold mb-0.5 ${
-                                                                log.status === 'success' ? 'text-emerald-500' :
-                                                                log.status === 'warning' ? 'text-yellow-500' :
-                                                                log.status === 'error' ? 'text-red-500' : 'text-blue-500'
+                                                                log.status === 'success' ? 'text-success' :
+                                                                log.status === 'warning' ? 'text-warning' :
+                                                                log.status === 'error' ? 'text-danger' : 'text-accent'
                                                             }`}>
                                                                 {log.step}
                                                             </div>
-                                                            <div className="text-slate-400 leading-relaxed whitespace-nowrap overflow-x-auto custom-scrollbar" style={{WebkitOverflowScrolling:'touch'}}>
+                                                            <div className="text-text-secondary leading-relaxed whitespace-nowrap overflow-x-auto custom-scrollbar" style={{WebkitOverflowScrolling:'touch'}}>
                                                                 {log.message}
                                                             </div>
                                                         </div>
                                                     </div>
                                               ))
                                             ) : (
-                                                <div className="h-full flex flex-col items-center justify-center text-slate-600 italic">
+                                                <div className="h-full flex flex-col items-center justify-center text-text-tertiary italic">
                                                   <Layers className="mb-2 opacity-20" size={24}/>
                                                   <span>暂无日志数据...</span>
                                                 </div>
@@ -600,33 +600,33 @@ export default function Distribution() {
     
     {/* Edit Modal */}
     {editingJob && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-        <div className="bg-[#1c1c1e] border border-white/10 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
-          <div className="p-4 border-b border-white/10 flex justify-between items-center">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg/50 backdrop-blur-sm p-4">
+        <div className="bg-surface border border-separator rounded-xl shadow-modal animate-modal-in w-full max-w-2xl flex flex-col max-h-[90vh]">
+          <div className="p-4 border-b border-separator flex justify-between items-center">
             <h3 className="text-lg font-bold text-white">编辑任务内容 #{editingJob.id}</h3>
-            <button onClick={() => setEditingJob(null)} className="text-slate-400 hover:text-white"><XCircle size={20}/></button>
+            <button onClick={() => setEditingJob(null)} className="text-text-secondary hover:text-white"><XCircle size={20}/></button>
           </div>
           <div className="p-6 overflow-y-auto flex-1 space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase mb-1">标题</label>
+              <label className="block text-xs font-bold text-text-secondary uppercase mb-1">标题</label>
               <input 
-                className="w-full bg-black/20 border border-white/10 rounded p-2 text-white focus:border-[#0a84ff] outline-none"
+                className="w-full bg-bg/20 border border-separator rounded p-2 text-white focus:border-accent outline-none"
                 value={editForm.title}
                 onChange={e => setEditForm({...editForm, title: e.target.value})}
               />
             </div>
             <div className="flex-1 flex flex-col min-h-0">
-              <label className="block text-xs font-bold text-slate-400 uppercase mb-1">正文内容</label>
+              <label className="block text-xs font-bold text-text-secondary uppercase mb-1">正文内容</label>
               <textarea 
-                className="w-full h-64 bg-black/20 border border-white/10 rounded p-3 text-white font-mono text-sm leading-relaxed focus:border-[#0a84ff] outline-none resize-none"
+                className="w-full h-64 bg-bg/20 border border-separator rounded p-3 text-white font-mono text-sm leading-relaxed focus:border-accent outline-none resize-none"
                 value={editForm.content}
                 onChange={e => setEditForm({...editForm, content: e.target.value})}
               />
             </div>
           </div>
-          <div className="p-4 border-t border-white/10 flex justify-end gap-3 bg-[#2c2c2e]/60 rounded-b-xl">
-            <button onClick={() => setEditingJob(null)} className="px-4 py-2 rounded text-slate-400 hover:text-white hover:bg-white/5 transition-colors">取消</button>
-            <button onClick={saveEdit} className="px-4 py-2 rounded bg-[#0071e3] hover:bg-[#0077ed] text-white font-medium shadow-apple">保存修改</button>
+          <div className="p-4 border-t border-separator flex justify-end gap-3 bg-surface-2/60 rounded-b-xl">
+            <button onClick={() => setEditingJob(null)} className="px-4 py-2 rounded text-text-secondary hover:text-white hover:bg-text/5 transition-colors">取消</button>
+            <button onClick={saveEdit} className="px-4 py-2 rounded bg-accent hover:bg-accent-hover text-white font-medium shadow-card">保存修改</button>
           </div>
         </div>
       </div>
@@ -634,15 +634,15 @@ export default function Distribution() {
 
     {/* Custom Delete Confirm Modal */}
     {deleteConfirmId !== null && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-        <div className="bg-[#1c1c1e] border border-white/10 rounded-xl shadow-2xl w-full max-w-sm flex flex-col">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg/50 backdrop-blur-sm p-4">
+        <div className="bg-surface border border-separator rounded-xl shadow-modal animate-modal-in w-full max-w-sm flex flex-col">
           <div className="p-6 flex flex-col items-center">
-            <Trash2 size={32} className="text-red-500 mb-2" />
+            <Trash2 size={32} className="text-danger mb-2" />
             <h3 className="text-lg font-bold text-white mb-2">确认删除</h3>
-            <p className="text-slate-400 mb-4">确定要删除这条任务记录吗？此操作不可恢复。</p>
+            <p className="text-text-secondary mb-4">确定要删除这条任务记录吗？此操作不可恢复。</p>
             <div className="flex gap-4 mt-2">
-              <button onClick={() => setDeleteConfirmId(null)} className="px-4 py-2 rounded bg-slate-700 text-slate-300 hover:bg-slate-600">取消</button>
-              <button onClick={confirmDelete} className="px-4 py-2 rounded bg-red-600 text-white font-bold hover:bg-red-500">确认删除</button>
+              <button onClick={() => setDeleteConfirmId(null)} className="px-4 py-2 rounded bg-surface-2 text-text hover:bg-text/10">取消</button>
+              <button onClick={confirmDelete} className="px-4 py-2 rounded bg-danger text-white font-bold hover:bg-danger">确认删除</button>
             </div>
           </div>
         </div>
@@ -650,21 +650,21 @@ export default function Distribution() {
     )}
 
     {/* Pagination Controls */}
-    <div className="flex items-center justify-between gap-2 p-3 border-t border-white/5">
-      <div className="text-xs text-slate-400">共 {total} 条</div>
+    <div className="flex items-center justify-between gap-2 p-3 border-t border-separator">
+      <div className="text-xs text-text-secondary">共 {total} 条</div>
       <div className="flex items-center gap-2">
         <button
           onClick={() => setPage(p => Math.max(1, p - 1))}
           disabled={page === 1}
-          className="px-3 py-1 text-xs rounded bg-[#2c2c2e] hover:bg-[#3a3a3c] disabled:opacity-50"
+          className="px-3 py-1 text-xs rounded bg-surface-2 hover:bg-surface-2 disabled:opacity-50"
         >上一页</button>
-        <span className="text-xs text-slate-300">第 {page} 页</span>
+        <span className="text-xs text-text">第 {page} 页</span>
         <button
           onClick={() => setPage(p => p + 1)}
           disabled={page * pageSize >= total}
-          className="px-3 py-1 text-xs rounded bg-[#2c2c2e] hover:bg-[#3a3a3c] disabled:opacity-50"
+          className="px-3 py-1 text-xs rounded bg-surface-2 hover:bg-surface-2 disabled:opacity-50"
         >下一页</button>
-        <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }} className="ml-2 bg-[#1c1c1e] text-xs p-1 rounded">
+        <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }} className="ml-2 bg-surface text-xs p-1 rounded">
           <option value={10}>10 / 页</option>
           <option value={20}>20 / 页</option>
           <option value={50}>50 / 页</option>

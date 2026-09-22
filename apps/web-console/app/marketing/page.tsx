@@ -19,11 +19,11 @@ export default function MarketingDashboard() {
     api.get('/api/v1/marketing/funnel?days=30').then(r => setKpis(r.data.kpis)).catch(() => {});
   }, []);
   return (
-    <div className="h-full w-full p-6 text-slate-100 flex flex-col gap-6">
+    <div className="h-full w-full p-6 text-text flex flex-col gap-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-rose-400">AI 营销云看板</h1>
-        <p className="text-sm text-slate-400 mt-1">外贸获客引擎 · 英文内容 · 海外分发 · GEO 监测</p>
+        <p className="text-sm text-text-secondary mt-1">外贸获客引擎 · 英文内容 · 海外分发 · GEO 监测</p>
       </div>
 
       {/* Quick Access Cards */}
@@ -40,7 +40,7 @@ export default function MarketingDashboard() {
           {/* Content Creation Hub */}
           <div className="glass-panel p-6 flex flex-col">
               <h3 className="font-semibold flex items-center gap-2 mb-6">
-                  <PenTool size={18} className="text-orange-400" />
+                  <PenTool size={18} className="text-warning" />
                   内容生产中心 (AIGC Hub)
               </h3>
               <div className="grid grid-cols-2 gap-4">
@@ -49,14 +49,14 @@ export default function MarketingDashboard() {
                     title="文生文 (Text Gen)"
                     desc="生成 SEO 文章、社媒文案、营销邮件。"
                     icon={PenTool}
-                    color="bg-orange-500"
+                    color="bg-warning"
                   />
                   <ActionCard 
                     href="/marketing/image-gen"
                     title="文生图 (Image Gen)"
                     desc="生成海报、配图、产品展示图。"
                     icon={ImageIcon}
-                    color="bg-pink-500"
+                    color="bg-danger"
                   />
               </div>
           </div>
@@ -64,7 +64,7 @@ export default function MarketingDashboard() {
           {/* Operations Hub */}
           <div className="glass-panel p-6 flex flex-col">
               <h3 className="font-semibold flex items-center gap-2 mb-6">
-                  <Send size={18} className="text-blue-400" />
+                  <Send size={18} className="text-accent" />
                   自动化运营 (Ops Automation)
               </h3>
               <div className="grid grid-cols-2 gap-4">
@@ -73,14 +73,14 @@ export default function MarketingDashboard() {
                     title="海外投放 (Distribute)"
                     desc="LinkedIn / WordPress / X 一键入队。"
                     icon={Share2}
-                    color="bg-blue-500"
+                    color="bg-accent"
                   />
                   <ActionCard 
                     href="/marketing/analytics"
                     title="获客漏斗 (Analytics)"
                     desc="内容 → 发布 → 曝光 → 本地询盘。"
                     icon={MousePointerClick}
-                    color="bg-cyan-500"
+                    color="bg-accent"
                   />
               </div>
           </div>
@@ -95,18 +95,18 @@ function KpiCard({ icon: Icon, title, value, trend, trendUp, sub, color }: any) 
             <div className={`absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity ${color || 'text-white'}`}>
                 <Icon size={60} />
             </div>
-            <div className="flex items-center gap-3 mb-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+            <div className="flex items-center gap-3 mb-2 text-text-secondary text-xs font-semibold uppercase tracking-wider">
                 <Icon size={16} />
                 {title}
             </div>
             <div className="flex items-end gap-3 z-10">
                 <span className={`text-3xl font-bold text-white tracking-tight`}>{value}</span>
                 {trend && (
-                    <span className={`text-xs font-bold mb-1.5 px-1.5 py-0.5 rounded ${trendUp ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
+                    <span className={`text-xs font-bold mb-1.5 px-1.5 py-0.5 rounded ${trendUp ? 'bg-success/20 text-success' : 'bg-danger/20 text-danger'}`}>
                         {trend}
                     </span>
                 )}
-                {sub && <span className="text-xs text-slate-500 mb-1.5">{sub}</span>}
+                {sub && <span className="text-xs text-text-secondary mb-1.5">{sub}</span>}
             </div>
         </div>
     )
@@ -114,14 +114,14 @@ function KpiCard({ icon: Icon, title, value, trend, trendUp, sub, color }: any) 
 
 function ActionCard({ href, title, desc, icon: Icon, color }: any) {
     return (
-        <Link href={href} className="flex flex-col p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all hover:-translate-y-1 group">
+        <Link href={href} className="flex flex-col p-4 rounded-xl bg-text/5 border border-separator hover:bg-text/10 transition-all hover:-translate-y-1 group">
             <div className={`w-10 h-10 rounded-lg ${color} flex items-center justify-center text-white mb-3 shadow-lg`}>
                 <Icon size={20} />
             </div>
-            <h4 className="font-bold text-slate-200 mb-1 text-sm">{title}</h4>
-            <p className="text-xs text-slate-400 leading-relaxed">{desc}</p>
+            <h4 className="font-bold text-text mb-1 text-sm">{title}</h4>
+            <p className="text-xs text-text-secondary leading-relaxed">{desc}</p>
             <div className="mt-3 flex justify-end">
-                <ArrowUpRight size={14} className="text-slate-500 group-hover:text-white transition-colors" />
+                <ArrowUpRight size={14} className="text-text-secondary group-hover:text-white transition-colors" />
             </div>
         </Link>
     )

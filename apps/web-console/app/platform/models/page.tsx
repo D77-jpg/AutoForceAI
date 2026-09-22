@@ -124,15 +124,15 @@ export default function ModelsPage() {
       }
     
       return (
-        <div className="h-full flex flex-col p-6 text-slate-100">
+        <div className="h-full flex flex-col p-6 text-text">
             <div className="flex justify-between items-center mb-6">
                 <div>
                      <h1 className="text-2xl font-bold text-white">模型纳管 (Model Registry)</h1>
-                     <p className="text-sm text-slate-400">管理与配置您的 AI 模型资产与路由。</p>
+                     <p className="text-sm text-text-secondary">管理与配置您的 AI 模型资产与路由。</p>
                 </div>
                 <button 
                     onClick={openCreateModal}
-                    className="px-4 py-2.5 bg-[#0071e3] hover:bg-[#0077ed] text-white rounded-full text-sm font-medium transition-colors flex items-center gap-2"
+                    className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-white rounded-full text-sm font-medium transition-colors flex items-center gap-2"
                 >
                     <Plus size={16} /> 接入新模型
                 </button>
@@ -141,11 +141,11 @@ export default function ModelsPage() {
             {/* Filters */}
             <div className="flex items-center gap-4 mb-6">
                 <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={16} />
                     <input 
                         type="text" 
                         placeholder="搜索模型..." 
-                        className="w-full pl-10 pr-4 py-2 bg-black/20 border border-white/10 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-[#0a84ff]/50"
+                        className="w-full pl-10 pr-4 py-2 bg-bg/20 border border-separator rounded-lg text-sm text-text focus:outline-none focus:border-accent/50"
                     />
                 </div>
                 <div className="flex items-center gap-2">
@@ -155,13 +155,13 @@ export default function ModelsPage() {
             </div>
     
             {/* Table - Added min-h-0 to allow proper flex scrolling */}
-            <div className="glass-panel min-h-0 flex-1 flex flex-col overflow-hidden border border-white/5 bg-[#1c1c1e] rounded-xl">
+            <div className="glass-panel min-h-0 flex-1 flex flex-col overflow-hidden border border-separator bg-surface rounded-xl">
                 {loading ? (
-                     <div className="p-12 text-center text-slate-500">正在加载模型配置...</div>
+                     <div className="p-12 text-center text-text-secondary">正在加载模型配置...</div>
                 ) : (
                     <div className="flex-1 overflow-auto">
                         <table className="w-full text-left text-sm">
-                            <thead className="bg-[#1c1c1e] text-slate-400 font-medium border-b border-white/5 sticky top-0 z-10">
+                            <thead className="bg-surface text-text-secondary font-medium border-b border-separator sticky top-0 z-10">
                                 <tr>
                                     <th className="p-4 pl-6">显示名称</th>
                                     <th className="p-4">类型</th>
@@ -171,49 +171,49 @@ export default function ModelsPage() {
                                     <th className="p-4 text-right pr-6">操作</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-white/5">
+                            <tbody className="divide-y divide-separator">
                                 {models.map((model) => (
-                                    <tr key={model.id} className="hover:bg-white/[0.02] transition-colors group">
+                                    <tr key={model.id} className="hover:bg-text/[0.02] transition-colors group">
                                         <td className="p-4 pl-6 font-medium text-white">
                                             <div className="flex items-center gap-2">
                                                 {model.display_name}
                                                 {model.is_default && (
-                                                    <span className="px-1.5 py-0.5 rounded bg-[#0a84ff]/16 text-[#64d2ff] text-[10px] border border-[#0a84ff]/25">
+                                                    <span className="px-1.5 py-0.5 rounded bg-accent/15 text-accent text-[10px] border border-accent/25">
                                                         默认
                                                     </span>
                                                 )}
                                                 {model.is_kb_search_default && (
-                                                    <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] border border-amber-500/30">
+                                                    <span className="px-1.5 py-0.5 rounded bg-warning/20 text-warning text-[10px] border border-warning/30">
                                                         KB默认
                                                     </span>
                                                 )}
                                             </div>
                                         </td>
                                         <td className="p-4">
-                                            <span className="px-2 py-0.5 rounded border border-white/10 text-xs bg-white/5 font-mono text-slate-300">{model.type}</span>
+                                            <span className="px-2 py-0.5 rounded border border-separator text-xs bg-text/5 font-mono text-text">{model.type}</span>
                                         </td>
-                                        <td className="p-4 text-slate-400 font-mono">{model.context_window}</td>
+                                        <td className="p-4 text-text-secondary font-mono">{model.context_window}</td>
                                         <td className="p-4">
                                             {model.supports_geo ? (
-                                                <span className="text-emerald-400 text-xs flex items-center gap-1"><CheckCircle2 size={12}/> 支持</span>
+                                                <span className="text-success text-xs flex items-center gap-1"><CheckCircle2 size={12}/> 支持</span>
                                             ) : (
-                                                <span className="text-slate-600 text-xs">-</span>
+                                                <span className="text-text-tertiary text-xs">-</span>
                                             )}
                                         </td>
                                         <td className="p-4">
                                             <StatusBadge active={model.is_active !== false} />
                                         </td>
                                         <td className="p-4 text-right pr-6">
-                                            <div className="flex items-center justify-end gap-2 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="flex items-center justify-end gap-2 text-text-secondary opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button 
                                                     onClick={() => openEditModal(model)}
-                                                    className="p-1.5 hover:bg-white/10 rounded text-slate-300 hover:text-white transition-colors" title="配置"
+                                                    className="p-1.5 hover:bg-text/10 rounded text-text hover:text-white transition-colors" title="配置"
                                                 >
                                                     <Settings size={14} />
                                                 </button>
                                                 <button 
                                                     onClick={() => setDeleteTargetId(model.id)}
-                                                    className="p-1.5 hover:bg-red-500/10 hover:text-red-400 rounded text-slate-300 transition-colors" title="下线"
+                                                    className="p-1.5 hover:bg-danger/10 hover:text-danger rounded text-text transition-colors" title="下线"
                                                 >
                                                     <Trash2 size={14} />
                                                 </button>
@@ -241,20 +241,20 @@ export default function ModelsPage() {
 
             {/* Custom Delete Confirmation Modal */}
             {deleteTargetId && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="bg-[#1c1c1e] border border-white/10 rounded-xl p-6 w-full max-w-sm shadow-2xl">
+                <div className="fixed inset-0 bg-bg/50 backdrop-blur-sm flex items-center justify-center z-50">
+                    <div className="bg-surface border border-separator rounded-xl p-6 w-full max-w-sm shadow-modal animate-modal-in">
                         <h3 className="text-lg font-bold text-white mb-2">确认删除</h3>
-                        <p className="text-sm text-slate-400 mb-6">确定要删除此模型配置吗？此操作不可恢复。</p>
+                        <p className="text-sm text-text-secondary mb-6">确定要删除此模型配置吗？此操作不可恢复。</p>
                         <div className="flex justify-end gap-3">
                             <button 
                                 onClick={() => setDeleteTargetId(null)}
-                                className="px-4 py-2 hover:bg-white/5 text-slate-300 rounded-lg text-sm transition-colors"
+                                className="px-4 py-2 hover:bg-text/5 text-text rounded-lg text-sm transition-colors"
                             >
                                 取消
                             </button>
                             <button 
                                 onClick={confirmDelete}
-                                className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-full text-sm font-medium transition-colors"
+                                className="px-4 py-2 bg-danger hover:bg-danger text-white rounded-full text-sm font-medium transition-colors"
                             >
                                 确认删除
                             </button>
@@ -350,13 +350,13 @@ function ModelModal({ model, providers, onClose, onSuccess }: { model: Model | n
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto py-10">
-            <div className="bg-[#1c1c1e] border border-white/10 rounded-xl w-full max-w-3xl shadow-2xl my-auto">
-                <div className="flex justify-between items-center p-6 border-b border-white/10">
+        <div className="fixed inset-0 bg-bg/50 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto py-10">
+            <div className="bg-surface border border-separator rounded-xl w-full max-w-3xl shadow-modal my-auto animate-modal-in">
+                <div className="flex justify-between items-center p-6 border-b border-separator">
                     <h2 className="text-xl font-bold text-white">
                         {isEdit ? '编辑模型配置' : '接入新模型'}
                     </h2>
-                    <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
+                    <button onClick={onClose} className="text-text-secondary hover:text-white transition-colors">
                         <X size={20} />
                     </button>
                 </div>
@@ -370,11 +370,11 @@ function ModelModal({ model, providers, onClose, onSuccess }: { model: Model | n
                         <div className="space-y-4">
                             {!isEdit && (
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-medium text-slate-400">选择预设 (Preset)</label>
+                                    <label className="text-xs font-medium text-text-secondary">选择预设 (Preset)</label>
                                     <div className="relative">
                                         <select
                                             onChange={handlePresetChange}
-                                            className="w-full bg-black border border-white/10 rounded-lg pl-3 pr-8 py-2.5 text-sm text-white focus:border-[#0a84ff] outline-none appearance-none transition-colors hover:border-white/20"
+                                            className="w-full bg-bg border border-separator rounded-lg pl-3 pr-8 py-2.5 text-sm text-white focus:border-accent outline-none appearance-none transition-colors hover:border-separator"
                                             defaultValue=""
                                         >
                                             <option value="" disabled>-- 请选择模型 (Please Select) --</option>
@@ -382,7 +382,7 @@ function ModelModal({ model, providers, onClose, onSuccess }: { model: Model | n
                                                 <option key={p.value} value={p.value}>{p.label}</option>
                                             ))}
                                         </select>
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary">
                                             <Search size={14} />
                                         </div>
                                     </div>
@@ -390,31 +390,31 @@ function ModelModal({ model, providers, onClose, onSuccess }: { model: Model | n
                             )}
 
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium text-slate-400">
-                                    模型ID / Endpoint ID <span className="text-red-400">*</span>
+                                <label className="text-xs font-medium text-text-secondary">
+                                    模型ID / Endpoint ID <span className="text-danger">*</span>
                                 </label>
                                 <input 
                                     type="text" 
                                     value={formData.name}
                                     onChange={e => setFormData({...formData, name: e.target.value})}
-                                    className="w-full bg-black/20 border border-white/10 rounded-lg p-2.5 text-sm text-slate-200 font-mono focus:border-[#0a84ff]/50 outline-none transition-colors"
+                                    className="w-full bg-bg/20 border border-separator rounded-lg p-2.5 text-sm text-text font-mono focus:border-accent/50 outline-none transition-colors"
                                     placeholder="e.g. gpt-4, ep-202406..."
                                     required
                                 />
-                                <p className="text-[10px] text-slate-500 leading-tight">
+                                <p className="text-[10px] text-text-secondary leading-tight">
                                     OpenAI等标准协议填写模型名(如 gpt-4)；火山引擎等私有部署填写 Endpoint ID。
                                 </p>
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium text-slate-400">
-                                    显示名称 (Display Name) <span className="text-red-400">*</span>
+                                <label className="text-xs font-medium text-text-secondary">
+                                    显示名称 (Display Name) <span className="text-danger">*</span>
                                 </label>
                                 <input 
                                     type="text" 
                                     value={formData.display_name}
                                     onChange={e => setFormData({...formData, display_name: e.target.value})}
-                                    className="w-full bg-black/20 border border-white/10 rounded-lg p-2.5 text-sm text-slate-200 focus:border-[#0a84ff]/50 outline-none transition-colors"
+                                    className="w-full bg-bg/20 border border-separator rounded-lg p-2.5 text-sm text-text focus:border-accent/50 outline-none transition-colors"
                                     placeholder="e.g. GPT-4 Turbo"
                                     required
                                 />
@@ -422,27 +422,27 @@ function ModelModal({ model, providers, onClose, onSuccess }: { model: Model | n
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-medium text-slate-400">上下文 (Context)</label>
+                                    <label className="text-xs font-medium text-text-secondary">上下文 (Context)</label>
                                     <input 
                                         type="text" 
                                         value={formData.context_window}
                                         onChange={e => setFormData({...formData, context_window: e.target.value})}
-                                        className="w-full bg-black/20 border border-white/10 rounded-lg p-2.5 text-sm text-slate-200"
+                                        className="w-full bg-bg/20 border border-separator rounded-lg p-2.5 text-sm text-text"
                                         placeholder="e.g. 128k"
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-medium text-slate-400">模型类型 (Type)</label>
+                                    <label className="text-xs font-medium text-text-secondary">模型类型 (Type)</label>
                                     <div className="relative">
                                         <select
                                             value={formData.type}
                                             onChange={e => setFormData({...formData, type: e.target.value})}
-                                            className="w-full bg-black border border-white/10 rounded-lg pl-3 pr-8 py-2.5 text-sm text-white focus:border-[#0a84ff] outline-none appearance-none hover:border-white/20"
+                                            className="w-full bg-bg border border-separator rounded-lg pl-3 pr-8 py-2.5 text-sm text-white focus:border-accent outline-none appearance-none hover:border-separator"
                                         >
                                             <option value="LLM">LLM</option>
                                             <option value="Embedding">Embedding</option>
                                         </select>
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary">
                                             <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                 <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                                             </svg>
@@ -455,91 +455,91 @@ function ModelModal({ model, providers, onClose, onSuccess }: { model: Model | n
                         {/* Right Column: API & Config */}
                         <div className="space-y-4">
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium text-slate-400">API 地址 (Base URL)</label>
+                                <label className="text-xs font-medium text-text-secondary">API 地址 (Base URL)</label>
                                 <input 
                                     type="text" 
                                     value={formData.base_url}
                                     onChange={e => setFormData({...formData, base_url: e.target.value})}
-                                    className="w-full bg-black/20 border border-white/10 rounded-lg p-2.5 text-sm text-slate-200 font-mono focus:border-[#0a84ff]/50 outline-none transition-colors"
+                                    className="w-full bg-bg/20 border border-separator rounded-lg p-2.5 text-sm text-text font-mono focus:border-accent/50 outline-none transition-colors"
                                     placeholder="https://api.openai.com/v1"
                                 />
                             </div>
                             
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium text-slate-400">API Key</label>
+                                <label className="text-xs font-medium text-text-secondary">API Key</label>
                                 <textarea 
                                     value={formData.api_key}
                                     onChange={e => setFormData({...formData, api_key: e.target.value})}
-                                    className="w-full h-[120px] bg-black/20 border border-white/10 rounded-lg p-2.5 text-sm text-slate-200 font-mono focus:border-[#0a84ff]/50 outline-none transition-colors resize-none"
+                                    className="w-full h-[120px] bg-bg/20 border border-separator rounded-lg p-2.5 text-sm text-text font-mono focus:border-accent/50 outline-none transition-colors resize-none"
                                     placeholder="sk-..."
                                 />
                             </div>
 
-                            <div className="bg-white/5 rounded-lg p-3 space-y-2">
-                                <label className="flex items-start gap-3 cursor-pointer p-1.5 rounded hover:bg-white/5 transition-colors border-b border-white/5 pb-2 mb-2">
+                            <div className="bg-text/5 rounded-lg p-3 space-y-2">
+                                <label className="flex items-start gap-3 cursor-pointer p-1.5 rounded hover:bg-text/5 transition-colors border-b border-separator pb-2 mb-2">
                                     <input 
                                         type="checkbox" 
                                         checked={formData.is_active}
                                         onChange={e => setFormData({...formData, is_active: e.target.checked})}
-                                        className="w-4 h-4 mt-0.5 rounded border-white/10 bg-black/20 text-emerald-500 focus:ring-offset-0 focus:ring-0"
+                                        className="w-4 h-4 mt-0.5 rounded border-separator bg-bg/20 text-success focus:ring-offset-0 focus:ring-0"
                                     />
                                     <div className="flex flex-col">
                                         <span className="text-sm text-white">启用模型 (Enable Model)</span>
-                                        <span className="text-[10px] text-slate-500">禁用后将无法在聊天中使用</span>
+                                        <span className="text-[10px] text-text-secondary">禁用后将无法在聊天中使用</span>
                                     </div>
                                 </label>
 
-                                <label className="flex items-center gap-3 cursor-pointer p-1.5 rounded hover:bg-white/5 transition-colors">
+                                <label className="flex items-center gap-3 cursor-pointer p-1.5 rounded hover:bg-text/5 transition-colors">
                                     <input 
                                         type="checkbox" 
                                         checked={formData.supports_geo}
                                         onChange={e => setFormData({...formData, supports_geo: e.target.checked})}
-                                        className="w-4 h-4 rounded border-white/10 bg-black/20 text-[#0a84ff] focus:ring-offset-0 focus:ring-0"
+                                        className="w-4 h-4 rounded border-separator bg-bg/20 text-accent focus:ring-offset-0 focus:ring-0"
                                     />
-                                    <span className="text-sm text-slate-300">支持 GEO 搜索 (Supports GEO)</span>
+                                    <span className="text-sm text-text">支持 GEO 搜索 (Supports GEO)</span>
                                 </label>
                                 
-                                <label className="flex items-start gap-3 cursor-pointer p-1.5 rounded hover:bg-white/5 transition-colors">
+                                <label className="flex items-start gap-3 cursor-pointer p-1.5 rounded hover:bg-text/5 transition-colors">
                                     <input 
                                         type="checkbox" 
                                         checked={formData.is_default}
                                         onChange={e => setFormData({...formData, is_default: e.target.checked})}
-                                        className="w-4 h-4 mt-0.5 rounded border-white/10 bg-black/20 text-[#0a84ff] focus:ring-offset-0 focus:ring-0"
+                                        className="w-4 h-4 mt-0.5 rounded border-separator bg-bg/20 text-accent focus:ring-offset-0 focus:ring-0"
                                     />
                                     <div className="flex flex-col">
                                         <span className="text-sm text-white">设为默认模型 (Default Model)</span>
-                                        <span className="text-[10px] text-slate-500">未指定模型时优先使用</span>
+                                        <span className="text-[10px] text-text-secondary">未指定模型时优先使用</span>
                                     </div>
                                 </label>
 
-                                <label className="flex items-start gap-3 cursor-pointer p-1.5 rounded hover:bg-white/5 transition-colors">
+                                <label className="flex items-start gap-3 cursor-pointer p-1.5 rounded hover:bg-text/5 transition-colors">
                                     <input 
                                         type="checkbox" 
                                         checked={formData.is_kb_search_default}
                                         onChange={e => setFormData({...formData, is_kb_search_default: e.target.checked})}
-                                        className="w-4 h-4 mt-0.5 rounded border-white/10 bg-black/20 text-[#0a84ff] focus:ring-offset-0 focus:ring-0"
+                                        className="w-4 h-4 mt-0.5 rounded border-separator bg-bg/20 text-accent focus:ring-offset-0 focus:ring-0"
                                     />
                                     <div className="flex flex-col">
                                         <span className="text-sm text-white">默认知识库搜索 (KB Default)</span>
-                                        <span className="text-[10px] text-slate-500">知识库相关任务优先使用</span>
+                                        <span className="text-[10px] text-text-secondary">知识库相关任务优先使用</span>
                                     </div>
                                 </label>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                    <div className="flex justify-end gap-3 pt-4 border-t border-separator">
                         <button 
                             type="button" 
                             onClick={onClose}
-                            className="px-6 py-2 hover:bg-white/5 text-slate-300 rounded-lg text-sm transition-colors"
+                            className="px-6 py-2 hover:bg-text/5 text-text rounded-lg text-sm transition-colors"
                         >
                             取消
                         </button>
                         <button 
                             type="submit" 
                             disabled={loading}
-                            className="px-6 py-2.5 bg-[#0071e3] hover:bg-[#0077ed] text-white rounded-full text-sm font-medium transition-colors shadow-apple disabled:opacity-50 disabled:shadow-none"
+                            className="px-6 py-2.5 bg-accent hover:bg-accent-hover text-white rounded-full text-sm font-medium transition-colors shadow-card disabled:opacity-50 disabled:shadow-none"
                         >
                             {loading ? '保存中...' : '保存配置'}
                         </button>
@@ -552,8 +552,8 @@ function ModelModal({ model, providers, onClose, onSuccess }: { model: Model | n
 
 function StatusBadge({ active }: { active: boolean }) {
     return (
-        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${active ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
+        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${active ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-success' : 'bg-danger'}`}></span>
             {active ? '激活 (Active)' : '禁用 (Disabled)'}
         </span>
     )
@@ -561,7 +561,7 @@ function StatusBadge({ active }: { active: boolean }) {
 
 function FilterButton({ label, active }: any) {
     return (
-        <button className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${active ? 'bg-[#0a84ff]/16 text-[#64d2ff] border-[#0a84ff]/25' : 'bg-white/5 text-slate-400 border-white/5 hover:bg-white/10'}`}>
+        <button className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${active ? 'bg-accent/15 text-accent border-accent/25' : 'bg-text/5 text-text-secondary border-separator hover:bg-text/10'}`}>
             {label}
         </button>
     )

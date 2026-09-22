@@ -206,7 +206,7 @@ export default function UserProfilePage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center p-12">
-                <Loader2 className="animate-spin text-[#0a84ff]" size={32} />
+                <Loader2 className="animate-spin text-accent" size={32} />
             </div>
         );
     }
@@ -214,7 +214,7 @@ export default function UserProfilePage() {
     return (
         <div className="p-8 max-w-4xl mx-auto animate-fade-in">
             <h1 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                <User className="text-[#0a84ff]" /> 用户中心
+                <User className="text-accent" /> 用户中心
             </h1>
 
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
@@ -222,19 +222,19 @@ export default function UserProfilePage() {
                 <div className="md:col-span-4">
                     <div className="glass-card p-6 rounded-xl flex flex-col items-center text-center relative group">
                         <div 
-                            className="w-32 h-32 rounded-full bg-[#2c2c2e] flex items-center justify-center border-4 border-white/10 shadow-xl mb-4 overflow-hidden relative cursor-pointer group-hover:border-[#0a84ff]/40 transition-all duration-300"
+                            className="w-32 h-32 rounded-full bg-surface-2 flex items-center justify-center border-4 border-separator shadow-xl mb-4 overflow-hidden relative cursor-pointer group-hover:border-accent/40 transition-all duration-300"
                             onClick={!uploadingAvatar ? handleAvatarClick : undefined}
                         >
                              {profile.avatar ? (
                                 <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
                              ) : (
-                                <span className="text-4xl font-bold text-slate-400">
+                                <span className="text-4xl font-bold text-text-secondary">
                                     {(profile.nickname || profile.username || 'U')?.[0]?.toUpperCase()}
                                 </span>
                              )}
                              
                              {/* Overlay for upload hint */}
-                             <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
+                             <div className="absolute inset-0 bg-bg/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
                                  {uploadingAvatar ? (
                                      <Loader2 className="animate-spin text-white mb-1" size={24} /> 
                                  ) : (
@@ -262,14 +262,14 @@ export default function UserProfilePage() {
                         
                         {!isEditingSignature ? (
                              <div 
-                                className="w-full text-center p-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer group/sig relative border border-transparent hover:border-white/5"
+                                className="w-full text-center p-2 rounded-lg hover:bg-text/5 transition-colors cursor-pointer group/sig relative border border-transparent hover:border-separator"
                                 onClick={openSignatureEdit}
                              >
-                                 <p className={`text-sm leading-relaxed ${profile.bio ? 'text-slate-300' : 'text-slate-600 italic'}`}>
+                                 <p className={`text-sm leading-relaxed ${profile.bio ? 'text-text' : 'text-text-tertiary italic'}`}>
                                      {profile.bio || "点击此处添加个性签名..."}
                                  </p>
                                 <div className="absolute top-2 right-2 opacity-0 group-hover/sig:opacity-100 transition-opacity">
-                                     <PenLine size={12} className="text-[#0a84ff]" />
+                                     <PenLine size={12} className="text-accent" />
                                 </div>
                              </div>
                         ) : (
@@ -277,7 +277,7 @@ export default function UserProfilePage() {
                                 <textarea
                                     value={tempSignature}
                                     onChange={(e) => setTempSignature(e.target.value)}
-                                    className="w-full bg-black border border-[#0a84ff]/40 rounded-lg p-3 text-sm text-white focus:outline-none resize-none placeholder:text-slate-600"
+                                    className="w-full bg-bg border border-accent/40 rounded-lg p-3 text-sm text-white focus:outline-none resize-none placeholder:text-text-tertiary"
                                     rows={3}
                                     placeholder="输入个性签名..."
                                     autoFocus
@@ -288,33 +288,33 @@ export default function UserProfilePage() {
                                 <div className="flex gap-2 justify-end">
                                     <button 
                                         onClick={() => setIsEditingSignature(false)}
-                                        className="text-xs text-slate-400 hover:text-white px-2 py-1 transition-colors"
+                                        className="text-xs text-text-secondary hover:text-white px-2 py-1 transition-colors"
                                     >取消</button>
                                     <button 
                                         onClick={saveSignature}
-                                        className="text-xs bg-[#0071e3] hover:bg-[#0077ed] text-white px-3 py-1 rounded transition-colors"
+                                        className="text-xs bg-accent hover:bg-accent-hover text-white px-3 py-1 rounded transition-colors"
                                     >保存</button>
                                 </div>
                             </div>
                         )}
                         
                         
-                        <div className="mt-8 w-full pt-6 border-t border-white/5">
+                        <div className="mt-8 w-full pt-6 border-t border-separator">
                             <div className="flex items-center justify-between text-sm mb-3">
-                                <span className="text-slate-500">微信绑定</span>
+                                <span className="text-text-secondary">微信绑定</span>
                                 {profile.is_wechat_bound ? (
-                                    <span className="flex items-center text-green-400 text-xs font-medium">
+                                    <span className="flex items-center text-success text-xs font-medium">
                                         <CheckCircle size={14} className="mr-1.5" /> 已绑定
                                     </span>
                                 ) : (
-                                    <span className="flex items-center text-slate-500 text-xs">
+                                    <span className="flex items-center text-text-secondary text-xs">
                                         <XCircle size={14} className="mr-1.5" /> 未绑定
                                     </span>
                                 )}
                             </div>
                             <div className="flex items-center justify-between text-sm">
-                                <span className="text-slate-500">组织 ID</span>
-                                <span className="text-slate-300 font-mono text-xs bg-[#2c2c2e] px-1.5 py-0.5 rounded">
+                                <span className="text-text-secondary">组织 ID</span>
+                                <span className="text-text font-mono text-xs bg-surface-2 px-1.5 py-0.5 rounded">
                                     {profile.organization_id || 'N/A'}
                                 </span>
                             </div>
@@ -325,63 +325,63 @@ export default function UserProfilePage() {
                 {/* Right Column: Edit Form (8 cols) */}
                 <div className="md:col-span-8 space-y-6">
                     <div className="glass-card p-8 rounded-xl space-y-6">
-                        <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-2">
+                        <div className="flex items-center justify-between border-b border-separator pb-4 mb-2">
                             <h3 className="text-lg font-semibold text-white">账户资料</h3>
-                            <span className="text-xs text-slate-500">如果不保存，更改将丢失</span>
+                            <span className="text-xs text-text-secondary">如果不保存，更改将丢失</span>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="md:col-span-2">
-                                <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">显示昵称</label>
+                                <label className="block text-xs font-bold text-text-secondary mb-2 uppercase tracking-wider">显示昵称</label>
                                 <div className="relative group">
-                                    <User className="absolute left-3 top-3 text-slate-500 group-focus-within:text-[#0a84ff] transition-colors" size={18} />
+                                    <User className="absolute left-3 top-3 text-text-secondary group-focus-within:text-accent transition-colors" size={18} />
                                     <input 
                                         type="text" 
                                         value={profile.nickname || ''} 
                                         onChange={(e) => setProfile({...profile, nickname: e.target.value})}
-                                        className="w-full bg-[#1c1c1e]/70 border border-white/10 rounded-xl py-2.5 pl-10 pr-3 text-white text-sm focus:border-[#0a84ff] focus:ring-1 focus:ring-[#0a84ff] outline-none transition-all placeholder:text-slate-600"
+                                        className="w-full bg-surface/70 border border-separator rounded-xl py-2.5 pl-10 pr-3 text-white text-sm focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all placeholder:text-text-tertiary"
                                         placeholder="设置您的显示名称"
                                     />
                                 </div>
                             </div>
                             
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">系统用户 ID (不可修改)</label>
+                                <label className="block text-xs font-bold text-text-secondary mb-2 uppercase tracking-wider">系统用户 ID (不可修改)</label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-3 text-slate-600 font-mono text-xs">#</span>
+                                    <span className="absolute left-3 top-3 text-text-tertiary font-mono text-xs">#</span>
                                     <input 
                                         type="text" 
                                         value={profile.username || ''} 
                                         disabled
-                                        className="w-full bg-[#1c1c1e]/50 border border-white/5 rounded-xl py-2.5 pl-8 pr-3 text-slate-500 text-sm cursor-not-allowed font-mono"
+                                        className="w-full bg-surface/50 border border-separator rounded-xl py-2.5 pl-8 pr-3 text-text-secondary text-sm cursor-not-allowed font-mono"
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">手机号码</label>
+                                <label className="block text-xs font-bold text-text-secondary mb-2 uppercase tracking-wider">手机号码</label>
                                 <div className="relative group">
-                                    <Phone className="absolute left-3 top-3 text-slate-500 group-focus-within:text-[#0a84ff] transition-colors" size={18} />
+                                    <Phone className="absolute left-3 top-3 text-text-secondary group-focus-within:text-accent transition-colors" size={18} />
                                     <input 
                                         type="text" 
                                         value={profile.phone || ''}
                                         onChange={(e) => setProfile({...profile, phone: e.target.value})}
                                         placeholder="输入手机号码"
-                                        className="w-full bg-[#1c1c1e]/70 border border-white/10 rounded-xl py-2.5 pl-10 pr-3 text-white text-sm focus:border-[#0a84ff] focus:ring-1 focus:ring-[#0a84ff] outline-none transition-all placeholder:text-slate-600"
+                                        className="w-full bg-surface/70 border border-separator rounded-xl py-2.5 pl-10 pr-3 text-white text-sm focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all placeholder:text-text-tertiary"
                                     />
                                 </div>
                             </div>
                             
                             <div className="md:col-span-2">
-                                <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">联系邮箱</label>
+                                <label className="block text-xs font-bold text-text-secondary mb-2 uppercase tracking-wider">联系邮箱</label>
                                 <div className="relative group">
-                                    <Mail className="absolute left-3 top-3 text-slate-500 group-focus-within:text-[#0a84ff] transition-colors" size={18} />
+                                    <Mail className="absolute left-3 top-3 text-text-secondary group-focus-within:text-accent transition-colors" size={18} />
                                     <input 
                                         type="email" 
                                         value={profile.email || ''} 
                                         onChange={(e) => setProfile({...profile, email: e.target.value})}
                                         placeholder="name@company.com"
-                                        className="w-full bg-[#1c1c1e]/70 border border-white/10 rounded-xl py-2.5 pl-10 pr-3 text-white text-sm focus:border-[#0a84ff] focus:ring-1 focus:ring-[#0a84ff] outline-none transition-all placeholder:text-slate-600"
+                                        className="w-full bg-surface/70 border border-separator rounded-xl py-2.5 pl-10 pr-3 text-white text-sm focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all placeholder:text-text-tertiary"
                                     />
                                 </div>
                             </div>
@@ -391,7 +391,7 @@ export default function UserProfilePage() {
                             <button 
                                 onClick={handleSave}
                                 disabled={saving}
-                                className="flex items-center gap-2 bg-[#0071e3] hover:bg-[#0077ed] text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-all shadow-apple hover:shadow-apple disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                                className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-all shadow-card hover:shadow-card disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                             >
                                 {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
                                 保存修改

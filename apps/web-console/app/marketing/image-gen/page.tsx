@@ -51,16 +51,16 @@ export default function ImageGenPage() {
   };
 
   return (
-    <div className="h-full w-full p-6 text-slate-100 flex flex-col gap-4 overflow-hidden">
+    <div className="h-full w-full p-6 text-text flex flex-col gap-4 overflow-hidden">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-white">文生图 · 获客视觉</h1>
-          <p className="text-sm text-slate-400">产品场景图 / Banner / 社媒配图。接入 DashScope Wanx，无 Key 时保存提示词。</p>
+          <p className="text-sm text-text-secondary">产品场景图 / Banner / 社媒配图。接入 DashScope Wanx，无 Key 时保存提示词。</p>
         </div>
         <button
           onClick={generate}
           disabled={loading}
-          className="px-4 py-2 bg-pink-600 hover:bg-pink-500 disabled:opacity-50 text-white rounded-full text-sm font-medium flex items-center gap-2"
+          className="px-4 py-2 bg-danger hover:bg-danger disabled:opacity-50 text-white rounded-full text-sm font-medium flex items-center gap-2"
         >
           {loading ? <RefreshCw size={16} className="animate-spin" /> : <Wand2 size={16} />}
           生成图片
@@ -75,7 +75,7 @@ export default function ImageGenPage() {
                 key={p.id}
                 onClick={() => setPreset(p.id)}
                 className={`flex-1 text-xs py-2 rounded border ${
-                  preset === p.id ? "border-pink-500 bg-pink-500/15 text-white" : "border-white/10 text-slate-400"
+                  preset === p.id ? "border-danger bg-danger/15 text-white" : "border-separator text-text-secondary"
                 }`}
               >
                 {p.label}
@@ -83,25 +83,25 @@ export default function ImageGenPage() {
             ))}
           </div>
           <input
-            className="w-full bg-black/30 border border-white/10 rounded p-2 text-sm"
+            className="w-full bg-bg/30 border border-separator rounded p-2 text-sm"
             value={productName}
             onChange={(e) => setProductName(e.target.value)}
             placeholder="产品名"
           />
           <textarea
-            className="w-full flex-1 min-h-[120px] bg-black/30 border border-white/10 rounded p-2 text-sm resize-none"
+            className="w-full flex-1 min-h-[120px] bg-bg/30 border border-separator rounded p-2 text-sm resize-none"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="可选：自定义英文提示词。留空则按预设自动生成。"
           />
           {latest?.prompt && (
-            <p className="text-[11px] text-slate-500 leading-relaxed">Prompt: {latest.prompt}</p>
+            <p className="text-[11px] text-text-secondary leading-relaxed">Prompt: {latest.prompt}</p>
           )}
         </div>
 
         <div className="overflow-y-auto">
           {items.length === 0 && !latest ? (
-            <div className="h-full flex items-center justify-center border border-dashed border-white/10 rounded-xl text-slate-500">
+            <div className="h-full flex items-center justify-center border border-dashed border-separator rounded-xl text-text-secondary">
               <div className="text-center">
                 <ImageIcon size={48} className="mx-auto mb-4 opacity-40" />
                 <p>还没有图片，点击生成</p>
@@ -114,11 +114,11 @@ export default function ImageGenPage() {
                   {img.url || img.image_url ? (
                     <img src={img.url || img.image_url} alt={img.title} className="w-full h-40 object-cover" />
                   ) : (
-                    <div className="h-40 flex items-center justify-center bg-white/5 text-xs text-slate-500 p-3 text-center">
+                    <div className="h-40 flex items-center justify-center bg-text/5 text-xs text-text-secondary p-3 text-center">
                       {img.mock ? "待配置 DASHSCOPE_API_KEY" : "无预览"}
                     </div>
                   )}
-                  <div className="p-2 text-[11px] text-slate-400 truncate">{img.title || img.preset}</div>
+                  <div className="p-2 text-[11px] text-text-secondary truncate">{img.title || img.preset}</div>
                 </div>
               ))}
             </div>

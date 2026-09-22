@@ -94,10 +94,10 @@ export default function ClientDownloadPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-sm text-gray-600 mb-4">
+                        <p className="text-sm text-text-tertiary mb-4">
                             包含了所有必要的运行环境。无需安装 Python，解压即用。
                         </p>
-                        <Alert className="  border-blue-200 mb-4">
+                        <Alert className="  border-accent mb-4">
                             {/* <AlertTitle className="text-xs font-bold text-white-800">环境要求</AlertTitle> */}
                             <AlertDescription className="text-xs text-white-700">
                                 环境要求：Windows 10/11, 建议 8G 内存以上
@@ -106,7 +106,7 @@ export default function ClientDownloadPage() {
                                 下载后点击运行的下载文件：DigitalEmployeeRPA.exe
                             </AlertDescription>
                         </Alert>
-                        {/* <div className="p-3 bg-blue-50/50 rounded border border-blue-100/50">
+                        {/* <div className="p-3 bg-accent/10/50 rounded border border-blue-100/50">
                             <p className="text-xs text-blue-800 font-medium text-center">
                                 下载后点击运行的下载文件：DigitalEmployeeRPA.exe
                             </p>
@@ -114,7 +114,7 @@ export default function ClientDownloadPage() {
                     </CardContent>
                     <CardFooter>
                         <Button 
-                            className="w-full bg-blue-600 hover:bg-blue-700" 
+                            className="w-full bg-accent hover:bg-accent" 
                             size="lg"
                             disabled={downloading}
                             onClick={() => {
@@ -138,7 +138,7 @@ export default function ClientDownloadPage() {
                         >
                             {downloading ? (
                                 <>
-                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-separator mr-2"></div>
                                  请求中...
                                 </>
                             ) : (

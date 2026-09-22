@@ -42,11 +42,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             key={toast.id}
             className={`
               pointer-events-auto
-              flex items-center gap-3 px-4 py-3.5 rounded-2xl shadow-apple-lg text-white min-w-[300px] max-w-md
-              backdrop-blur-2xl border border-white/10
+              flex items-center gap-3 px-4 py-3.5 rounded-2xl shadow-popover text-white min-w-[300px] max-w-md
+              backdrop-blur-2xl border border-separator
               transition-all duration-300 ease-out transform
               animate-slide-in-right
-              ${toast.type === 'success' ? 'bg-[#1c1c1e]/95 text-[#30d158]' : toast.type === 'warning' ? 'bg-[#1c1c1e]/95 text-[#ffd60a]' : toast.type === 'info' ? 'bg-[#1c1c1e]/95 text-[#0a84ff]' : 'bg-[#1c1c1e]/95 text-[#ff453a]'}
+              ${toast.type === 'success' ? 'bg-surface/95 text-success' : toast.type === 'warning' ? 'bg-surface/95 text-warning' : toast.type === 'info' ? 'bg-surface/95 text-accent' : 'bg-surface/95 text-danger'}
             `}
             role="alert"
           >
@@ -59,10 +59,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             ) : (
               <AlertCircle size={20} />
             )}
-            <span className="flex-1 text-sm font-medium text-[#f5f5f7]">{toast.message}</span>
+            <span className="flex-1 text-sm font-medium text-text">{toast.message}</span>
             <button
               onClick={() => removeToast(toast.id)}
-              className="text-[#86868b] hover:text-white hover:bg-white/10 rounded-full p-1 transition-colors"
+              className="text-text-secondary hover:text-white hover:bg-text/10 rounded-full p-1 transition-colors"
             >
               <X size={16} />
             </button>

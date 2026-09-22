@@ -131,21 +131,21 @@ export default function ChatSidebar({ bot, onClose }: ChatSidebarProps) {
     };
 
     return (
-        <div className="fixed inset-y-0 right-0 w-[400px] bg-[#1c1c1e]/95 backdrop-blur-2xl border-l border-white/8 shadow-apple-lg z-50 flex flex-col transform transition-transform duration-300 ease-in-out">
+        <div className="fixed inset-y-0 right-0 w-[400px] bg-surface/95 backdrop-blur-2xl border-l border-separator shadow-popover z-50 flex flex-col transform transition-transform duration-300 ease-in-out">
             {/* Header */}
-            <div className="p-4 border-b border-white/8 flex items-center justify-between bg-transparent">
+            <div className="p-4 border-b border-separator flex items-center justify-between bg-transparent">
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-[#0a84ff]/15 flex items-center justify-center text-[#0a84ff]">
+                    <div className="w-8 h-8 rounded-full bg-accent/15 flex items-center justify-center text-accent">
                         <Bot size={18} />
                     </div>
                     <div>
                         <h3 className="font-bold text-white text-sm">{bot.name}</h3>
-                        <p className="text-xs text-slate-500 line-clamp-1 max-w-[200px]">{bot.model_name}</p>
+                        <p className="text-xs text-text-secondary line-clamp-1 max-w-[200px]">{bot.model_name}</p>
                     </div>
                 </div>
                 <button 
                     onClick={onClose}
-                    className="p-1.5 hover:bg-white/8 rounded-full text-[#86868b] hover:text-white transition-colors"
+                    className="p-1.5 hover:bg-text/10 rounded-full text-text-secondary hover:text-white transition-colors"
                 >
                     <X size={18} />
                 </button>
@@ -157,8 +157,8 @@ export default function ChatSidebar({ bot, onClose }: ChatSidebarProps) {
                     <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[85%] rounded-[18px] p-3 text-sm leading-relaxed ${
                             msg.role === 'user' 
-                                ? 'bg-[#0071e3] text-white' 
-                                : 'bg-[#2c2c2e] text-[#f5f5f7]'
+                                ? 'bg-accent text-white' 
+                                : 'bg-surface-2 text-text'
                         }`}>
                            {msg.role === 'assistant' ? (
                                 <div className="prose prose-invert prose-sm max-w-none">
@@ -174,27 +174,27 @@ export default function ChatSidebar({ bot, onClose }: ChatSidebarProps) {
                 ))}
                 {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
                     <div className="flex justify-start">
-                        <div className="bg-[#2c2c2e] rounded-[18px] p-3">
-                            <Loader2 className="animate-spin h-4 w-4 text-[#0a84ff]" />
+                        <div className="bg-surface-2 rounded-[18px] p-3">
+                            <Loader2 className="animate-spin h-4 w-4 text-accent" />
                         </div>
                     </div>
                 )}
             </div>
 
             {/* Input Area */}
-            <div className="p-4 border-t border-white/8 bg-transparent">
+            <div className="p-4 border-t border-separator bg-transparent">
                 <div className="relative">
                     <textarea
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="Type a message..."
-                        className="w-full bg-[#2c2c2e] border border-white/8 rounded-[18px] py-3 pl-4 pr-12 text-sm text-white placeholder-[#6e6e73] focus:outline-none focus:border-[#0a84ff]/40 focus:ring-1 focus:ring-[#0a84ff]/30 resize-none h-[50px]"
+                        className="w-full bg-surface-2 border border-separator rounded-[18px] py-3 pl-4 pr-12 text-sm text-white placeholder-text-tertiary focus:outline-none focus:border-accent/40 focus:ring-1 focus:ring-accent/30 resize-none h-[50px]"
                     />
                     <button
                         onClick={handleSend}
                         disabled={!input.trim() || isLoading}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-[#0071e3] hover:bg-[#0077ed] text-white rounded-full disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-accent hover:bg-accent-hover text-white rounded-full disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                     >
                         <Send size={14} />
                     </button>
