@@ -41,6 +41,13 @@ h1, h2, h3, h4 {
   transform: translateY(-1px);
 }
 
+/* ── 强毛玻璃菜单：深色 rgba(28,28,30,.85) / 浅色 rgba(255,255,255,.85) ── */
+.menu-glass {
+  background: rgb(var(--ui-surface) / 0.85);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+}
+
 /* ── 侧边栏导航项：选中为 accent 浅色圆角高亮块 ─────── */
 .nav-item {
   @apply flex items-center gap-3 px-3 py-2 text-text-tertiary cursor-pointer;

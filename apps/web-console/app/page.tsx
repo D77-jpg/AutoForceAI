@@ -335,16 +335,36 @@ export default function HomePage() {
   const [mounted, setMounted] = useState(false);
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showProductMenu, setShowProductMenu] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Esc 关闭产品矩阵菜单
+  useEffect(() => {
+    if (!showProductMenu) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowProductMenu(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showProductMenu]);
+
   if (!mounted) return null;
 
   return (
     <div className="min-h-screen bg-bg text-text font-sans w-full overflow-x-hidden">
-      
+
+      {/* 产品矩阵菜单遮罩：点击关闭，位于 header 之下、主内容之上 */}
+      {showProductMenu && (
+          <div
+              className="fixed inset-0 top-16 z-40 bg-black/30"
+              onClick={() => setShowProductMenu(false)}
+              aria-hidden="true"
+          />
+      )}
+
       <div className="fixed inset-0 z-0 pointer-events-none">
           <div className="absolute top-[-18%] left-[12%] w-[720px] h-[420px] bg-accent/10 blur-[140px]" />
       </div>
@@ -364,41 +384,45 @@ export default function HomePage() {
               </div>
 
               {/* Product Menu */}
-              <div className="relative group h-16 flex items-center">
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-text-secondary hover:text-white hover:bg-text/5 rounded-full transition-colors">
+              <div className="relative h-16 flex items-center">
+                  <button
+                      onClick={() => setShowProductMenu(v => !v)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-text-secondary hover:text-white hover:bg-text/5 rounded-full transition-colors"
+                  >
                       <LayoutGrid size={16} className="text-accent"/>
                       <span>产品矩阵</span>
-                      <ChevronRight size={12} className="group-hover:rotate-90 transition-transform duration-300" />
+                      <ChevronRight size={12} className={`${showProductMenu ? 'rotate-90' : ''} transition-transform duration-300`} />
                   </button>
                   
-                  {/* Mega Menu Dropdown */}
-                  <div className="absolute top-full left-0 w-[800px] bg-surface/95 backdrop-blur-2xl border border-separator rounded-2xl shadow-popover p-6 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300 z-50 overflow-hidden">
+                  {/* Mega Menu Dropdown：强毛玻璃，下层内容不可辨认 */}
+                  <div className={`absolute top-full left-0 w-[800px] max-w-[calc(100vw-2rem)] menu-glass border border-separator rounded-2xl shadow-popover p-6 transition-all duration-300 z-50 ${showProductMenu ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
                         
-                        <div className="relative z-10 grid grid-cols-2 gap-4">
+                        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {SYSTEM_PRODUCTS.map((prod) => (
                                 <Link 
                                     key={prod.id} 
                                     href={prod.href} 
                                     target={prod.href.startsWith('http') ? '_blank' : undefined}
+                                    onClick={() => setShowProductMenu(false)}
                                     className="flex items-start gap-4 p-4 rounded-2xl hover:bg-text/5 border border-transparent transition-all group/card"
                                 >
-                                    <div className={`p-3 rounded-2xl bg-surface-2 ${prod.color} group-hover/card:scale-105 transition-transform duration-300`}>
-                                        <prod.icon size={24} />
+                                    <div className={`w-11 h-11 rounded-[22%] flex items-center justify-center ${TINT_BG[prod.tint]} text-white group-hover/card:scale-105 transition-transform duration-300 shrink-0`}>
+                                        <prod.icon size={22} />
                                     </div>
-                                    <div className="flex-1">
-                                        <div className="flex justify-between items-start mb-1">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between items-start mb-1 gap-2">
                                             <h4 className="font-bold text-text group-hover/card:text-white transition-colors">{prod.name}</h4>
-                                            <span className="text-[10px] font-medium bg-text/5 px-1.5 py-0.5 rounded-full text-text-secondary">{prod.keyData}</span>
+                                            <span className="text-[10px] font-medium bg-surface-2 px-1.5 py-0.5 rounded-full text-text-secondary shrink-0 tabular-nums">{prod.keyData}</span>
                                         </div>
-                                        <p className="text-[11px] font-medium text-accent mb-1">{prod.slogan}</p>
+                                        <p className="text-[11px] font-medium text-text-secondary mb-1">{prod.slogan}</p>
                                         <p className="text-xs text-text-secondary leading-relaxed line-clamp-2">{prod.desc}</p>
                                     </div>
                                 </Link>
                             ))}
                         </div>
                         <div className="mt-4 pt-3 border-t border-separator flex justify-between items-center px-2">
-                             <span className="text-[10px] text-text-secondary uppercase tracking-widest">GlobalPilot AI © 2026</span>
-                             <Link href="/solution" className="text-xs text-accent hover:text-white flex items-center gap-1 group/link">
+                             <span className="text-xs text-text-tertiary">GlobalPilot AI © 2026</span>
+                             <Link href="/solution" onClick={() => setShowProductMenu(false)} className="text-xs text-accent hover:text-accent-hover flex items-center gap-1 group/link">
                                  查看全景图 <ArrowUpRight size={12} className="group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform"/>
                              </Link>
                         </div>
