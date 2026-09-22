@@ -150,6 +150,44 @@ class AnalysisTask(Base):
 
     project = relationship("Project", back_populates="analysis_tasks")
 
+
+class GeoWatchQuery(Base):
+    """Scheduled GEO keyword watch (English-first for overseas engines)."""
+    __tablename__ = "geo_watch_queries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    target_brand = Column(String, index=True, nullable=False)
+    query = Column(String, nullable=False)
+    engine_name = Column(String, default="perplexity")
+    language = Column(String, default="en")
+    interval_hours = Column(Integer, default=24)
+    enabled = Column(Boolean, default=True)
+    last_run_at = Column(DateTime, nullable=True)
+    next_run_at = Column(DateTime, nullable=True)
+    last_task_id = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=datetime.now)
+
+
+class MarketingContent(Base):
+    """Generated marketing copy / images for the acquisition engine."""
+    __tablename__ = "marketing_contents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    content_type = Column(String, index=True)  # product_article / linkedin_post / seo_blog / outreach_email / image
+    product_name = Column(String, nullable=True)
+    selling_points = Column(Text, nullable=True)
+    language = Column(String, default="en")
+    title = Column(String, nullable=True)
+    body = Column(Text, nullable=True)
+    tags = Column(JSON, default=list)
+    image_url = Column(String, nullable=True)
+    prompt = Column(Text, nullable=True)
+    extra = Column(JSON, default=dict)
+    created_at = Column(DateTime, default=datetime.now)
+
+
 class ContentAsset(Base):
     """内容资产表 (Content Lab 生成的内容)"""
     __tablename__ = "content_assets"
@@ -327,14 +365,19 @@ class ChatSession(Base):
     id = Column(Integer, primary_key=True, index=True)
     session_uuid = Column(String, unique=True, index=True) # UUID for frontend access
     
-    project_id = Column(Integer, ForeignKey("projects.id"))
-    employee_id = Column(Integer, ForeignKey("digital_employees.id"))
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
+    employee_id = Column(Integer, ForeignKey("digital_employees.id"), nullable=True)
+    bot_id = Column(Integer, nullable=True, index=True)  # 关联 shared_models.Bot
     
     visitor_id = Column(String, nullable=True, index=True) # Anonymous unique ID
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True) # Registered User ID
+    visitor_email = Column(String, nullable=True)
+    visitor_name = Column(String, nullable=True)
+    language = Column(String, nullable=True)
     
     status = Column(String, default="active") # active, closed, archived
     summary = Column(Text, nullable=True) # Conversation summary
+    intent = Column(JSON, nullable=True)
     
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)

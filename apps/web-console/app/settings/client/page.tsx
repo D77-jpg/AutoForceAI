@@ -14,7 +14,7 @@ const generateConfig = () => {
     // removing trailing slash if present to avoid double slash with /api/v1
     const envUrl = process.env.NEXT_PUBLIC_API_URL;
     // Fallback logic improved: if env is missing, use default dev URL
-    const baseUrl = (envUrl || "http://localhost:8002").replace(/\/$/, "");
+    const baseUrl = (envUrl || "http://localhost:8010").replace(/\/$/, "");
 
     return {
         "GEO_SERVER_URL": `${baseUrl}/api/v1`, 

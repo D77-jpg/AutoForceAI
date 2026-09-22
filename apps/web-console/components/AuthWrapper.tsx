@@ -20,18 +20,16 @@ export default function AuthWrapper({ children }: { children: React.ReactNode })
   const isImmersive = isBrainPage || isGeneratorPage;
 
   return (
-    <Suspense fallback={<div className="h-screen w-screen bg-[#0B0D14]" />}>
+    <Suspense fallback={<div className="h-screen w-screen bg-black" />}>
     <AuthProvider>
         <ToastProvider> 
             <OrganizationGate>
-                <div className="flex h-screen overflow-hidden text-slate-100 bg-[rgb(var(--background))]">
-                    {/* Only show Sidebar if NOT on login/landing page */}
+                <div className="flex h-screen overflow-hidden text-[#f5f5f7] bg-black">
                     {!isFullScreen && <Sidebar />}
 
-                {/* Main Content Area */}
-                <main className={`flex-1 relative ${isImmersive ? 'overflow-hidden p-0' : 'overflow-auto p-4'} ${isFullScreen ? 'w-full p-0 flex flex-col' : ''}`}>
+                <main className={`flex-1 relative ${isImmersive ? 'overflow-hidden p-0' : 'overflow-auto p-3'} ${isFullScreen ? 'w-full p-0 flex flex-col' : ''}`}>
                     <GlobalStateProvider>
-                        <div className={`h-full ${isImmersive ? 'overflow-hidden p-0' : 'px-2 overflow-y-auto pb-10 scrollbar-hide'} ${isFullScreen ? 'p-0 px-0 pb-0' : ''}`}>
+                        <div className={`h-full ${isImmersive ? 'overflow-hidden p-0' : 'px-1 overflow-y-auto pb-10'} ${isFullScreen ? 'p-0 px-0 pb-0' : ''}`}>
                             {children}
                         </div>
                     </GlobalStateProvider>

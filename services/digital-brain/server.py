@@ -17,7 +17,7 @@ from database.shared_models import SharedBase, RPAJobStatus
 from database.models import RPAJob
 from core.db_manager import SHARED_ENGINE, get_shared_db, init_shared_db
 from routers import auth_router, monitor_router, bot_router, branding_router, content_router, agent_router, platform_router, storage_router, brain_router, export_router, admin_router
-# from routers import kb_router, chat_router # Excluded for now
+from routers import kb_router, service_chat_router, lead_router, marketing_router
 from core.dependencies import get_db, get_current_user_id
 from core.config import settings
 from fastapi.staticfiles import StaticFiles
@@ -44,7 +44,17 @@ async def lifespan(app: FastAPI):
     init_shared_db()
     
     print("[OK] Connected to Digital Employee Shared Database")
+    try:
+        from core.geo_scheduler import start as start_geo_scheduler
+        start_geo_scheduler(interval_seconds=int(os.getenv("GEO_SCHEDULER_INTERVAL", "60")))
+    except Exception as exc:
+        print(f"[Warn] GEO scheduler not started: {exc}")
     yield
+    try:
+        from core.geo_scheduler import stop as stop_geo_scheduler
+        stop_geo_scheduler()
+    except Exception:
+        pass
 
 app = FastAPI(title="Digital Employee SaaS API", version="2.0.0", lifespan=lifespan)
 
@@ -63,6 +73,11 @@ if not os.path.exists("storage/uploads"):
     os.makedirs("storage/uploads")
 app.mount("/uploads", StaticFiles(directory="storage/uploads"), name="uploads")
 
+# Chat widget (embeddable JS for independent sites)
+_WIDGET_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "apps", "chat-widget"))
+if os.path.isdir(_WIDGET_DIR):
+    app.mount("/widget", StaticFiles(directory=_WIDGET_DIR), name="chat-widget")
+
 from fastapi.exceptions import RequestValidationError
 from starlette.requests import Request
 from fastapi.responses import JSONResponse
@@ -77,15 +92,13 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         content={"detail": exc.errors()},
     )
 
-from routers import solution_router, ppt_template_router,
-# from routers import product_router # Excluded
-# from routers import service_chat_router # Excluded for now
+from routers import solution_router, ppt_template_router
 
 # Include Routers
 app.include_router(auth_router.router)
 app.include_router(ppt_template_router.router)
 app.include_router(monitor_router.router)
-# app.include_router(kb_router.router) # Excluded
+app.include_router(kb_router.router)
 app.include_router(bot_router.router)
 app.include_router(storage_router.router)
 app.include_router(content_router.router)
@@ -95,8 +108,9 @@ app.include_router(agent_router.router)
 app.include_router(platform_router.router)
 app.include_router(brain_router.router)
 app.include_router(export_router.router)
-# app.include_router(service_chat_router.router) # Excluded
-# app.include_router(product_router.router) # Excluded
+app.include_router(service_chat_router.router)
+app.include_router(lead_router.router)
+app.include_router(marketing_router.router)
 app.include_router(solution_router.router)
 app.include_router(admin_router.router)
 
@@ -228,11 +242,9 @@ class PlatformConnector:
         """
         示例：通过 REST API 推送到 WordPress (Direct Mode)
         """
-        # 真实环境请读取 os.getenv("WP_API_URL") 和 os.getenv("WP_APP_PASSWORD")
+        from core.wordpress import publish_post
         print(f"   [Connect] 连接到 WordPress API...")
-        # response = requests.post(url, json={"title": title, "content": content, "status": "draft"}, auth=(user, pwd))
-        # return response.json()
-        return {"id": 1024, "link": "https://your-site.com/p=1024", "status": "draft"}
+        return publish_post(title, content, status="draft")
 
     @staticmethod
     def trigger_rpa_agent(platform: str, content: str):
@@ -900,7 +912,7 @@ def publish_content_to_platform(
                 "msg": f"发布成功！文章 ID: {result['id']} (状态: Draft)。可前往后台预览。"
             }
         
-        elif request.platform in ['social_qa', 'media', 'wiki', 'redbook', 'tiktok', 'wechat', 'linkedin']:
+        elif request.platform in ['social_qa', 'media', 'wiki', 'redbook', 'tiktok', 'wechat', 'linkedin', 'x', 'twitter', 'wordpress']:
             # 模式 2: RPA 任务派发 (入库)
             
             new_job = RPAJob(
@@ -980,6 +992,6 @@ if __name__ == "__main__":
             print(f"[ROUTE] {route.path} {route.methods}")
     print("=========================")
 
-    port = int(os.getenv("PORT", 8000))
+    port = int(os.getenv("PORT", 8010))
     # Disable reload to avoid signal/subprocess issues in this environment
     uvicorn.run("server:app", host="0.0.0.0", port=port, reload=False)

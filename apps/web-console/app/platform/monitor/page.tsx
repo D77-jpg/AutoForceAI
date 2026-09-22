@@ -49,9 +49,9 @@ export default function MonitorPage() {
                 {/* Hardware Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {/* CPU */}
-                    <div className="bg-[#1C1F26] border border-white/5 p-4 rounded-xl">
+                    <div className="bg-[#1c1c1e] border border-white/5 p-4 rounded-xl">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="p-2 bg-indigo-500/10 text-indigo-400 rounded-lg">
+                            <div className="p-2 bg-[#0a84ff]/10 text-[#0a84ff] rounded-lg">
                                 <Cpu size={20} />
                             </div>
                             <div>
@@ -65,14 +65,14 @@ export default function MonitorPage() {
                         </div>
                         <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
                             <div 
-                                className={`h-full rounded-full transition-all duration-500 ${stats?.cpu_usage > 80 ? 'bg-red-500' : 'bg-indigo-500'}`} 
+                                className={`h-full rounded-full transition-all duration-500 ${stats?.cpu_usage > 80 ? 'bg-red-500' : 'bg-[#0a84ff]'}`} 
                                 style={{ width: `${stats?.cpu_usage}%` }}
                             ></div>
                         </div>
                     </div>
 
                     {/* Memory */}
-                    <div className="bg-[#1C1F26] border border-white/5 p-4 rounded-xl">
+                    <div className="bg-[#1c1c1e] border border-white/5 p-4 rounded-xl">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="p-2 bg-pink-500/10 text-pink-400 rounded-lg">
                                 <Database size={20} />
@@ -98,7 +98,7 @@ export default function MonitorPage() {
                     </div>
 
                      {/* Platform Info */}
-                     <div className="bg-[#1C1F26] border border-white/5 p-4 rounded-xl">
+                     <div className="bg-[#1c1c1e] border border-white/5 p-4 rounded-xl">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg">
                                 <Server size={20} />
@@ -130,7 +130,7 @@ export default function MonitorPage() {
                 {/* DB Stats Grid */}
                 <h3 className="text-slate-400 text-sm font-medium mt-6 mb-4">业务指标 (Business Metrics)</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                     <StatCard label="活跃模型" value={stats?.resources?.active_models} icon={<Box size={16}/>} color="text-indigo-400" />
+                     <StatCard label="活跃模型" value={stats?.resources?.active_models} icon={<Box size={16}/>} color="text-[#0a84ff]" />
                      <StatCard label="活跃用户" value={stats?.resources?.active_users} icon={<Users size={16}/>} color="text-blue-400" />
                      <StatCard label="RPA 任务队列" value={stats?.resources?.queued_jobs} icon={<Clock size={16}/>} color="text-amber-400" />
                      <StatCard label="服务状态" value="Normal" icon={<Activity size={16}/>} color="text-emerald-400" valueClass="text-emerald-400 text-lg" />
@@ -143,7 +143,7 @@ export default function MonitorPage() {
 
 function StatCard({ label, value, icon, color, valueClass }: any) {
     return (
-        <div className="bg-[#1C1F26] border border-white/5 p-4 rounded-xl flex flex-col justify-between h-24">
+        <div className="bg-[#1c1c1e] border border-white/5 p-4 rounded-xl flex flex-col justify-between h-24">
             <div className={`flex items-center gap-2 text-xs font-medium ${color}`}>
                 {icon} {label}
             </div>

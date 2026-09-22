@@ -351,3 +351,31 @@ class InspectionRecord(SharedBase):
     session = relationship("BrainSession")
 
 
+class Lead(SharedBase):
+    """
+    本地线索池（Outbox）。阶段 1 询盘先落此地，CRM 稳定后再由投递器消费。
+    去重键：同一 organization 下 email 相同则更新而非新建。
+    """
+    __tablename__ = "leads"
+
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
+
+    source = Column(String, default="Website AI Chat", index=True)
+    status = Column(String, default="new", index=True)  # new / contacted / converted / dropped
+
+    email = Column(String, nullable=True, index=True)
+    name = Column(String, nullable=True)
+    company = Column(String, nullable=True)
+    country = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
+    products = Column(String, nullable=True)
+
+    intent_json = Column(JSON, nullable=True)
+    conversation = Column(Text, nullable=True)
+    session_uuid = Column(String, nullable=True, index=True)
+    language = Column(String, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+

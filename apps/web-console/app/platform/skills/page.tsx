@@ -1,35 +1,61 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Save, Search, Server, FileText, Sparkles, Terminal, Plus, Trash2, Edit } from 'lucide-react';
+import { Save, Search, Server, FileText, Sparkles, Terminal, Loader2, RefreshCw } from 'lucide-react';
 import { useToast } from "@/contexts/ToastContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8010";
+
+interface SkillParam { name: string; type: string; description: string; required: boolean; }
+interface Skill { name: string; description: string; category: string; tags: string[]; parameters: SkillParam[]; }
 
 export default function SkillSettingsPage() {
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
-  
-  // Mock State - in production this would fetch from API
+
+  // Live skills from the backend ToolRegistry
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [skillsLoading, setSkillsLoading] = useState(true);
+  const [skillsError, setSkillsError] = useState<string | null>(null);
+
+  const fetchSkills = async () => {
+    setSkillsLoading(true);
+    setSkillsError(null);
+    try {
+      const res = await fetch(API_URL + "/api/v1/platform/skills");
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      setSkills(data.skills || []);
+    } catch (e) {
+      setSkillsError(e.message || "无法连接后端服务");
+    } finally {
+      setSkillsLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchSkills(); }, []);
+
+  // Base capability config — local until backend config API lands (Phase 5)
   const [config, setConfig] = useState({
     web_search_enabled: true,
-    serp_api_key: "**********************",
+    serp_api_key: "",
     rpa_enabled: true,
-    rpa_worker_url: "http://rpa-worker.internal:8000",
+    rpa_worker_url: "http://localhost:8010",
     ppt_enabled: true,
     ppt_template_path: "/storage/ppt_templates/default.pptx"
   });
 
   const handleSave = () => {
     setLoading(true);
-    // Simulate API call
     setTimeout(() => {
       setLoading(false);
-      showToast("配置已保存", "success");
-    }, 1000);
+      showToast("配置已保存（本地暂存）", "success");
+    }, 500);
   };
 
   return (
@@ -50,7 +76,7 @@ export default function SkillSettingsPage() {
       </p>
 
       <Tabs defaultValue="library" className="w-full">
-        <TabsList className="mb-6 bg-slate-900 border border-slate-700/50">
+        <TabsList className="mb-6 bg-[#1c1c1e] border border-white/8">
            <TabsTrigger value="library" className="px-6 data-[state=active]:bg-violet-600">
              <Terminal className="w-4 h-4 mr-2" />
              业务技能 (Business Skills)
@@ -63,80 +89,48 @@ export default function SkillSettingsPage() {
 
         {/* Tab 1: 业务技能 (原 Registry) */}
         <TabsContent value="library" className="animate-in fade-in slide-in-from-left-4">
+             {skillsLoading ? (
+                 <div className="flex items-center justify-center h-60 text-slate-500 gap-2">
+                     <Loader2 className="animate-spin" size={20} /> 正在从后端加载技能清单...
+                 </div>
+             ) : skillsError ? (
+                 <div className="flex flex-col items-center justify-center h-60 text-slate-500 gap-3">
+                     <p>加载失败：{skillsError}</p>
+                     <Button variant="outline" onClick={fetchSkills} className="gap-2 border-white/10 text-slate-300 hover:bg-white/5">
+                         <RefreshCw size={14} /> 重试
+                     </Button>
+                 </div>
+             ) : (
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                
-                {/* 1. Order Status */}
-                <div className="glass-card p-6 relative group hover:bg-slate-800/60 transition-all border-0">
-                    <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => showToast("功能开发中: 技能编辑器即将上线", "info")} className="p-1 hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"><Edit size={16}/></button>
-                        <button onClick={() => showToast("功能开发中: 删除功能开发中", "warning")} className="p-1 hover:bg-red-900/30 rounded text-red-400 hover:text-red-300 transition-colors"><Trash2 size={16}/></button>
-                    </div>
-                    <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center text-green-400 mb-4 border border-green-500/20">
+                {skills.map((skill) => (
+                <div key={skill.name} className="glass-card p-6 relative group hover:bg-[#2c2c2e]/60 transition-all border-0">
+                    <div className={"w-10 h-10 rounded-lg flex items-center justify-center mb-4 border " + (skill.category === "system" ? "bg-blue-500/10 text-blue-400 border-blue-500/20" : "bg-green-500/10 text-green-400 border-green-500/20")}>
                         <Terminal size={20} />
                     </div>
                     <div className="mb-1">
-                        <h3 className="font-semibold text-lg text-white">订单状态查询</h3>
-                        <p className="text-xs text-slate-500 font-mono">Check Order Status</p>
+                        <h3 className="font-semibold text-lg text-white">{skill.name}</h3>
                     </div>
-                    <code className="text-xs bg-slate-800 px-1 py-0.5 rounded text-slate-400 border border-slate-700">check_order_status</code>
-                    <p className="text-sm text-slate-400 mt-3 line-clamp-2">
-                        查询订单物流状态的业务工具。调用 ERP API 返回发货进度与预计送达时间。
-                    </p>
-                    <div className="mt-4 pt-4 border-t border-slate-700/50 flex gap-2">
-                         <span className="px-2 py-0.5 bg-violet-500/10 text-violet-400 text-xs rounded border border-violet-500/20">Business</span>
-                        <span className="px-2 py-0.5 bg-slate-700 text-slate-300 text-xs rounded border border-slate-600">Python</span>
-                    </div>
-                </div>
-
-                {/* 2. CRM Info */}
-                <div className="glass-card p-6 relative group hover:bg-slate-800/60 transition-all border-0">
-                    <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                         <button onClick={() => showToast("功能开发中: 技能编辑器即将上线", "info")} className="p-1 hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"><Edit size={16}/></button>
-                    </div>
-                     <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center text-blue-400 mb-4 border border-blue-500/20">
-                        <Terminal size={20} />
-                    </div>
-                    <div className="mb-1">
-                        <h3 className="font-semibold text-lg text-white">CRM 客户画像</h3>
-                        <p className="text-xs text-slate-500 font-mono">Get Customer Profile</p>
-                    </div>
-                    <code className="text-xs bg-slate-800 px-1 py-0.5 rounded text-slate-400 border border-slate-700">get_crm_profile</code>
-                    <p className="text-sm text-slate-400 mt-3 line-clamp-2">
-                        从 CRM 系统拉取客户画像与历史跟进记录。
-                    </p>
-                    <div className="mt-4 pt-4 border-t border-slate-700/50 flex gap-2">
-                        <span className="px-2 py-0.5 bg-violet-500/10 text-violet-400 text-xs rounded border border-violet-500/20">Business</span>
-                        <span className="px-2 py-0.5 bg-slate-700 text-slate-300 text-xs rounded border border-slate-600">Python</span>
+                    <code className="text-xs bg-[#2c2c2e] px-1 py-0.5 rounded text-slate-400 border border-white/10">{skill.name}</code>
+                    <p className="text-sm text-slate-400 mt-3 line-clamp-2">{skill.description || "暂无描述"}</p>
+                    {skill.parameters.length > 0 && (
+                        <div className="mt-3 space-y-1">
+                            {skill.parameters.map((p) => (
+                                <div key={p.name} className="text-xs text-slate-500 font-mono">
+                                    <span className="text-slate-300">{p.name}</span>
+                                    <span className="text-slate-600">: {p.type}{p.required ? " *" : ""}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    <div className="mt-4 pt-4 border-t border-white/8 flex gap-2">
+                        {skill.tags.map((tag) => (
+                            <span key={tag} className={"px-2 py-0.5 text-xs rounded border " + (tag === "System" ? "bg-slate-500/10 text-slate-400 border-slate-500/20" : tag === "Business" ? "bg-violet-500/10 text-violet-400 border-violet-500/20" : "bg-slate-700 text-slate-300 border-white/12")}>{tag}</span>
+                        ))}
                     </div>
                 </div>
-
-                 {/* 3. Web Search (System) */}
-                 <div className="glass-card p-6 relative group hover:bg-slate-800/60 transition-all border-0">
-                     <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center text-blue-400 mb-4 border border-blue-500/20">
-                        <Search size={20} />
-                    </div>
-                    <div className="mb-1">
-                        <h3 className="font-semibold text-lg text-white">联网搜索</h3>
-                        <p className="text-xs text-slate-500 font-mono">Web Search</p>
-                    </div>
-                    <code className="text-xs bg-slate-800 px-1 py-0.5 rounded text-slate-400 border border-slate-700">web_search</code>
-                    <p className="text-sm text-slate-400 mt-3 line-clamp-2">
-                        [系统预置] 联网深度搜索能力。依赖“基础技能”中的 API Key。
-                    </p>
-                    <div className="mt-4 pt-4 border-t border-slate-700/50 flex gap-2">
-                        <span className="px-2 py-0.5 bg-slate-500/10 text-slate-400 text-xs rounded border border-slate-500/20">System</span>
-                        <span className="px-2 py-0.5 bg-slate-700 text-slate-300 text-xs rounded border border-slate-600">Built-in</span>
-                    </div>
-                </div>
-
-                {/* Add New */}
-                <div onClick={() => showToast("功能开发中: 技能编辑器即将上线", "info")} className="border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center text-slate-500 hover:border-violet-500/50 hover:text-violet-400 transition-all cursor-pointer h-[240px] bg-slate-800/20 hover:bg-slate-800/40">
-                    <div className="flex flex-col items-center gap-2">
-                         <Plus size={32} />
-                         <span className="text-sm font-medium">注册新业务技能</span>
-                    </div>
-                </div>
+                ))}
             </div>
+            )}
         </TabsContent>
 
         {/* Tab 2: 基础设施配置 (原 Config 内容) */}
@@ -169,7 +163,7 @@ export default function SkillSettingsPage() {
                         />
                         <Button variant="outline" className="border-white/10 text-slate-300 hover:bg-white/5 hover:text-white">验证连接</Button>
                         </div>
-                        <p className="text-xs text-slate-500">用于 <code className="bg-slate-800 px-1 py-0.5 rounded text-blue-300">web_search</code> 技能调用外部搜索引擎。</p>
+                        <p className="text-xs text-slate-500">用于 <code className="bg-[#2c2c2e] px-1 py-0.5 rounded text-blue-300">web_search</code> 技能调用外部搜索引擎。</p>
                     </div>
                     </div>
                 )}
@@ -198,7 +192,7 @@ export default function SkillSettingsPage() {
                         className="bg-black/30 border-white/10 text-white"
                         onChange={(e) => setConfig({...config, rpa_worker_url: e.target.value})} 
                         />
-                        <p className="text-xs text-slate-500">指向 <code className="bg-slate-800 px-1 py-0.5 rounded text-purple-300">rpa-worker</code> 服务的内部地址。</p>
+                        <p className="text-xs text-slate-500">指向 <code className="bg-[#2c2c2e] px-1 py-0.5 rounded text-purple-300">rpa-worker</code> 服务的内部地址。</p>
                     </div>
                     </div>
                 )}

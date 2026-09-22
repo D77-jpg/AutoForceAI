@@ -6,7 +6,7 @@ const nextConfig = {
     // /geo -> GEO Dashboard (app/geo/page.tsx)
     async rewrites() {
       // Prefer env var, fallback to default
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8002';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8010';
       console.log(`[Next.js] Proxying API requests to: ${apiUrl}`);
       
       return [

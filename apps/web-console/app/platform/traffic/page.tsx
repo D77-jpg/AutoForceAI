@@ -46,7 +46,7 @@ export default function TrafficPage() {
             <div className="space-y-6">
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                     <div className="bg-[#1C1F26] border border-white/5 p-6 rounded-xl relative overflow-hidden">
+                     <div className="bg-[#1c1c1e] border border-white/5 p-6 rounded-xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4 opacity-5">
                             <Coins size={64} />
                         </div>
@@ -59,12 +59,12 @@ export default function TrafficPage() {
                         <div className="text-xs text-slate-500 mt-1">Estimate: ${(totalTokens * 0.00001).toFixed(4)}</div>
                      </div>
 
-                     <div className="bg-[#1C1F26] border border-white/5 p-6 rounded-xl relative overflow-hidden">
+                     <div className="bg-[#1c1c1e] border border-white/5 p-6 rounded-xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4 opacity-5">
                             <Zap size={64} />
                         </div>
                         <h3 className="text-sm font-medium text-slate-400 mb-2 flex items-center gap-2">
-                            <Zap size={16} className="text-indigo-400"/> API 调用次数
+                            <Zap size={16} className="text-[#0a84ff]"/> API 调用次数
                         </h3>
                         <div className="text-3xl font-bold text-white font-mono">
                             {totalCalls}
@@ -72,7 +72,7 @@ export default function TrafficPage() {
                         <div className="text-xs text-slate-500 mt-1">Avg: {(totalCalls / 7).toFixed(1)} / day</div>
                      </div>
 
-                     <div className="bg-[#1C1F26] border border-white/5 p-6 rounded-xl relative overflow-hidden">
+                     <div className="bg-[#1c1c1e] border border-white/5 p-6 rounded-xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4 opacity-5">
                             <Layers size={64} />
                         </div>
@@ -87,9 +87,9 @@ export default function TrafficPage() {
                 </div>
 
                 {/* Chart */}
-                <div className="bg-[#1C1F26] border border-white/5 p-6 rounded-xl flex-1 min-h-[300px] flex flex-col">
+                <div className="bg-[#1c1c1e] border border-white/5 p-6 rounded-xl flex-1 min-h-[300px] flex flex-col">
                      <h3 className="text-sm font-medium text-slate-300 mb-6 flex items-center gap-2">
-                         <TrendingUp size={16} className="text-indigo-400"/> 每日消耗趋势
+                         <TrendingUp size={16} className="text-[#0a84ff]"/> 每日消耗趋势
                      </h3>
                      
                      <div className="flex-1 flex items-end gap-2 h-full">
@@ -102,7 +102,7 @@ export default function TrafficPage() {
                             <div key={day.date} className="flex-1 flex flex-col items-center gap-2 group">
                                 <div className="w-full relative flex-1 flex items-end bg-white/[0.02] rounded-t-lg hover:bg-white/[0.05] transition-colors">
                                     <div 
-                                        className="w-full bg-indigo-500/50 hover:bg-indigo-500 rounded-t-lg transition-all relative group-hover:shadow-[0_0_15px_rgba(99,102,241,0.5)]"
+                                        className="w-full bg-[#0a84ff]/50 hover:bg-[#0077ed] rounded-t-lg transition-all relative group-hover:shadow-none"
                                         style={{ height: `${(day.tokens / maxDailyTokens) * 100}%` }}
                                     >
                                         <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-black/80 px-2 py-1 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
@@ -119,7 +119,7 @@ export default function TrafficPage() {
                 </div>
 
                 {/* Provider Breakdown Table */}
-                 <div className="bg-[#1C1F26] border border-white/5 rounded-xl overflow-hidden">
+                 <div className="bg-[#1c1c1e] border border-white/5 rounded-xl overflow-hidden">
                     <table className="w-full text-left text-sm">
                         <thead className="bg-white/[0.02] text-slate-400 font-medium">
                             <tr>

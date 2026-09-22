@@ -261,8 +261,98 @@ def delete_model(model_id: int, db: Session = Depends(get_shared_db)):
     db_model = db.query(LLMModel).filter(LLMModel.id == model_id).first()
     if not db_model:
         raise HTTPException(status_code=404, detail="Model not found")
-    
+
     # Hard delete (completely remove from database)
     db.delete(db_model)
     db.commit()
     return {"message": "Model deleted"}
+
+
+# --- Skills (Tool Registry) ---
+
+# Tools that are built into the platform (System) vs business tools (Business)
+_SYSTEM_TOOLS = {"web_search", "rpa_browser", "ppt_generator"}
+_TOOL_TAGS = {
+    "check_order_status": ["Business", "Python"],
+    "web_search": ["System", "Built-in"],
+    "rpa_browser": ["System", "Built-in"],
+    "ppt_generator": ["System", "Built-in"],
+}
+
+@router.get("/skills")
+def list_skills():
+    """
+    List all registered agent skills/tools from the runtime ToolRegistry.
+    This is the single source of truth for the 技能工具箱 page.
+    """
+    from core.tools.registry import ToolRegistry
+
+    schemas = ToolRegistry.get_all_schemas()
+    skills = []
+    for s in schemas:
+        fn = s.get("function", s)  # tolerate both OpenAI-style and flat schemas
+        name = fn.get("name", "unknown")
+        params = fn.get("parameters", {}) or {}
+        required = params.get("required", [])
+        properties = params.get("properties", {}) or {}
+        skills.append({
+            "name": name,
+            "description": fn.get("description", ""),
+            "category": "system" if name in _SYSTEM_TOOLS else "business",
+            "tags": _TOOL_TAGS.get(name, ["Business", "Python"]),
+            "parameters": [
+                {
+                    "name": pname,
+                    "type": pdef.get("type", "string"),
+                    "description": pdef.get("description", ""),
+                    "required": pname in required,
+                }
+                for pname, pdef in properties.items()
+            ],
+        })
+    return {"skills": skills, "total": len(skills)}
+
+
+# --- Skills (Tool Registry) ---
+
+# Tools that are built into the platform (System) vs business tools (Business)
+_SYSTEM_TOOLS = {"web_search", "rpa_browser", "ppt_generator"}
+_TOOL_TAGS = {
+    "check_order_status": ["Business", "Python"],
+    "web_search": ["System", "Built-in"],
+    "rpa_browser": ["System", "Built-in"],
+    "ppt_generator": ["System", "Built-in"],
+}
+
+@router.get("/skills")
+def list_skills():
+    """
+    List all registered agent skills/tools from the runtime ToolRegistry.
+    This is the single source of truth for the 技能工具箱 page.
+    """
+    from core.tools.registry import ToolRegistry
+
+    schemas = ToolRegistry.get_all_schemas()
+    skills = []
+    for s in schemas:
+        fn = s.get("function", s)  # tolerate both OpenAI-style and flat schemas
+        name = fn.get("name", "unknown")
+        params = fn.get("parameters", {}) or {}
+        required = params.get("required", [])
+        properties = params.get("properties", {}) or {}
+        skills.append({
+            "name": name,
+            "description": fn.get("description", ""),
+            "category": "system" if name in _SYSTEM_TOOLS else "business",
+            "tags": _TOOL_TAGS.get(name, ["Business", "Python"]),
+            "parameters": [
+                {
+                    "name": pname,
+                    "type": pdef.get("type", "string"),
+                    "description": pdef.get("description", ""),
+                    "required": pname in required,
+                }
+                for pname, pdef in properties.items()
+            ],
+        })
+    return {"skills": skills, "total": len(skills)}

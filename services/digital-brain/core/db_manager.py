@@ -17,12 +17,33 @@ SHARED_ENGINE = create_engine(
 )
 SharedSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=SHARED_ENGINE)
 
+def _sqlite_add_columns():
+    """SQLite create_all 不会给已有表加列，这里补齐阶段 1 新增字段。"""
+    if "sqlite" not in SHARED_DB_URL:
+        return
+    statements = [
+        "ALTER TABLE chat_sessions ADD COLUMN bot_id INTEGER",
+        "ALTER TABLE chat_sessions ADD COLUMN visitor_email VARCHAR",
+        "ALTER TABLE chat_sessions ADD COLUMN visitor_name VARCHAR",
+        "ALTER TABLE chat_sessions ADD COLUMN language VARCHAR",
+        "ALTER TABLE chat_sessions ADD COLUMN intent JSON",
+        "ALTER TABLE knowledge_docs ADD COLUMN error_msg TEXT",
+    ]
+    with SHARED_ENGINE.begin() as conn:
+        for sql in statements:
+            try:
+                conn.exec_driver_sql(sql)
+            except Exception:
+                pass
+
+
 # 初始化主数据库 (Merging Tenant Schemas into Shared DB)
 def init_shared_db():
     print("[DB] Initializing Shared Database Schema...")
     SharedBase.metadata.create_all(bind=SHARED_ENGINE)
     # Also create Tenant tables in the Shared DB (Single DB Mode)
     TenantBase.metadata.create_all(bind=SHARED_ENGINE)
+    _sqlite_add_columns()
     print("[DB] Schema Sync Complete.")
 
 # 租户数据库引擎缓存

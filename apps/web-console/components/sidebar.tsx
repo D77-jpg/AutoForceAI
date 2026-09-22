@@ -33,7 +33,7 @@ import {
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 
-const MenuLink = ({ href, icon: Icon, label, exact }: any) => {
+const MenuLink = ({ href, icon: Icon, label, exact, badge }: any) => {
   const pathname = usePathname();
   // Precise match for root or exact path match or sub-path match with separator
   // This prevents /knowledge matching /knowledge/brain active state incorrectly
@@ -45,6 +45,11 @@ const MenuLink = ({ href, icon: Icon, label, exact }: any) => {
     <Link href={href} className={`nav-item ${isActive ? 'active' : ''}`}>
         <Icon size={18} />
         <span className="font-medium text-sm">{label}</span>
+        {badge && (
+          <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded-full bg-[#ff9f0a]/15 text-[#ffd60a] font-medium shrink-0">
+            {badge}
+          </span>
+        )}
     </Link>
   );
 }
@@ -82,7 +87,8 @@ export default function Sidebar() {
                     title: '会话管理',
                     items: [
                         { href: '/service/sessions', icon: Activity, label: '实时会话监控' },
-                        { href: '/service/history', icon: Book, label: '历史会话查询' }
+                        { href: '/service/history', icon: Book, label: '历史会话查询' },
+                        { href: '/leads', icon: Users, label: '本地线索池' }
                     ]
                 },
                 {
@@ -109,24 +115,24 @@ export default function Sidebar() {
             {
               title: '店铺运营',
               items: [
-                { href: '/ecommerce', icon: LayoutDashboard, label: '运营数据', exact: true },
-                { href: '/ecommerce/products', icon: Sparkles, label: '商品管理', exact: true },
-                { href: '/ecommerce/products/create', icon: Plus, label: '发布商品' },
-                { href: '/ecommerce/categories', icon: LayoutGrid, label: '商品分类' },
-                { href: '/ecommerce/attributes', icon:  SlidersHorizontal, label: '商品属性' },
-                { href: '/ecommerce/orders', icon: FileText, label: '订单管理' },
+                { href: '/ecommerce', icon: LayoutDashboard, label: '运营数据', exact: true, badge: '开发中' },
+                { href: '/ecommerce/products', icon: Sparkles, label: '商品管理', exact: true, badge: '开发中' },
+                { href: '/ecommerce/products/create', icon: Plus, label: '发布商品', badge: '开发中' },
+                { href: '/ecommerce/categories', icon: LayoutGrid, label: '商品分类', badge: '开发中' },
+                { href: '/ecommerce/attributes', icon:  SlidersHorizontal, label: '商品属性', badge: '开发中' },
+                { href: '/ecommerce/orders', icon: FileText, label: '订单管理', badge: '开发中' },
               ]
             },
             {
               title: '客户',
               items: [
-                 { href: '/ecommerce/customers', icon: Users, label: '客户与会员' }
+                 { href: '/ecommerce/customers', icon: Users, label: '客户与会员', badge: '开发中' }
               ]
             },
             {
               title: '营销',
               items: [
-                 { href: '/ecommerce/marketing', icon: RadioTower, label: 'AI 营销' }
+                 { href: '/ecommerce/marketing', icon: RadioTower, label: 'AI 营销', badge: '开发中' }
               ]
             }
           ]
@@ -159,7 +165,7 @@ export default function Sidebar() {
           {
             title: '知识库应用',
             items: [
-               { href: '/knowledge/solution', icon: Presentation, label: '方案生成' },
+               { href: '/knowledge/solution', icon: Presentation, label: '方案生成', badge: '开发中' },
             ]
           }
         ]
@@ -186,23 +192,6 @@ export default function Sidebar() {
           }
         ]
       };
-    } else if (pathname?.startsWith('/service') || pathname?.startsWith('/chat')) {
-      return {
-        appName: 'AI 智能客服',
-        appEnName: '全天候智能对话代理',
-        homeLink: '/service/stats', // Update home link to Dashbaord
-        groups: [
-          {
-            title: '客服运营',
-            items: [
-              { href: '/service/stats', icon: BarChart4, label: '服务质检' },
-              { href: '/service/rules', icon: ShieldCheck, label: '质检规则' },
-              { href: '/chat', icon: FileText, label: '对话日志' },
-              { href: '/service/config', icon: Bot, label: '机器人配置' },
-            ]
-          }
-        ]
-      };
     } else if (pathname?.startsWith('/monitor')) {
         return {
           appName: '全链路监控',
@@ -213,7 +202,7 @@ export default function Sidebar() {
               title: '监控中心',
               items: [
                 { href: '/monitor', icon: ShieldCheck, label: '实时大屏' },
-                { href: '/monitor/alerts', icon: RadioTower, label: '告警记录' }
+                { href: '/monitor/alerts', icon: RadioTower, label: '告警记录', badge: '开发中' }
               ]
             }
           ]
@@ -228,7 +217,7 @@ export default function Sidebar() {
               title: '组织架构',
               items: [
                 { href: '/organization', icon: Network, label: '团队概览' },
-                { href: '/organization/agents', icon: Users, label: '员工管理' }
+                { href: '/organization/agents', icon: Users, label: '员工管理', badge: '开发中' }
               ]
             }
           ]
@@ -262,7 +251,7 @@ export default function Sidebar() {
               title: '内容制作',
               items: [
                 { href: '/digital-human', icon: Video, label: '视频生成' },
-                { href: '/digital-human/assets', icon: Users, label: '形象资产' }
+                { href: '/digital-human/assets', icon: Users, label: '形象资产', badge: '开发中' }
               ]
             }
           ]
@@ -323,25 +312,25 @@ export default function Sidebar() {
             }
           ]
         };
-    } else if (pathname?.startsWith('/crm')) {
+    } else if (pathname?.startsWith('/crm') || pathname?.startsWith('/leads')) {
       return {
         appName: 'AI CRM',
         appEnName: '智能客户关系管理',
-        homeLink: '/crm',
+        homeLink: '/leads',
         groups: [
             {
               title: '客户管理',
               items: [
                 { href: '/crm', icon: LayoutDashboard, label: '概览 Dashboard' },
-                { href: '/crm/leads', icon: Users, label: '线索公海' },
-                { href: '/crm/customers', icon: Building2, label: '客户列表' }
+                { href: '/leads', icon: Users, label: '本地线索池' },
+                { href: '/crm/customers', icon: Building2, label: '客户列表', badge: '开发中' }
               ]            
             },
             {
                 title: '销售漏斗',
                 items: [
-                    { href: '/crm/opportunities', icon: BarChart4, label: '商机管理' },
-                    { href: '/crm/contracts', icon: FileText, label: '合同归档' }
+                    { href: '/crm/opportunities', icon: BarChart4, label: '商机管理', badge: '开发中' },
+                    { href: '/crm/contracts', icon: FileText, label: '合同归档', badge: '开发中' }
                 ]            
             }
         ]
@@ -375,11 +364,10 @@ export default function Sidebar() {
   const appConfig = getAppConfig();
 
   return (
-    <aside className="w-64 glass-card m-4 mr-0 flex flex-col border-r-0 shrink-0">
-         {/* App Header & Portal Switcher */}
-         <div className="p-6 pb-6 border-b border-[rgba(255,255,255,0.05)]">
+    <aside className="w-[248px] m-3 mr-0 flex flex-col shrink-0 rounded-[24px] bg-[#1c1c1e]/80 backdrop-blur-2xl border border-white/8 shadow-apple">
+         <div className="p-5 pb-4 border-b border-white/6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="relative w-8 h-8">
+              <div className="relative w-8 h-8 rounded-xl overflow-hidden bg-[#2c2c2e]">
                  <Image 
                     src="/logo.png" 
                     alt="Logo" 
@@ -387,29 +375,27 @@ export default function Sidebar() {
                     className="object-contain"
                  />
               </div>
-              <div>
-                <h1 className="font-bold text-lg tracking-tight">{appConfig.appName}</h1>
-                <p className="bg-yellow-500/20 text-yellow-100 border border-blue-400 rounded px-2 py-0.5 text-[10px] font-medium ml-0.5 mt-1 scale-95 origin-left w-fit">
+              <div className="min-w-0">
+                <h1 className="font-semibold text-[15px] tracking-tight truncate">{appConfig.appName}</h1>
+                <p className="text-[11px] text-[#86868b] mt-0.5 truncate">
                     {appConfig.appEnName}
                 </p>
               </div>
             </div>
 
-            {/* Portal Switcher Button */}
             <Link 
                 href="/" 
-                className="flex items-center gap-2 w-full p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 transition-colors text-xs text-slate-300 font-medium group"
+                className="flex items-center gap-2 w-full p-2 rounded-full bg-white/6 hover:bg-white/10 transition-colors text-[12px] text-[#f5f5f7] font-medium group"
             >
-                <LayoutGrid size={14} className="text-slate-400 group-hover:text-indigo-400 transition-colors" />
-                <span>切换应用 / Switch App</span>
+                <LayoutGrid size={14} className="text-[#86868b] group-hover:text-[#0a84ff] transition-colors" />
+                <span>切换应用</span>
             </Link>
          </div>
 
-         {/* Dynamic Navigation */}
-         <div className="flex-1 overflow-y-auto py-6 px-3 space-y-1">
+         <div className="flex-1 overflow-y-auto py-5 px-2.5 space-y-1">
             {appConfig.groups.map((group, idx) => (
-                <div key={idx} className="mb-6 last:mb-0">
-                    <div className="text-xs font-semibold text-slate-500 px-4 mb-2 uppercase tracking-wider">
+                <div key={idx} className="mb-5 last:mb-0">
+                    <div className="text-[11px] font-semibold text-[#6e6e73] px-3 mb-1.5 uppercase tracking-[0.12em]">
                         {group.title}
                     </div>
                     {group.items.map((item, itemIdx) => (
@@ -419,84 +405,79 @@ export default function Sidebar() {
                             icon={item.icon} 
                             label={item.label} 
                             exact={item.exact}
+                            badge={(item as any).badge}
                         />
                     ))}
-                    {idx !== appConfig.groups.length - 1 && (
-                         <div className="my-4 border-t border-[rgba(255,255,255,0.05)] mx-4"></div>
-                    )}
                 </div>
             ))}
          </div>
 
-         {/* User Profile */}
-         <div className="p-4 border-t border-[rgba(255,255,255,0.05)] relative">
+         <div className="p-3 border-t border-white/6 relative">
             <div 
-                className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer group"
+                className="flex items-center gap-3 p-2 rounded-2xl hover:bg-white/6 transition-colors cursor-pointer group"
                 onClick={() => setShowMenu(!showMenu)}
             >
-               <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center border border-slate-600 overflow-hidden relative">
+               <div className="w-8 h-8 rounded-full bg-[#3a3a3c] flex items-center justify-center overflow-hidden relative">
                   {user?.avatar || user?.headimgurl ? (
                       <img src={user?.headimgurl || user?.avatar} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
-                      <span className="text-xs font-bold text-slate-300">
+                      <span className="text-xs font-semibold text-[#f5f5f7]">
                           {(user?.nickname || user?.username || 'U')?.[0]?.toUpperCase()}
                       </span>
                   )}
                </div>
                <div className="flex-1 overflow-hidden min-w-0">
-                  <p className="text-sm font-medium text-slate-200 group-hover:text-white truncate" title={user?.nickname || user?.username}>
+                  <p className="text-sm font-medium text-[#f5f5f7] truncate" title={user?.nickname || user?.username}>
                       {user?.nickname || user?.username || '未登录用户'}
                   </p>
-                  <p className="text-[10px] text-slate-500 uppercase truncate flex items-center gap-1">
+                  <p className="text-[10px] text-[#86868b] truncate flex items-center gap-1">
                       {user?.org_name && (
-                          <span className="text-indigo-400 font-semibold truncate max-w-[80px]" title={user.org_name}>
+                          <span className="text-[#0a84ff] font-medium truncate max-w-[80px]" title={user.org_name}>
                               {user.org_name}
                           </span>
                       )}
-                      {user?.org_name && <span className="text-slate-600">|</span>}
+                      {user?.org_name && <span className="text-[#3a3a3c]">|</span>}
                       <span className="shrink-0">
                         {user?.role === 'admin' ? '系统管理员' : (user?.role === 'enterprise_admin' ? '管理员' : '成员')}
                       </span>
                   </p>
                </div>
-               <Settings size={16} className={`text-slate-500 group-hover:text-white transition-transform ${showMenu ? 'rotate-90' : ''}`}/>
+               <Settings size={16} className={`text-[#6e6e73] group-hover:text-white transition-transform ${showMenu ? 'rotate-90' : ''}`}/>
             </div>
 
-            {/* Dropdown Menu */}
             {showMenu && (
-                <div className="absolute bottom-full left-4 right-4 mb-2 bg-[#1C1F26] border border-white/10 rounded-xl shadow-2xl p-1 z-50 animate-fade-in-up">
+                <div className="absolute bottom-full left-3 right-3 mb-2 bg-[#1c1c1e] border border-white/10 rounded-2xl shadow-apple-lg p-1.5 z-50 animate-fade-in-up">
                     {user?.role === 'enterprise_admin' && user?.invite_code && (
-                        <div className="px-3 py-3 border-b border-white/5 mb-1 bg-yellow-500/10">
+                        <div className="px-3 py-3 border-b border-white/6 mb-1 bg-[#2c2c2e] rounded-xl">
                             <div className="flex justify-between items-center mb-1">
-                                <span className="text-xs text-yellow-200/70">企业邀请码</span>
-                                <span className="text-[10px] text-yellow-500/50">点击复制</span>
+                                <span className="text-xs text-[#86868b]">企业邀请码</span>
+                                <span className="text-[10px] text-[#6e6e73]">点击复制</span>
                             </div>
                             <div 
-                                className="text-yellow-400 font-bold font-mono text-lg text-center tracking-widest cursor-pointer hover:scale-105 transition-transform select-all" 
+                                className="text-[#0a84ff] font-semibold font-mono text-lg text-center tracking-widest cursor-pointer select-all" 
                                 title="点击复制" 
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     navigator.clipboard.writeText(user.invite_code || '');
-                                    // ideally show toast here but we might not have access to it easily in this component if not passed context
                                 }}
                             >
                                 {user.invite_code}
                             </div>
-                            <p className="text-[10px] text-yellow-200/50 text-center mt-1 scale-90">
+                            <p className="text-[10px] text-[#6e6e73] text-center mt-1">
                                 发送给同事以加入企业
                             </p>
                         </div>
                     )}
-                    <Link href="/settings/profile" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg transition-colors" onClick={() => setShowMenu(false)}>
+                    <Link href="/settings/profile" className="flex items-center gap-2 px-3 py-2 text-sm text-[#f5f5f7] hover:bg-white/6 rounded-xl transition-colors" onClick={() => setShowMenu(false)}>
                         <UserIcon size={14} /> 用户中心
                     </Link>
-                    <Link href="/ops" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg transition-colors" onClick={() => setShowMenu(false)}>
+                    <Link href="/ops" className="flex items-center gap-2 px-3 py-2 text-sm text-[#f5f5f7] hover:bg-white/6 rounded-xl transition-colors" onClick={() => setShowMenu(false)}>
                         <Settings size={14} /> 系统设置
                     </Link>
-                    <div className="h-px bg-white/5 my-1"></div>
+                    <div className="h-px bg-white/8 my-1"></div>
                     <button 
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-white/5 rounded-lg transition-colors text-left"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#ff453a] hover:bg-white/6 rounded-xl transition-colors text-left"
                     >
                         <LogOut size={14} /> 退出登录
                     </button>

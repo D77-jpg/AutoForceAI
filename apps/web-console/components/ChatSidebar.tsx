@@ -131,11 +131,11 @@ export default function ChatSidebar({ bot, onClose }: ChatSidebarProps) {
     };
 
     return (
-        <div className="fixed inset-y-0 right-0 w-[400px] bg-[#1C1F26] border-l border-white/10 shadow-2xl z-50 flex flex-col transform transition-transform duration-300 ease-in-out">
+        <div className="fixed inset-y-0 right-0 w-[400px] bg-[#1c1c1e]/95 backdrop-blur-2xl border-l border-white/8 shadow-apple-lg z-50 flex flex-col transform transition-transform duration-300 ease-in-out">
             {/* Header */}
-            <div className="p-4 border-b border-white/10 flex items-center justify-between bg-[#1C1F26]/95 backdrop-blur">
+            <div className="p-4 border-b border-white/8 flex items-center justify-between bg-transparent">
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+                    <div className="w-8 h-8 rounded-full bg-[#0a84ff]/15 flex items-center justify-center text-[#0a84ff]">
                         <Bot size={18} />
                     </div>
                     <div>
@@ -145,7 +145,7 @@ export default function ChatSidebar({ bot, onClose }: ChatSidebarProps) {
                 </div>
                 <button 
                     onClick={onClose}
-                    className="p-1.5 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-colors"
+                    className="p-1.5 hover:bg-white/8 rounded-full text-[#86868b] hover:text-white transition-colors"
                 >
                     <X size={18} />
                 </button>
@@ -155,10 +155,10 @@ export default function ChatSidebar({ bot, onClose }: ChatSidebarProps) {
             <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar" ref={scrollRef}>
                 {messages.map((msg) => (
                     <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[85%] rounded-lg p-3 text-sm leading-relaxed ${
+                        <div className={`max-w-[85%] rounded-[18px] p-3 text-sm leading-relaxed ${
                             msg.role === 'user' 
-                                ? 'bg-indigo-600 text-white shadow-lg' 
-                                : 'bg-slate-800/80 text-slate-200 border border-white/5 shadow-sm'
+                                ? 'bg-[#0071e3] text-white' 
+                                : 'bg-[#2c2c2e] text-[#f5f5f7]'
                         }`}>
                            {msg.role === 'assistant' ? (
                                 <div className="prose prose-invert prose-sm max-w-none">
@@ -174,27 +174,27 @@ export default function ChatSidebar({ bot, onClose }: ChatSidebarProps) {
                 ))}
                 {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
                     <div className="flex justify-start">
-                        <div className="bg-slate-800/80 rounded-lg p-3 border border-white/5">
-                            <Loader2 className="animate-spin h-4 w-4 text-indigo-400" />
+                        <div className="bg-[#2c2c2e] rounded-[18px] p-3">
+                            <Loader2 className="animate-spin h-4 w-4 text-[#0a84ff]" />
                         </div>
                     </div>
                 )}
             </div>
 
             {/* Input Area */}
-            <div className="p-4 border-t border-white/10 bg-[#1C1F26]">
+            <div className="p-4 border-t border-white/8 bg-transparent">
                 <div className="relative">
                     <textarea
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="Type a message..."
-                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-3 pl-4 pr-12 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 resize-none h-[50px] custom-scrollbar"
+                        className="w-full bg-[#2c2c2e] border border-white/8 rounded-[18px] py-3 pl-4 pr-12 text-sm text-white placeholder-[#6e6e73] focus:outline-none focus:border-[#0a84ff]/40 focus:ring-1 focus:ring-[#0a84ff]/30 resize-none h-[50px]"
                     />
                     <button
                         onClick={handleSend}
                         disabled={!input.trim() || isLoading}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-[#0071e3] hover:bg-[#0077ed] text-white rounded-full disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                     >
                         <Send size={14} />
                     </button>

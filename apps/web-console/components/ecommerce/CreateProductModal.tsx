@@ -187,12 +187,12 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-            <div className={`bg-[#0f172a] border border-white/10 w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col transition-all duration-500 ${step === 'review' ? 'max-w-4xl h-[80vh]' : 'max-w-xl'}`}>
+            <div className={`bg-[#1c1c1e] border border-white/10 w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col transition-all duration-500 ${step === 'review' ? 'max-w-4xl h-[80vh]' : 'max-w-xl'}`}>
                 
                 {/* Header */}
                 <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/5">
                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                        <Wand2 className="text-indigo-400" size={20} />
+                        <Wand2 className="text-[#0a84ff]" size={20} />
                         {initialData ? "编辑商品 (Edit Product)" : "AI 新品构建 (Product Creator)"}
                     </h3>
                     <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
@@ -210,14 +210,14 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
                             <div className="flex border-b border-white/5">
                                 <button 
                                     onClick={() => setActiveTab('generate')}
-                                    className={`flex-1 py-4 text-sm font-medium transition-colors ${activeTab === 'generate' ? 'text-indigo-400 border-b-2 border-indigo-500 bg-white/5' : 'text-slate-400 hover:text-white'}`}
+                                    className={`flex-1 py-4 text-sm font-medium transition-colors ${activeTab === 'generate' ? 'text-[#0a84ff] border-b-2 border-[#0a84ff] bg-white/5' : 'text-slate-400 hover:text-white'}`}
                                 >
                                     <Sparkles size={14} className="inline mr-2" />
                                     AI 生成 (Text-to-Product)
                                 </button>
                                 <button 
                                     onClick={() => setActiveTab('upload')}
-                                    className={`flex-1 py-4 text-sm font-medium transition-colors ${activeTab === 'upload' ? 'text-indigo-400 border-b-2 border-indigo-500 bg-white/5' : 'text-slate-400 hover:text-white'}`}
+                                    className={`flex-1 py-4 text-sm font-medium transition-colors ${activeTab === 'upload' ? 'text-[#0a84ff] border-b-2 border-[#0a84ff] bg-white/5' : 'text-slate-400 hover:text-white'}`}
                                 >
                                     <Upload size={14} className="inline mr-2" />
                                     本地上传 (Upload Image)
@@ -240,8 +240,8 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
                                                  </div>
                                             ) : isImageGenerating ? (
                                                 <div className="text-center space-y-4">
-                                                    <div className="w-16 h-16 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto animate-pulse">
-                                                        <Loader2 className="animate-spin text-indigo-400" size={32} />
+                                                    <div className="w-16 h-16 bg-[#0a84ff]/10 rounded-full flex items-center justify-center mx-auto animate-pulse">
+                                                        <Loader2 className="animate-spin text-[#0a84ff]" size={32} />
                                                     </div>
                                                     <p className="text-slate-400 text-sm">正在调用云端模型生成设计图...</p>
                                                 </div>
@@ -256,14 +256,14 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
                                             <textarea 
                                                 value={genPrompt}
                                                 onChange={(e) => setGenPrompt(e.target.value)}
-                                                className="w-full h-24 bg-black/20 border border-white/10 rounded-xl p-3 text-sm text-slate-300 focus:border-indigo-500 outline-none resize-none"
+                                                className="w-full h-24 bg-black/20 border border-white/10 rounded-xl p-3 text-sm text-slate-300 focus:border-[#0a84ff] outline-none resize-none"
                                                 placeholder="Describe the product (e.g. Red silk evening gown...)"
                                             />
                                             <div className="flex justify-end gap-2">
                                                  {previewImage ? (
                                                      <button 
                                                         onClick={() => startAnalysis(previewImage)}
-                                                        className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold shadow-lg transition-all flex items-center gap-2"
+                                                        className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-sm font-medium shadow-lg transition-all flex items-center gap-2"
                                                      >
                                                          使用此图并分析 <ArrowRight size={16} />
                                                      </button>
@@ -271,7 +271,7 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
                                                      <button 
                                                         onClick={handleAiGenerate}
                                                         disabled={isImageGenerating || !genPrompt}
-                                                        className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-sm font-bold shadow-lg transition-all flex items-center gap-2"
+                                                        className="px-6 py-2.5 bg-[#0071e3] hover:bg-[#0077ed] disabled:opacity-50 text-white rounded-full text-sm font-medium shadow-lg transition-all flex items-center gap-2"
                                                      >
                                                          {isImageGenerating ? '生成中...' : '开始生成 (Generate)'}
                                                      </button>
@@ -303,18 +303,18 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
                         <div className="p-10 flex flex-col items-center justify-center h-full space-y-8">
                              <div className="relative">
                                 {/* Scanning Effect Overlay on Image */}
-                                <div className="w-48 h-48 rounded-lg overflow-hidden relative border-2 border-indigo-500/50 shadow-2xl">
+                                <div className="w-48 h-48 rounded-lg overflow-hidden relative border-2 border-[#0a84ff]/40 shadow-2xl">
                                     {previewImage && <img src={previewImage} className="w-full h-full object-cover opacity-50" />}
-                                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-indigo-500/20 to-transparent w-full h-full animate-scan"></div>
+                                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0a84ff]/20 to-transparent w-full h-full animate-scan"></div>
                                 </div>
-                                <div className="absolute -bottom-3 -right-3 bg-indigo-600 text-white text-[10px] px-2 py-1 rounded-full font-mono flex items-center gap-1">
+                                <div className="absolute -bottom-3 -right-3 bg-[#0071e3] text-white text-[10px] px-2 py-1 rounded-full font-mono flex items-center gap-1">
                                     <Loader2 size={10} className="animate-spin" /> PROCESSING
                                 </div>
                              </div>
 
                              <div className="text-center space-y-2">
                                  <h4 className="text-lg font-bold text-white">AI 数字导购正在分析...</h4>
-                                 <p className="text-indigo-300 font-mono text-sm h-6 transition-all">{analyzingStep}</p>
+                                 <p className="text-[#64d2ff] font-mono text-sm h-6 transition-all">{analyzingStep}</p>
                              </div>
                         </div>
                     )}
@@ -335,7 +335,7 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
                                     <h5 className="text-xs font-bold text-slate-500 uppercase">Detect Traits</h5>
                                     <div className="flex flex-wrap gap-2">
                                         {Object.entries(formData.attributes).map(([k,v]: any) => (
-                                            <span key={k} className="px-2 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded text-xs">
+                                            <span key={k} className="px-2 py-1 bg-[#0a84ff]/10 text-[#64d2ff] border border-[#0a84ff]/20 rounded text-xs">
                                                 {v}
                                             </span>
                                         ))}
@@ -360,7 +360,7 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
                                             type="text" 
                                             value={formData.name}
                                             onChange={(e) => setFormData({...formData, name: e.target.value})}
-                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-indigo-500 focus:bg-white/10 transition-all outline-none font-medium"
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-[#0a84ff] focus:bg-white/10 transition-all outline-none font-medium"
                                         />
                                     </div>
 
@@ -374,7 +374,7 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
                                                 type="text" 
                                                 value={formData.category} 
                                                 onChange={(e) => setFormData({...formData, category: e.target.value})}
-                                                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-slate-300 outline-none focus:border-indigo-500"
+                                                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-slate-300 outline-none focus:border-[#0a84ff]"
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -387,7 +387,7 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
                                                     type="text" 
                                                     value={formData.price} 
                                                     onChange={(e) => setFormData({...formData, price: e.target.value})}
-                                                    className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-4 py-3 text-emerald-400 font-mono font-bold outline-none focus:border-indigo-500"
+                                                    className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-4 py-3 text-emerald-400 font-mono font-bold outline-none focus:border-[#0a84ff]"
                                                 />
                                             </div>
                                         </div>
@@ -397,14 +397,14 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
                                     <div className="space-y-2">
                                         <label className="text-xs text-slate-400 uppercase font-bold flex items-center justify-between">
                                             <span className="flex items-center gap-1"><Box size={14} /> AI 营销文案 (Description)</span>
-                                            <button className="text-[10px] text-indigo-400 hover:text-white flex items-center gap-1">
+                                            <button className="text-[10px] text-[#0a84ff] hover:text-white flex items-center gap-1">
                                                 <Sparkles size={10} /> 重新生成
                                             </button>
                                         </label>
                                         <textarea 
                                             value={formData.description}
                                             onChange={(e) => setFormData({...formData, description: e.target.value})}
-                                            className="w-full h-32 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-slate-300 leading-relaxed outline-none focus:border-indigo-500 resize-none"
+                                            className="w-full h-32 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-slate-300 leading-relaxed outline-none focus:border-[#0a84ff] resize-none"
                                         />
                                     </div>
 
@@ -446,7 +446,7 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
                         </button>
                         <button 
                             onClick={handleCreate}
-                            className="px-8 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all flex items-center gap-2"
+                            className="px-8 py-2 bg-[#0071e3] hover:bg-[#0077ed] text-white rounded-full text-sm font-medium shadow-apple transition-all flex items-center gap-2"
                         >
                             {initialData ? '保存修改 (Update)' : '确认创建商品 (Create)'} <ArrowRight size={16} />
                         </button>

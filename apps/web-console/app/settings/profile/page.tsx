@@ -40,7 +40,7 @@ export default function UserProfilePage() {
                 return;
             }
 
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/me`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8010'}/auth/me`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -82,7 +82,7 @@ export default function UserProfilePage() {
         setSaving(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/profile`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8010'}/auth/profile`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -130,7 +130,7 @@ export default function UserProfilePage() {
         
         try {
              const token = localStorage.getItem('token');
-             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/storage/upload/avatar`, {
+             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8010'}/api/v1/storage/upload/avatar`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -140,7 +140,7 @@ export default function UserProfilePage() {
             
             if (res.ok) {
                 const data = await res.json();
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8010';
                 
                 const fullUrl = data.url.startsWith('http') ? data.url : `${apiUrl}${data.url}`;
                 
@@ -164,7 +164,7 @@ export default function UserProfilePage() {
     
     const updateProfileAvatar = async (avatarUrl: string) => {
         const token = localStorage.getItem('token');
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/profile`, {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8010'}/auth/profile`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -189,7 +189,7 @@ export default function UserProfilePage() {
         
         try {
              const token = localStorage.getItem('token');
-             await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/profile`, {
+             await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8010'}/auth/profile`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -206,7 +206,7 @@ export default function UserProfilePage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center p-12">
-                <Loader2 className="animate-spin text-indigo-400" size={32} />
+                <Loader2 className="animate-spin text-[#0a84ff]" size={32} />
             </div>
         );
     }
@@ -214,7 +214,7 @@ export default function UserProfilePage() {
     return (
         <div className="p-8 max-w-4xl mx-auto animate-fade-in">
             <h1 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                <User className="text-indigo-400" /> 用户中心
+                <User className="text-[#0a84ff]" /> 用户中心
             </h1>
 
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
@@ -222,7 +222,7 @@ export default function UserProfilePage() {
                 <div className="md:col-span-4">
                     <div className="glass-card p-6 rounded-xl flex flex-col items-center text-center relative group">
                         <div 
-                            className="w-32 h-32 rounded-full bg-slate-800 flex items-center justify-center border-4 border-slate-700 shadow-xl mb-4 overflow-hidden relative cursor-pointer group-hover:border-indigo-500/50 transition-all duration-300"
+                            className="w-32 h-32 rounded-full bg-[#2c2c2e] flex items-center justify-center border-4 border-white/10 shadow-xl mb-4 overflow-hidden relative cursor-pointer group-hover:border-[#0a84ff]/40 transition-all duration-300"
                             onClick={!uploadingAvatar ? handleAvatarClick : undefined}
                         >
                              {profile.avatar ? (
@@ -269,7 +269,7 @@ export default function UserProfilePage() {
                                      {profile.bio || "点击此处添加个性签名..."}
                                  </p>
                                 <div className="absolute top-2 right-2 opacity-0 group-hover/sig:opacity-100 transition-opacity">
-                                     <PenLine size={12} className="text-indigo-400" />
+                                     <PenLine size={12} className="text-[#0a84ff]" />
                                 </div>
                              </div>
                         ) : (
@@ -277,7 +277,7 @@ export default function UserProfilePage() {
                                 <textarea
                                     value={tempSignature}
                                     onChange={(e) => setTempSignature(e.target.value)}
-                                    className="w-full bg-slate-950 border border-indigo-500/50 rounded-lg p-3 text-sm text-white focus:outline-none resize-none placeholder:text-slate-600"
+                                    className="w-full bg-black border border-[#0a84ff]/40 rounded-lg p-3 text-sm text-white focus:outline-none resize-none placeholder:text-slate-600"
                                     rows={3}
                                     placeholder="输入个性签名..."
                                     autoFocus
@@ -292,7 +292,7 @@ export default function UserProfilePage() {
                                     >取消</button>
                                     <button 
                                         onClick={saveSignature}
-                                        className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1 rounded transition-colors"
+                                        className="text-xs bg-[#0071e3] hover:bg-[#0077ed] text-white px-3 py-1 rounded transition-colors"
                                     >保存</button>
                                 </div>
                             </div>
@@ -314,7 +314,7 @@ export default function UserProfilePage() {
                             </div>
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-slate-500">组织 ID</span>
-                                <span className="text-slate-300 font-mono text-xs bg-slate-800 px-1.5 py-0.5 rounded">
+                                <span className="text-slate-300 font-mono text-xs bg-[#2c2c2e] px-1.5 py-0.5 rounded">
                                     {profile.organization_id || 'N/A'}
                                 </span>
                             </div>
@@ -334,12 +334,12 @@ export default function UserProfilePage() {
                             <div className="md:col-span-2">
                                 <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">显示昵称</label>
                                 <div className="relative group">
-                                    <User className="absolute left-3 top-3 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                                    <User className="absolute left-3 top-3 text-slate-500 group-focus-within:text-[#0a84ff] transition-colors" size={18} />
                                     <input 
                                         type="text" 
                                         value={profile.nickname || ''} 
                                         onChange={(e) => setProfile({...profile, nickname: e.target.value})}
-                                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-2.5 pl-10 pr-3 text-white text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-600"
+                                        className="w-full bg-[#1c1c1e]/70 border border-white/10 rounded-xl py-2.5 pl-10 pr-3 text-white text-sm focus:border-[#0a84ff] focus:ring-1 focus:ring-[#0a84ff] outline-none transition-all placeholder:text-slate-600"
                                         placeholder="设置您的显示名称"
                                     />
                                 </div>
@@ -353,7 +353,7 @@ export default function UserProfilePage() {
                                         type="text" 
                                         value={profile.username || ''} 
                                         disabled
-                                        className="w-full bg-slate-900/30 border border-white/5 rounded-xl py-2.5 pl-8 pr-3 text-slate-500 text-sm cursor-not-allowed font-mono"
+                                        className="w-full bg-[#1c1c1e]/50 border border-white/5 rounded-xl py-2.5 pl-8 pr-3 text-slate-500 text-sm cursor-not-allowed font-mono"
                                     />
                                 </div>
                             </div>
@@ -361,13 +361,13 @@ export default function UserProfilePage() {
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">手机号码</label>
                                 <div className="relative group">
-                                    <Phone className="absolute left-3 top-3 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                                    <Phone className="absolute left-3 top-3 text-slate-500 group-focus-within:text-[#0a84ff] transition-colors" size={18} />
                                     <input 
                                         type="text" 
                                         value={profile.phone || ''}
                                         onChange={(e) => setProfile({...profile, phone: e.target.value})}
                                         placeholder="输入手机号码"
-                                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-2.5 pl-10 pr-3 text-white text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-600"
+                                        className="w-full bg-[#1c1c1e]/70 border border-white/10 rounded-xl py-2.5 pl-10 pr-3 text-white text-sm focus:border-[#0a84ff] focus:ring-1 focus:ring-[#0a84ff] outline-none transition-all placeholder:text-slate-600"
                                     />
                                 </div>
                             </div>
@@ -375,13 +375,13 @@ export default function UserProfilePage() {
                             <div className="md:col-span-2">
                                 <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">联系邮箱</label>
                                 <div className="relative group">
-                                    <Mail className="absolute left-3 top-3 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                                    <Mail className="absolute left-3 top-3 text-slate-500 group-focus-within:text-[#0a84ff] transition-colors" size={18} />
                                     <input 
                                         type="email" 
                                         value={profile.email || ''} 
                                         onChange={(e) => setProfile({...profile, email: e.target.value})}
                                         placeholder="name@company.com"
-                                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-2.5 pl-10 pr-3 text-white text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-600"
+                                        className="w-full bg-[#1c1c1e]/70 border border-white/10 rounded-xl py-2.5 pl-10 pr-3 text-white text-sm focus:border-[#0a84ff] focus:ring-1 focus:ring-[#0a84ff] outline-none transition-all placeholder:text-slate-600"
                                     />
                                 </div>
                             </div>
@@ -391,7 +391,7 @@ export default function UserProfilePage() {
                             <button 
                                 onClick={handleSave}
                                 disabled={saving}
-                                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-all shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                                className="flex items-center gap-2 bg-[#0071e3] hover:bg-[#0077ed] text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-all shadow-apple hover:shadow-apple disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                             >
                                 {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
                                 保存修改

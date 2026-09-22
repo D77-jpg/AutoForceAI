@@ -25,12 +25,12 @@ interface Model {
 }
 
 const defaultRadarData = [
-  { subject: '品牌可见性', A: 100, B: 80, fullMark: 150 }, // Mock gray shape
-  { subject: '情感倾向', A: 100, B: 80, fullMark: 150 },
-  { subject: '引用质量', A: 100, B: 80, fullMark: 150 },
-  { subject: '功能推荐', A: 100, B: 80, fullMark: 150 },
-  { subject: '成本感知', A: 100, B: 80, fullMark: 150 },
-  { subject: '创新程度', A: 100, B: 80, fullMark: 150 },
+  { subject: '品牌可见性', A: 0, B: 0, fullMark: 150 },
+  { subject: '情感倾向', A: 0, B: 0, fullMark: 150 },
+  { subject: '引用质量', A: 0, B: 0, fullMark: 150 },
+  { subject: '功能推荐', A: 0, B: 0, fullMark: 150 },
+  { subject: '成本感知', A: 0, B: 0, fullMark: 150 },
+  { subject: '创新程度', A: 0, B: 0, fullMark: 150 },
 ];
 
 // Simple Typewriter Component
@@ -56,7 +56,7 @@ const TypewriterEffect = ({ text }: { text: string }) => {
 
     return (
         <p dangerouslySetInnerHTML={{ 
-            __html: displayedText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white bg-indigo-500/20 px-1 rounded">$1</strong>').replace(/\n/g, '<br/>') 
+            __html: displayedText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white bg-[#0a84ff]/16 px-1 rounded">$1</strong>').replace(/\n/g, '<br/>') 
         }} />
     );
 };
@@ -95,6 +95,37 @@ export default function Diagnosis() {
         }
     };
     fetchGeoModels();
+    const hydrateRadar = async () => {
+        if (result) return;
+        try {
+            const res = await api.get(`/api/v1/branding/diagnosis-summary${brand ? `?brand=${encodeURIComponent(brand)}` : ''}`);
+            const s = res.data;
+            if (!s || !s.sample_size) return;
+            setResult({
+                bestRank: s.best_rank,
+                sov: (s.radar || []).map((row: any) => ({ ...row, B: 0 })),
+                pieData: s.pie,
+                insights: [
+                    s.mentioned
+                        ? `✅ 基于 ${s.sample_size} 条真实监测：品牌被提及 ${s.mentioned} 次（${s.mention_rate}%）。`
+                        : `⚠️ 近 ${s.sample_size} 条监测尚未提及该品牌。`,
+                    `情感均分 ${s.avg_sentiment}；最佳排名 ${s.best_rank > 0 ? s.best_rank : '未上榜'}。`,
+                    s.engine_configured?.perplexity ? 'Perplexity Key 已配置。' : 'Perplexity 走 mock（配置 PERPLEXITY_API_KEY 后为真实英文检索）。',
+                ],
+                queryAnalysis: (s.recent || []).map((t: any) => ({
+                    question: t.query,
+                    mentioned: t.is_mentioned,
+                    sentiment: (t.sentiment_score || 0) > 5 ? '正面 (Positive)' : '中性 (Neutral)',
+                    snippet: '',
+                    snippet_raw: '',
+                    rank: t.rank_position || -1,
+                })),
+            });
+        } catch (e) {
+            console.error('diagnosis-summary', e);
+        }
+    };
+    hydrateRadar();
   }, [])
 
   const handleAnalyze = async () => {
@@ -123,7 +154,7 @@ export default function Diagnosis() {
                 const res = await api.post('/api/v1/branding/analyze', {
                     target_brand: brand,
                     query: q,
-                    engine_name: selectedModel === 'auto' ? 'qwen' : selectedModel
+                    engine_name: selectedModel === 'auto' ? 'perplexity' : selectedModel
                 });
                 if (res.data && res.data.id) {
                     taskIds.push(res.data.id);
@@ -257,16 +288,18 @@ export default function Diagnosis() {
 
       // Calculate Stats
       const sovScore = queriesCount > 0 ? (mentionCount / queriesCount) * 100 : 0;
-      
+      const avgSent = tasks.reduce((a, t) => a + (Number(t.sentiment_score) || 0), 0) / Math.max(queriesCount, 1);
+      const citationN = tasks.reduce((a, t) => a + (Array.isArray(t.citations) ? t.citations.length : 0), 0);
+
       setResult({
           bestRank: bestRank,
           sov: [
-              { subject: '品牌可见性', A: sovScore * 1.5, B: competitor ? 110 : 0, fullMark: 150 },
-              { subject: '情感倾向', A: mentionCount > 0 ? 98 : 0, B: competitor ? 130 : 0, fullMark: 150 },
-              { subject: '引用质量', A: mentionCount > 0 ? 86 : 0, B: competitor ? 86 : 0, fullMark: 150 },
-              { subject: '功能推荐', A: mentionCount > 0 ? 99 : 0, B: competitor ? 100 : 0, fullMark: 150 },
-              { subject: '成本感知', A: mentionCount > 0 ? 85 : 0, B: competitor ? 90 : 0, fullMark: 150 },
-              { subject: '创新程度', A: mentionCount > 0 ? 65 : 0, B: competitor ? 85 : 0, fullMark: 150 },
+              { subject: '品牌可见性', A: Math.min(150, sovScore * 1.5), B: competitor ? 110 : 0, fullMark: 150 },
+              { subject: '情感倾向', A: Math.min(150, (avgSent / 10) * 150), B: competitor ? 90 : 0, fullMark: 150 },
+              { subject: '引用质量', A: mentionCount > 0 ? Math.min(150, 40 + citationN * 8) : 0, B: competitor ? 60 : 0, fullMark: 150 },
+              { subject: '功能推荐', A: mentionCount > 0 ? Math.min(150, 50 + mentionCount * 12) : 0, B: competitor ? 70 : 0, fullMark: 150 },
+              { subject: '成本感知', A: mentionCount > 0 ? Math.min(150, 70 + sovScore * 0.4) : 0, B: competitor ? 80 : 0, fullMark: 150 },
+              { subject: '创新程度', A: mentionCount > 0 ? Math.min(150, 45 + sovScore * 0.6) : 0, B: competitor ? 75 : 0, fullMark: 150 },
           ],
           pieData: [
               { name: '品牌提及 (Mentioned)', value: mentionCount },
@@ -344,11 +377,11 @@ export default function Diagnosis() {
       <div className="grid grid-cols-12 gap-6 h-[calc(100vh-60px)]">
         
         {/* Left: Configuration (3 Cols) */}
-        <div className="col-span-3 bg-slate-900/40 rounded-2xl border border-white/5 flex flex-col h-full overflow-hidden">
+        <div className="col-span-3 bg-[#1c1c1e]/60 rounded-2xl border border-white/5 flex flex-col h-full overflow-hidden">
             {/* Header */}
             <div className="p-5 border-b border-white/5 bg-white/5 shrink-0">
                  <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-                    <Search size={16} className="text-indigo-400" />
+                    <Search size={16} className="text-[#0a84ff]" />
                     诊断目标配置
                 </h3>
             </div>
@@ -356,12 +389,12 @@ export default function Diagnosis() {
             {/* Form Content */}
             <div className="p-5 overflow-y-auto custom-scrollbar flex-1 space-y-4">
                 <div>
-                     <label className="block text-[10px] uppercase tracking-wider text-indigo-300 font-bold mb-1.5">您的品牌 (Your Brand)</label>
+                     <label className="block text-[10px] uppercase tracking-wider text-[#64d2ff] font-bold mb-1.5">您的品牌 (Your Brand)</label>
                      <div className="relative group">
                         <input 
                             value={brand}
                             onChange={e => setBrand(e.target.value)}
-                            className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:border-indigo-500 outline-none transition-all group-hover:border-white/20"
+                            className="w-full bg-black border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:border-[#0a84ff] outline-none transition-all group-hover:border-white/20"
                             placeholder="输入您的品牌名称"
                         />
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600">
@@ -381,19 +414,19 @@ export default function Diagnosis() {
                         placeholder="例如: 特斯拉 (选填)"
                         value={competitor}
                         onChange={e => setCompetitor(e.target.value)}
-                        className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:border-indigo-500 outline-none transition-all placeholder:text-slate-600"
+                        className="w-full bg-black border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:border-[#0a84ff] outline-none transition-all placeholder:text-slate-600"
                     />
                 </div>
 
                 <div>
                     <label className="block text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1.5">
                         用户拟提问 (Test Queries)
-                        <span className="ml-2 text-[9px] text-slate-600 bg-slate-800 px-1 py-0.5 rounded">一行一个</span>
+                        <span className="ml-2 text-[9px] text-slate-600 bg-[#2c2c2e] px-1 py-0.5 rounded">一行一个</span>
                     </label>
                     <textarea
                         value={userQueries}
                         onChange={(e) => setUserQueries(e.target.value)}
-                        className="w-full h-32 bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-300 outline-none resize-none focus:border-indigo-500 custom-scrollbar leading-relaxed"
+                        className="w-full h-32 bg-black border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-300 outline-none resize-none focus:border-[#0a84ff] custom-scrollbar leading-relaxed"
                         placeholder="输入用户可能会问模型的问题..."
                     />
                 </div>
@@ -404,7 +437,7 @@ export default function Diagnosis() {
                         <select 
                             value={selectedModel}
                             onChange={(e) => setSelectedModel(e.target.value)}
-                            className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-slate-300 outline-none appearance-none cursor-pointer hover:border-white/20 transition-all"
+                            className="w-full bg-black border border-white/10 rounded-lg px-3 py-2.5 text-sm text-slate-300 outline-none appearance-none cursor-pointer hover:border-white/20 transition-all"
                         >
                             <option value="auto">⚡ 自动选择 (Auto Mode)</option>
                             <option disabled>──────────</option>
@@ -427,19 +460,19 @@ export default function Diagnosis() {
             </div>
 
             {/* Footer Action */}
-            <div className="p-5 border-t border-white/5 bg-slate-900/50 shrink-0">
+            <div className="p-5 border-t border-white/5 bg-[#1c1c1e]/70 shrink-0">
                 <button 
                     onClick={handleAnalyze}
                     disabled={analyzing}
                     className={`w-full py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
                         analyzing 
-                            ? 'bg-slate-800 text-slate-500 border border-white/5 cursor-not-allowed' 
-                            : 'bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white shadow-lg shadow-indigo-500/20 active:scale-[0.98]'
+                            ? 'bg-[#2c2c2e] text-slate-500 border border-white/5 cursor-not-allowed' 
+                            : 'bg-gradient-to-r from-[#0071e3] to-[#0a84ff] hover:from-[#0a84ff] hover:to-[#64d2ff] text-white shadow-apple active:scale-[0.98]'
                     }`}
                 >
                     {analyzing ? (
                         <>
-                            <div className="w-4 h-4 border-2 border-white/20 border-t-indigo-500 rounded-full animate-spin"></div>
+                            <div className="w-4 h-4 border-2 border-white/20 border-t-[#0a84ff] rounded-full animate-spin"></div>
                             正在分析市场数据...
                         </>
                     ) : (
@@ -458,17 +491,17 @@ export default function Diagnosis() {
             {/* Top Row: Visualizations */}
             <div className="flex gap-6 h-80 shrink-0">
                 {/* Radar Chart (2/3) */}
-                <div className="flex-[2] bg-slate-900/40 rounded-2xl border border-white/5 p-6 relative overflow-hidden flex flex-col">
+                <div className="flex-[2] bg-[#1c1c1e]/60 rounded-2xl border border-white/5 p-6 relative overflow-hidden flex flex-col">
                     <div className="flex justify-between items-start mb-2 z-10 relative">
                         <h3 className="text-sm font-bold text-slate-300">品牌维度分析 (Brand Dimensions)</h3>
                         <div className="flex items-center gap-2 bg-black/40 rounded-full px-1 pl-3 py-1 border border-white/5">
-                            <span className="text-[10px] text-indigo-300 font-mono flex items-center gap-1">
+                            <span className="text-[10px] text-[#64d2ff] font-mono flex items-center gap-1">
                                 <BrainCircuit size={10} />
                                 {getModelDisplayName()}
                             </span>
                             <button 
                                 onClick={handleTestModel}
-                                className="bg-indigo-600 hover:bg-indigo-500 text-white p-1 rounded-full transition-colors"
+                                className="bg-[#0071e3] hover:bg-[#0077ed] text-white p-1 rounded-full transition-colors"
                                 title="测试此模型 (Test Model)"
                             >
                                 <ArrowRightCircle size={12} />
@@ -479,7 +512,7 @@ export default function Diagnosis() {
                         <div className="flex w-full h-full relative">
                             {!result && (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
-                                    <div className="bg-slate-900/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/5"> 
+                                    <div className="bg-[#1c1c1e]/90 backdrop-blur-sm px-4 py-2 rounded-full border border-white/5"> 
                                         <p className="text-slate-400 font-bold text-xs">等待分析数据 (Waiting)</p>
                                     </div>
                                 </div>
@@ -503,7 +536,7 @@ export default function Diagnosis() {
                                         )}
                                         <Legend />
                                         <Tooltip 
-                                            contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155' }}
+                                            contentStyle={{ backgroundColor: '#1c1c1e', borderColor: 'rgba(255,255,255,0.1)' }}
                                             itemStyle={{ color: '#e2e8f0' }}
                                         />
                                     </RadarChart>
@@ -518,7 +551,7 @@ export default function Diagnosis() {
                     </div>
 
                 {/* Pie Chart (1/3) */}
-                <div className="flex-1 bg-slate-900/40 rounded-2xl border border-white/5 p-6 flex flex-col relative overflow-hidden">
+                <div className="flex-1 bg-[#1c1c1e]/60 rounded-2xl border border-white/5 p-6 flex flex-col relative overflow-hidden">
                      <div className="flex justify-between items-center mb-2 z-10 relative">
                         <h3 className="text-sm font-bold text-slate-300">
                             {result ? '品牌提及率' : '声量份额'}
@@ -529,9 +562,9 @@ export default function Diagnosis() {
                      </div>
                      
                      {analyzing ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/60 backdrop-blur-sm z-20 space-y-4">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1c1c1e]/80 backdrop-blur-sm z-20 space-y-4">
                             <div className="relative w-20 h-20">
-                               <div className="absolute inset-0 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin"></div>
+                               <div className="absolute inset-0 rounded-full border-4 border-[#0a84ff]/20 border-t-[#0a84ff] animate-spin"></div>
                                <div className="absolute inset-4 rounded-full border-4 border-white/10 border-b-white/50 animate-spin-reverse"></div>
                             </div>
                             <div className="text-center space-y-1">
@@ -541,7 +574,7 @@ export default function Diagnosis() {
                         </div>
                      ) : !result ? (
                          <div className="flex-1 flex items-center justify-center">
-                             <div className="w-32 h-32 rounded-full border-4 border-slate-800 border-t-slate-700 animate-spin opacity-50"></div>
+                             <div className="w-32 h-32 rounded-full border-4 border-white/8 border-t-slate-700 animate-spin opacity-50"></div>
                          </div>
                      ) : (
                         <div className="flex-1 min-h-0">
@@ -562,7 +595,7 @@ export default function Diagnosis() {
                                             ))}
                                         </Pie>
                                         <Tooltip 
-                                            contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155' }} 
+                                            contentStyle={{ backgroundColor: '#1c1c1e', borderColor: 'rgba(255,255,255,0.1)' }} 
                                             itemStyle={{ color: '#fff' }}
                                         />
                                         <Legend verticalAlign="bottom" height={36} iconSize={8} wrapperStyle={{ fontSize: '10px' }}/>
@@ -582,11 +615,11 @@ export default function Diagnosis() {
             {/* Middle Row: Simulation-Status & Interactive Process [Integrated] */}
             <div className="flex flex-col gap-4">
                  {/* 1. Status Display Panel */}
-                 <div className="bg-slate-900/40 rounded-2xl border border-white/5 p-6 relative overflow-hidden h-32 shrink-0 flex items-center justify-between">
+                 <div className="bg-[#1c1c1e]/60 rounded-2xl border border-white/5 p-6 relative overflow-hidden h-32 shrink-0 flex items-center justify-between">
                      <div>
                          <h3 className="text-lg font-bold text-white mb-1">分析状态</h3>
                          {analyzing ? (
-                             <div className="text-indigo-400 font-mono text-sm flex items-center gap-2">
+                             <div className="text-[#0a84ff] font-mono text-sm flex items-center gap-2">
                                  <Cpu size={14} className="animate-pulse"/> 
                                  {progressText} {progress}%
                              </div>
@@ -605,7 +638,7 @@ export default function Diagnosis() {
 
                      {/* Progress Bar Background */}
                      {analyzing && (
-                         <div className="absolute bottom-0 left-0 h-1 bg-indigo-500 transition-all duration-100 ease-linear" style={{ width: `${progress}%` }}></div>
+                         <div className="absolute bottom-0 left-0 h-1 bg-[#0a84ff] transition-all duration-100 ease-linear" style={{ width: `${progress}%` }}></div>
                      )}
                      
                      {/* Quick Metrics */}
@@ -622,7 +655,7 @@ export default function Diagnosis() {
                              </div>
                              <div className="text-center">
                                  <div className="text-[10px] text-slate-500 uppercase tracking-widest">品牌可见性</div>
-                                 <div className="text-2xl font-bold text-indigo-400">
+                                 <div className="text-2xl font-bold text-[#0a84ff]">
                                      {result.pieData[0].value > 0
                                         ? ((result.pieData[0].value / (result.pieData[0].value + result.pieData[1].value)) * 100).toFixed(0) + "%"
                                         : '-'
@@ -644,11 +677,11 @@ export default function Diagnosis() {
 
                  {/* 2. Simulation Results Body / Process View */}
                  {(result || analyzing) && (
-                     <div className="bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden flex flex-col relative min-h-[300px]">
+                     <div className="bg-[#1c1c1e]/60 rounded-2xl border border-white/5 overflow-hidden flex flex-col relative min-h-[300px]">
                         
                             <div className="flex-1 flex flex-col animate-fade-in">
                                 <div className="p-8 flex items-start gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/30 shrink-0">
+                                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#0a84ff] to-[#bf5af2] flex items-center justify-center shadow-apple shrink-0">
                                         <Cpu size={20} className="text-white"/>
                                     </div>
                                     <div className="flex-1 space-y-2">
@@ -661,7 +694,7 @@ export default function Diagnosis() {
                                             {result && result.queryAnalysis && result.queryAnalysis[0] && !result.queryAnalysis[0].mentioned && (
                                                 <button 
                                                     onClick={() => router.push(`/optimize?q=${encodeURIComponent(result.queryAnalysis[0].question)}&brand=${encodeURIComponent(brand)}`)}
-                                                    className="flex items-center gap-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 hover:scale-105 active:scale-95 transition-all px-4 py-2 rounded-lg shadow-lg shadow-indigo-500/30 animate-pulse border border-indigo-400"
+                                                    className="flex items-center gap-2 text-xs font-bold text-white bg-[#0071e3] hover:bg-[#0077ed] hover:scale-105 active:scale-95 transition-all px-4 py-2 rounded-lg shadow-apple animate-pulse border border-[#0a84ff]"
                                                 >
                                                     <TrendingUp size={14} className="fill-current" /> 
                                                     立即优化 (Optimize Now)
@@ -670,9 +703,9 @@ export default function Diagnosis() {
                                         </div>
                                         <div className="text-base text-slate-200 leading-relaxed p-4 bg-white/[0.03] rounded-xl border border-white/5 min-h-[100px]">
                                             {analyzing ? (
-                                                <div className="whitespace-pre-wrap font-mono text-sm text-indigo-200/80">
+                                                <div className="whitespace-pre-wrap font-mono text-sm text-[#7dc1ff]/80">
                                                     {streamingSnippet || "Initializing connection to neural network..."}
-                                                    <span className="inline-block w-2 h-4 ml-1 align-middle bg-indigo-500/50 animate-pulse"/>
+                                                    <span className="inline-block w-2 h-4 ml-1 align-middle bg-[#0a84ff]/50 animate-pulse"/>
                                                 </div>
                                             ) : result && result.queryAnalysis[0] ? (
                                                 <TypewriterEffect text={result.queryAnalysis[0].snippet_raw || result.queryAnalysis[0].snippet} />
@@ -752,7 +785,7 @@ export default function Diagnosis() {
             </div>
 
             {/* Bottom Row: Insights */}
-            <div className="bg-slate-900/40 rounded-2xl border border-white/5 p-6 shrink-0 mb-6 mt-4">
+            <div className="bg-[#1c1c1e]/60 rounded-2xl border border-white/5 p-6 shrink-0 mb-6 mt-4">
                 <h3 className="text-sm font-bold text-slate-300 mb-4 flex items-center gap-2">
                     <ShieldCheck size={16} className="text-emerald-500" />
                     Arthur 战略备忘录 (Strategic Insights)
@@ -762,7 +795,7 @@ export default function Diagnosis() {
                  ) : (
                     <ul className="space-y-3">
                         {result.insights.map((insight: string, i: number) => (
-                             <li key={i} className="text-sm text-slate-300 leading-relaxed bg-black/20 p-3 rounded border-l-2 border-indigo-500">
+                             <li key={i} className="text-sm text-slate-300 leading-relaxed bg-black/20 p-3 rounded border-l-2 border-[#0a84ff]">
                                  {insight}
                              </li>
                         ))}

@@ -27,7 +27,7 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
     const [joinCode, setJoinCode] = useState('');
     
     // Check if API_URL is defined, otherwise fallback
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8002';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8010';
     const API_BASE = `${API_URL}/auth/organization`; // Use config if available
 
     const refreshUser = async () => {
@@ -225,20 +225,20 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
             </div>
 
             {/* Blocking Overlay */}
-            <div className="fixed inset-0 z-[100] bg-[#0B0D14]/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in duration-300">
+            <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in duration-300">
                 
                 {/* Header for User Profile */}
                 <div className="absolute top-4 right-4 sm:top-8 sm:right-8 z-50">
                     <div className="relative">
                         <button 
                             onClick={() => setShowUserMenu(!showUserMenu)}
-                            className="flex items-center gap-3 bg-[#1e2230] hover:bg-[#252a3b] border border-white/5 rounded-full pl-2 pr-4 py-1.5 transition-colors focus:outline-none"
+                            className="flex items-center gap-3 bg-[#1c1c1e] hover:bg-[#2c2c2e] border border-white/5 rounded-full pl-2 pr-4 py-1.5 transition-colors focus:outline-none"
                         >
                             <div className="relative w-8 h-8 rounded-full overflow-hidden border border-white/10 bg-slate-700">
                                 {user?.avatar ? (
                                     <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-indigo-600 text-white font-bold text-xs">
+                                    <div className="w-full h-full flex items-center justify-center bg-[#0071e3] text-white font-bold text-xs">
                                         {(user?.nickname || user?.username || 'U')[0].toUpperCase()}
                                     </div>
                                 )}
@@ -249,7 +249,7 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
 
                         {/* Dropdown Menu */}
                         {showUserMenu && user && (
-                            <div className="absolute top-full right-0 mt-2 w-64 bg-[#1e2230] border border-white/10 rounded-xl shadow-2xl py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-[60]">
+                            <div className="absolute top-full right-0 mt-2 w-64 bg-[#1c1c1e] border border-white/10 rounded-xl shadow-2xl py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-[60]">
                                 <div className="px-4 py-3 border-b border-white/5 bg-white/5">
                                     <div className="text-sm font-medium text-white truncate">
                                         <span className="font-semibold text-slate-200">{user.nickname || user.username}</span>
@@ -287,8 +287,8 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
                     {/* Centered: Creation/Join Form */}
                     <div className="w-full max-w-md shrink-0 z-10 transition-all duration-500">
                         <div className="text-center mb-10">
-                            <div className="mx-auto w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mb-4 border border-indigo-500/20">
-                                <Building2 size={32} className="text-indigo-400" />
+                            <div className="mx-auto w-16 h-16 bg-[#0a84ff]/10 rounded-2xl flex items-center justify-center mb-4 border border-[#0a84ff]/20">
+                                <Building2 size={32} className="text-[#0a84ff]" />
                             </div>
                             <h1 className="text-2xl font-bold text-white mb-2">欢迎加入数字员工平台</h1>
                             <p className="text-slate-400">为了更好地协作，您需要加入一个企业组织</p>
@@ -298,33 +298,33 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
                             <div className="grid gap-4">
                                 <button 
                                     onClick={() => setMode('create')}
-                                    className="group p-6 bg-[#1e2230] hover:bg-[#252a3b] border border-white/5 hover:border-indigo-500/30 rounded-xl transition-all flex items-center justify-between text-left"
+                                    className="group p-6 bg-[#1c1c1e] hover:bg-[#2c2c2e] border border-white/5 hover:border-[#0a84ff]/30 rounded-xl transition-all flex items-center justify-between text-left"
                                 >
                                     <div>
-                                        <h3 className="text-lg font-bold text-white mb-1 group-hover:text-indigo-400 transition-colors">我是团队负责人</h3>
+                                        <h3 className="text-lg font-bold text-white mb-1 group-hover:text-[#0a84ff] transition-colors">我是团队负责人</h3>
                                         <p className="text-sm text-slate-400">创建新企业，邀请成员加入</p>
                                     </div>
-                                    <ArrowRight size={20} className="text-slate-500 group-hover:text-indigo-400 transform group-hover:translate-x-1 transition-all" />
+                                    <ArrowRight size={20} className="text-slate-500 group-hover:text-[#0a84ff] transform group-hover:translate-x-1 transition-all" />
                                 </button>
 
                                 <button 
                                     onClick={() => setMode('join')}
-                                    className="group p-6 bg-[#1e2230] hover:bg-[#252a3b] border border-white/5 hover:border-indigo-500/30 rounded-xl transition-all flex items-center justify-between text-left"
+                                    className="group p-6 bg-[#1c1c1e] hover:bg-[#2c2c2e] border border-white/5 hover:border-[#0a84ff]/30 rounded-xl transition-all flex items-center justify-between text-left"
                                 >
                                     <div>
-                                        <h3 className="text-lg font-bold text-white mb-1 group-hover:text-indigo-400 transition-colors">我是团队成员</h3>
+                                        <h3 className="text-lg font-bold text-white mb-1 group-hover:text-[#0a84ff] transition-colors">我是团队成员</h3>
                                         <p className="text-sm text-slate-400">使用邀请码加入现有团队</p>
                                     </div>
-                                    <UserPlus size={20} className="text-slate-500 group-hover:text-indigo-400 transform group-hover:translate-x-1 transition-all" />
+                                    <UserPlus size={20} className="text-slate-500 group-hover:text-[#0a84ff] transform group-hover:translate-x-1 transition-all" />
                                 </button>
                             </div>
                         )}
 
                         {mode === 'create' && !createdCode && (
-                            <div className="bg-[#1e2230] border border-white/5 rounded-xl p-6 animate-in slide-in-from-bottom-4 duration-300">
+                            <div className="bg-[#1c1c1e] border border-white/5 rounded-xl p-6 animate-in slide-in-from-bottom-4 duration-300">
                                 <div className="flex items-center justify-between mb-6">
                                     <h3 className="text-xl font-bold text-white">创建新企业</h3>
-                                    <div className="px-2 py-1 rounded bg-indigo-500/20 text-indigo-300 text-xs font-bold border border-indigo-500/30">
+                                    <div className="px-2 py-1 rounded bg-[#0a84ff]/16 text-[#64d2ff] text-xs font-bold border border-[#0a84ff]/25">
                                         负责人模式
                                     </div>
                                 </div>
@@ -332,7 +332,7 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
                                     <div>
                                         <label className="block text-xs font-bold text-slate-500 uppercase mb-2">企业名称</label>
                                         <input 
-                                            className="w-full bg-[#0B0D14] border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
+                                            className="w-full bg-black border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-[#0a84ff] transition-colors"
                                             placeholder="例如：星之光年"
                                             value={createName}
                                             onChange={e => setCreateName(e.target.value)}
@@ -342,7 +342,7 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
                                     <div>
                                         <label className="block text-xs font-bold text-slate-500 uppercase mb-2">企业描述</label>
                                         <textarea 
-                                            className="w-full h-24 bg-[#0B0D14] border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-indigo-500 transition-colors resize-none"
+                                            className="w-full h-24 bg-black border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-[#0a84ff] transition-colors resize-none"
                                             placeholder="简单的介绍..."
                                             value={createDesc}
                                             onChange={e => setCreateDesc(e.target.value)}
@@ -358,7 +358,7 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
                                         <button 
                                             onClick={handleCreate}
                                             disabled={loading}
-                                            className="flex-[2] py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                                            className="flex-[2] py-3 bg-[#0071e3] hover:bg-[#0077ed] text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                                         >
                                             {loading ? <Loader2 className="animate-spin" size={18}/> : '立即创建'}
                                         </button>
@@ -368,7 +368,7 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
                         )}
 
                         {mode === 'create' && createdCode && (
-                            <div className="bg-[#1e2230] border border-white/5 rounded-xl p-6 animate-in zoom-in-95 duration-300 text-center">
+                            <div className="bg-[#1c1c1e] border border-white/5 rounded-xl p-6 animate-in zoom-in-95 duration-300 text-center">
                                 <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-500/20">
                                     <Check size={32} className="text-green-500" />
                                 </div>
@@ -378,17 +378,17 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
                                     请将下方的邀请码发送给团队成员。
                                 </p>
                                 
-                                <div className="bg-[#0B0D14] border border-white/10 rounded-lg p-4 mb-6 flex items-center justify-between group cursor-pointer" onClick={() => {
+                                <div className="bg-black border border-white/10 rounded-lg p-4 mb-6 flex items-center justify-between group cursor-pointer" onClick={() => {
                                     navigator.clipboard.writeText(createdCode);
                                     showToast("已复制到剪贴板", "success");
                                 }}>
-                                    <span className="text-2xl font-mono text-indigo-400 font-bold tracking-widest">{createdCode}</span>
+                                    <span className="text-2xl font-mono text-[#0a84ff] font-bold tracking-widest">{createdCode}</span>
                                     <Copy size={18} className="text-slate-500 group-hover:text-white transition-colors" />
                                 </div>
 
                                 <button 
                                     onClick={finishCreation}
-                                    className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors"
+                                    className="w-full py-3 bg-[#0071e3] hover:bg-[#0077ed] text-white rounded-lg font-medium transition-colors"
                                 >
                                     进入工作台
                                 </button>
@@ -396,7 +396,7 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
                         )}
 
                         {mode === 'join' && (
-                            <div className="bg-[#1e2230] border border-white/5 rounded-xl p-6 animate-in slide-in-from-bottom-4 duration-300">
+                            <div className="bg-[#1c1c1e] border border-white/5 rounded-xl p-6 animate-in slide-in-from-bottom-4 duration-300">
                                 <div className="flex items-center justify-between mb-6">
                                     <h3 className="text-xl font-bold text-white">加入企业</h3>
                                     <div className="px-2 py-1 rounded bg-teal-500/20 text-teal-300 text-xs font-bold border border-teal-500/30">
@@ -407,7 +407,7 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
                                     <div>
                                         <label className="block text-xs font-bold text-slate-500 uppercase mb-2">企业名称</label>
                                         <input 
-                                            className="w-full bg-[#0B0D14] border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
+                                            className="w-full bg-black border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-[#0a84ff] transition-colors"
                                             placeholder="请输入需加入的企业全称"
                                             value={joinName}
                                             onChange={e => setJoinName(e.target.value)}
@@ -417,14 +417,14 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
                                     <div>
                                         <label className="block text-xs font-bold text-slate-500 uppercase mb-2">邀请码</label>
                                         <input 
-                                            className="w-full bg-[#0B0D14] border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-indigo-500 transition-colors font-mono tracking-widest"
+                                            className="w-full bg-black border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-[#0a84ff] transition-colors font-mono tracking-widest"
                                             placeholder="6位邀请码"
                                             value={joinCode}
                                             onChange={e => setJoinCode(e.target.value)}
                                             maxLength={6}
                                         />
                                     </div>
-                                    <div className="bg-slate-800/50 rounded-lg p-3 flex gap-3 items-start border border-white/5">
+                                    <div className="bg-[#2c2c2e]/60 rounded-lg p-3 flex gap-3 items-start border border-white/5">
                                         <Info size={16} className="text-slate-400 mt-0.5 shrink-0" />
                                         <p className="text-xs text-slate-400 leading-relaxed">
                                             请联系您的企业管理员获取邀请码。只有输入正确的企业名称和对应的邀请码才能成功加入。
@@ -440,7 +440,7 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
                                         <button 
                                             onClick={handleJoin}
                                             disabled={loading}
-                                            className="flex-[2] py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                                            className="flex-[2] py-3 bg-[#0071e3] hover:bg-[#0077ed] text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                                         >
                                             {loading ? <Loader2 className="animate-spin" size={18}/> : '验证并加入'}
                                         </button>
@@ -452,18 +452,18 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
 
                      {/* Right Side: Guide / Instructions - Absolute Positioned */}
                      <div className="hidden lg:block absolute right-0 top-1/2 -translate-y-1/2 w-full max-w-sm text-left animate-in slide-in-from-right-8 duration-500 delay-100 pr-8">
-                        <div className="bg-[#1e2230]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-sm">
+                        <div className="bg-[#1c1c1e]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-sm">
                             <h3 className="text-white font-bold flex items-center gap-2 mb-4">
-                                <HelpCircle size={18} className="text-indigo-400" />
+                                <HelpCircle size={18} className="text-[#0a84ff]" />
                                 操作指引
                             </h3>
                             
                             <div className="space-y-6 relative">
                                 {/* Vertical line connecting steps */}
-                                <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-indigo-500/20" />
+                                <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-[#0a84ff]/16" />
 
                                 <div className="relative pl-10">
-                                    <div className="absolute left-0 top-0 w-6 h-6 rounded-full bg-[#0B0D14] border-2 border-indigo-500 flex items-center justify-center z-10">
+                                    <div className="absolute left-0 top-0 w-6 h-6 rounded-full bg-black border-2 border-[#0a84ff] flex items-center justify-center z-10">
                                         <span className="text-[10px] font-bold text-white">1</span>
                                     </div>
                                     <h4 className="text-sm font-bold text-slate-200 mb-1">何时“创建企业”？</h4>
@@ -473,7 +473,7 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
                                 </div>
 
                                 <div className="relative pl-10">
-                                    <div className="absolute left-0 top-0 w-6 h-6 rounded-full bg-[#0B0D14] border-2 border-teal-500 flex items-center justify-center z-10">
+                                    <div className="absolute left-0 top-0 w-6 h-6 rounded-full bg-black border-2 border-teal-500 flex items-center justify-center z-10">
                                         <span className="text-[10px] font-bold text-white">2</span>
                                     </div>
                                     <h4 className="text-sm font-bold text-slate-200 mb-1">何时“加入企业”？</h4>
@@ -483,7 +483,7 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
                                 </div>
 
                                 <div className="relative pl-10">
-                                    <div className="absolute left-0 top-0 w-6 h-6 rounded-full bg-[#0B0D14] border-2 border-yellow-500 flex items-center justify-center z-10">
+                                    <div className="absolute left-0 top-0 w-6 h-6 rounded-full bg-black border-2 border-yellow-500 flex items-center justify-center z-10">
                                         <span className="text-[10px] font-bold text-white">3</span>
                                     </div>
                                     <h4 className="text-sm font-bold text-slate-200 mb-1">关于“企业邀请码”</h4>

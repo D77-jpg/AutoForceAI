@@ -65,7 +65,7 @@ export default function MonitorPage() {
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-                        <Activity className="text-indigo-400" /> 
+                        <Activity className="text-[#0a84ff]" /> 
                         System Monitor
                     </h1>
                     <p className="text-gray-400">Real-time observability for AI Agents & RPA Workers</p>
@@ -83,7 +83,7 @@ export default function MonitorPage() {
                     value={(llmStats?.summary?.total_tokens / 1000).toFixed(1) + "k"}
                     subValue={`${llmStats?.summary?.total_calls} API Calls`}
                     icon={Cpu}
-                    color="text-indigo-400"
+                    color="text-[#0a84ff]"
                 />
                  <StatCard 
                     title="RPA Queue Depth" 
@@ -117,7 +117,7 @@ export default function MonitorPage() {
                 {/* Token Usage Trend */}
                 <div className="glass-card p-6 border border-white/5 rounded-xl">
                     <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
-                        <Server size={18} className="text-indigo-400"/>
+                        <Server size={18} className="text-[#0a84ff]"/>
                         Token Consumption Trend
                     </h3>
                     <div className="h-64 w-full">
@@ -158,7 +158,7 @@ export default function MonitorPage() {
                                 </div>
                                 <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                                     <div 
-                                        className="h-full bg-gradient-to-r from-purple-500 to-indigo-500" 
+                                        className="h-full bg-gradient-to-r from-[#0a84ff] to-[#bf5af2]" 
                                         style={{width: `${(tokens / llmStats?.summary?.total_tokens) * 100}%`}}
                                     ></div>
                                 </div>
@@ -203,7 +203,7 @@ export default function MonitorPage() {
                                     </td>
                                     <td className="px-6 py-4 font-mono text-gray-300">{log.model}</td>
                                     <td className="px-6 py-4 text-gray-400">
-                                        {log.input_tokens} / <span className="text-indigo-400">{log.output_tokens}</span>
+                                        {log.input_tokens} / <span className="text-[#0a84ff]">{log.output_tokens}</span>
                                     </td>
                                     <td className="px-6 py-4 text-gray-400">{log.latency_ms}ms</td>
                                     <td className="px-6 py-4 text-gray-500 flex items-center gap-2">

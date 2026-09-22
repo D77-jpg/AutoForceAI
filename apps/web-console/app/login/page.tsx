@@ -6,12 +6,25 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useToast } from "../../contexts/ToastContext"; 
 import { useAuth } from "../../contexts/AuthContext"; 
-import { BrainCircuit, Sparkles, Zap, BarChart3, ScanLine, ShieldCheck, ArrowLeft } from 'lucide-react';
+import { BrainCircuit, Sparkles, Zap, BarChart3, ScanLine, ShieldCheck, ArrowLeft, Mail, Lock, User as UserIcon } from 'lucide-react';
+
+function getApiBase(): string {
+    const envApiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (envApiUrl) return envApiUrl;
+    const protocol = window.location.protocol;
+    const hostname = window.location.hostname;
+    return `${protocol}//${hostname}:8000`;
+}
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [wechatUrl, setWechatUrl] = useState<string | null>(null);
   const [isMockMode, setIsMockMode] = useState(true);
+  const [authTab, setAuthTab] = useState<'email' | 'wechat'>('email');
+  const [isRegister, setIsRegister] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [nickname, setNickname] = useState('');
   const router = useRouter();
   const { showToast } = useToast();
   const { login } = useAuth();
@@ -20,16 +33,7 @@ export default function LoginPage() {
     // 获取微信登录链接
     const fetchWeChatUrl = async () => {
         try {
-            // Use configured global API URL first, fallback to dynamic logic
-            const envApiUrl = process.env.NEXT_PUBLIC_API_URL;
-            let apiBase = envApiUrl;
-
-            if (!apiBase) {
-                const protocol = window.location.protocol; 
-                const hostname = window.location.hostname;
-                apiBase = `${protocol}//${hostname}:8000`;
-            }
-            
+            const apiBase = getApiBase();
             const res = await fetch(`${apiBase}/auth/wechat/url`);
             const data = await res.json();
             if (data.url && !data.mock_mode) {
@@ -68,14 +72,7 @@ export default function LoginPage() {
   const performLogin = async (code: string) => {
       setLoading(true);
       try {
-        const envApiUrl = process.env.NEXT_PUBLIC_API_URL;
-        let apiBase = envApiUrl;
-
-        if (!apiBase) {
-            const protocol = window.location.protocol; 
-            const hostname = window.location.hostname;
-            apiBase = `${protocol}//${hostname}:8000`;
-        }
+        const apiBase = getApiBase();
 
         const response = await fetch(`${apiBase}/auth/wechat/login`, {
             method: 'POST',
@@ -119,6 +116,53 @@ export default function LoginPage() {
       }
   };
 
+  // 邮箱密码 登录/注册
+  const handleEmailAuth = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!email || !password) {
+          showToast("请输入邮箱和密码", "warning");
+          return;
+      }
+      if (password.length < 6) {
+          showToast("密码长度至少 6 位", "warning");
+          return;
+      }
+      setLoading(true);
+      try {
+          const apiBase = getApiBase();
+          const endpoint = isRegister ? '/auth/register' : '/auth/login';
+          const body: any = { email: email.trim(), password };
+          if (isRegister && nickname.trim()) body.nickname = nickname.trim();
+
+          const response = await fetch(`${apiBase}${endpoint}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+          });
+
+          if (!response.ok) {
+              const errData = await response.json();
+              throw new Error(errData.detail || (isRegister ? '注册失败' : '登录失败'));
+          }
+
+          const data = await response.json();
+          login(data.access_token, {
+              id: data.user_id,
+              username: data.username,
+              role: data.role,
+              org_id: data.organization_id,
+              avatar: data.avatar,
+              nickname: data.nickname || data.username,
+              invite_code: data.invite_code
+          });
+          showToast(isRegister ? "注册成功，欢迎加入！" : "登录成功！", "success");
+      } catch (error: any) {
+          showToast(error.message || "操作失败，请重试", "error");
+      } finally {
+          setLoading(false);
+      }
+  };
+
   const handleMockLogin = async () => {
     // 模拟一个随机的微信 Code
     const mockCode = "mock_wx_code_" + Math.random().toString(36).substring(7);
@@ -126,23 +170,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex w-full bg-[#0B0D14] text-white overflow-hidden font-sans selection:bg-indigo-500/30">
+    <div className="min-h-screen flex w-full bg-black text-[#f5f5f7] overflow-hidden font-sans">
       
-      {/* 左侧：品牌与价值主张 (更加聚焦，布局更紧凑) */}
-      <div className="hidden lg:flex flex-col justify-center w-[60%] relative px-16 bg-[#0B0D14] overflow-hidden">
+      <div className="hidden lg:flex flex-col justify-center w-[58%] relative px-20 overflow-hidden">
         
-        {/* 背景动效 */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-             <div className="absolute top-[10%] left-[10%] w-[800px] h-[800px] bg-indigo-600/10 rounded-full blur-[120px]"></div>
-             <div className="absolute bottom-[10%] right-[10%] w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[100px]"></div>
-             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10"></div>
+             <div className="absolute top-[-10%] left-[8%] w-[520px] h-[520px] bg-[#0a84ff]/12 rounded-full blur-[140px]"></div>
+             <div className="absolute bottom-[0%] right-[8%] w-[420px] h-[420px] bg-white/[0.04] rounded-full blur-[100px]"></div>
         </div>
 
-        {/* 内容容器 */}
-        <div className="relative z-10 max-w-2xl pl-8">
-            {/* Logo */}
-            <Link href={process.env.NEXT_PUBLIC_OFFICIAL_SITE_URL || "http://localhost:3000"} className="flex items-center gap-3 mb-6 cursor-pointer hover:opacity-80 transition-opacity">
-                <div className="relative w-10 h-10">
+        <div className="relative z-10 max-w-2xl pl-4">
+            <Link href={process.env.NEXT_PUBLIC_OFFICIAL_SITE_URL || "http://localhost:3000"} className="flex items-center gap-3 mb-10 cursor-pointer hover:opacity-80 transition-opacity">
+                <div className="relative w-10 h-10 rounded-2xl overflow-hidden bg-[#1c1c1e]">
                     <Image 
                         src="/logo.png" 
                         alt="Digital Employee Logo" 
@@ -150,21 +189,20 @@ export default function LoginPage() {
                         className="object-contain"
                     />
                 </div>
-                <span className="text-xl font-bold tracking-wide text-white">
+                <span className="text-[17px] font-semibold tracking-tight text-[#f5f5f7]">
                     思渡数字员工
                 </span>
             </Link>
 
-            {/* 主标题 */}
-            <div className="mb-8">
-                <h1 className="text-4xl font-extrabold leading-[1.2] mb-4 tracking-tight">
+            <div className="mb-10">
+                <h1 className="text-[52px] font-semibold leading-[1.08] mb-5 tracking-tight">
                     构建属于您的<br/>
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400">
+                    <span className="text-[#86868b]">
                          AI 数字员工集群
                     </span>
                 </h1>
-                <p className="text-base text-gray-400 leading-relaxed font-light max-w-lg">
-                    企业级 AI 中台。统一管理您的 <strong>数字员工 (Agents)</strong>、<strong>知识资产 (RAG)</strong> 与 <strong>品牌内容 (GEO)</strong>。
+                <p className="text-[17px] text-[#86868b] leading-relaxed max-w-lg">
+                    企业级 AI 中台。统一管理您的 <span className="text-[#f5f5f7]">数字员工</span>、<span className="text-[#f5f5f7]">知识资产</span> 与 <span className="text-[#f5f5f7]">品牌内容</span>。
                     <br/>
                     让 AI 成为真正的生产力。
                 </p>
@@ -189,86 +227,151 @@ export default function LoginPage() {
                 />
             </div>
             
-            <div className="mt-12 text-xs text-gray-600 border-t border-white/5 pt-5 w-full">
-                © 2026 思渡数字员工 (sdosoft.com)  |  为企业提供下一代数字员工解决方案
+            <div className="mt-14 text-[12px] text-[#6e6e73] border-t border-white/8 pt-5 w-full">
+                © 2026 思渡数字员工 (sdosoft.com)  ·  为企业提供下一代数字员工解决方案
             </div>
         </div>
       </div>
 
-      {/* 右侧：极简登录区 */}
-      <div className="w-full lg:w-[40%] flex flex-col items-center justify-center p-8 bg-[#151921] border-l border-white/5 shadow-2xl relative">
+      <div className="w-full lg:w-[42%] flex flex-col items-center justify-center p-8 relative">
          
-         <div className="w-full max-w-sm">
-            <div className="bg-[#1C1F26] rounded-2xl p-10 shadow-2xl border border-white/5 relative overflow-hidden text-center">
-                
-                <h2 className="text-2xl font-semibold text-white mb-2">欢迎登录数字员工平台</h2>
-                <p className="text-gray-400 text-sm mb-8">请使用微信扫码登录系统，新用户将自动注册</p>
-                
-                {/* 二维码区域 */}
-                <div className="flex flex-col items-center justify-center mb-8 min-h-[200px]">
-                    {!isMockMode && wechatUrl ? (
-                         <div className="w-[300px] h-[350px] overflow-hidden rounded-lg bg-white shadow-lg">
-                            <iframe 
-                                src={wechatUrl}
-                                frameBorder="0"
-                                scrolling="no"
-                                width="300px"
-                                height="400px"
-                                className="-mt-[50px]" // 调整 iframe 内容位置以隐藏顶部微信标题栏 (可选)
-                            ></iframe>
-                         </div>
-                    ) : (
-                    <div className="relative group/qr cursor-pointer transition-transform duration-300 hover:scale-[1.02]" onClick={handleMockLogin}>
-                        {/* 模拟二维码样式 */}
-                        <div className="w-48 h-48 bg-white rounded-lg flex items-center justify-center shadow-lg border-4 border-white">
-                            <div className="w-full h-full border-2 border-dashed border-gray-300 p-2 flex flex-col items-center justify-center">
-                                 <ScanLine size={40} className="text-gray-800 opacity-80 mb-2" />
-                                 {/* 模拟二维码矩阵 */}
-                                 <div className="grid grid-cols-5 gap-1 w-24 h-24 opacity-80">
-                                     {[...Array(25)].map((_, i) => (
-                                         <div key={i} className={`bg-black rounded-sm ${Math.random() > 0.5 ? 'opacity-100' : 'opacity-0'}`}></div>
-                                     ))}
-                                 </div>
-                            </div>
-                        </div>
-                        
-                        {/* 悬停遮罩 */}
-                        <div className="absolute inset-0 bg-indigo-900/90 opacity-0 group-hover/qr:opacity-100 transition-opacity duration-300 flex items-center justify-center rounded-lg backdrop-blur-[2px]">
-                            <div className="text-center">
-                                 <ScanLine className="w-10 h-10 text-white mx-auto mb-2 animate-pulse" />
-                                 <p className="text-white font-medium text-sm">点击模拟扫码成功</p>
-                            </div>
-                        </div>
+         <div className="w-full max-w-[400px]">
+            <div className="bg-[#1c1c1e]/90 backdrop-blur-2xl rounded-[28px] p-9 shadow-apple-lg border border-white/8 relative overflow-hidden">
 
-                        {/* Loading 状态 */}
-                        {loading && (
-                            <div className="absolute inset-0 bg-[#1C1F26]/95 z-30 flex items-center justify-center rounded-lg">
-                                <div className="flex flex-col items-center">
-                                    <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-                                    <span className="text-indigo-400 text-xs font-medium">安全验证中...</span>
-                                </div>
+                <h2 className="text-[22px] font-semibold text-white mb-1.5 text-center tracking-tight">欢迎回来</h2>
+                <p className="text-[#86868b] text-[13px] mb-7 text-center">企业级 AI 中台 · 数字员工 · GEO</p>
+
+                <div className="flex rounded-full bg-[#2c2c2e] p-1 mb-7">
+                    <button
+                        onClick={() => setAuthTab('email')}
+                        className={`flex-1 py-2 text-[13px] font-medium rounded-full transition-colors ${authTab === 'email' ? 'bg-[#3a3a3c] text-white' : 'text-[#86868b] hover:text-white'}`}
+                    >
+                        账号登录
+                    </button>
+                    <button
+                        onClick={() => setAuthTab('wechat')}
+                        className={`flex-1 py-2 text-[13px] font-medium rounded-full transition-colors ${authTab === 'wechat' ? 'bg-[#3a3a3c] text-white' : 'text-[#86868b] hover:text-white'}`}
+                    >
+                        微信扫码
+                    </button>
+                </div>
+
+                {authTab === 'email' ? (
+                    /* ========== 邮箱密码登录/注册 ========== */
+                    <form onSubmit={handleEmailAuth} className="space-y-4">
+                        <div className="relative">
+                            <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="邮箱地址"
+                                className="w-full bg-[#2c2c2e] border border-white/8 rounded-[14px] py-3 pl-10 pr-3 text-white text-sm focus:border-[#0a84ff]/50 focus:ring-1 focus:ring-[#0a84ff]/30 outline-none transition-all placeholder:text-[#6e6e73]"
+                            />
+                        </div>
+                        {isRegister && (
+                            <div className="relative">
+                                <UserIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                                <input
+                                    type="text"
+                                    value={nickname}
+                                    onChange={(e) => setNickname(e.target.value)}
+                                    placeholder="显示名称（选填）"
+                                    className="w-full bg-[#2c2c2e] border border-white/8 rounded-[14px] py-3 pl-10 pr-3 text-white text-sm focus:border-[#0a84ff]/50 focus:ring-1 focus:ring-[#0a84ff]/30 outline-none transition-all placeholder:text-[#6e6e73]"
+                                />
                             </div>
                         )}
-                    </div>
-                    )}
-                </div>
+                        <div className="relative">
+                            <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder={isRegister ? "设置密码（至少 6 位）" : "密码"}
+                                className="w-full bg-[#2c2c2e] border border-white/8 rounded-[14px] py-3 pl-10 pr-3 text-white text-sm focus:border-[#0a84ff]/50 focus:ring-1 focus:ring-[#0a84ff]/30 outline-none transition-all placeholder:text-[#6e6e73]"
+                            />
+                        </div>
 
-                <div className="space-y-4">
-                    <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
-                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                        <span>微信安全连接已就绪</span>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full py-3 bg-[#0071e3] hover:bg-[#0077ed] disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                        >
+                            {loading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                            {isRegister ? '注册并登录' : '登 录'}
+                        </button>
+
+                        <p className="text-center text-xs text-gray-500">
+                            {isRegister ? (
+                                <>已有账号？<span onClick={() => setIsRegister(false)} className="text-[#0a84ff] hover:text-white cursor-pointer">直接登录</span></>
+                            ) : (
+                                <>还没有账号？<span onClick={() => setIsRegister(true)} className="text-[#0a84ff] hover:text-white cursor-pointer">立即注册</span>（首个注册用户将成为系统管理员）</>
+                            )}
+                        </p>
+                    </form>
+                ) : (
+                    /* ========== 微信扫码登录 ========== */
+                    <div className="text-center">
+                        <div className="flex flex-col items-center justify-center mb-6 min-h-[200px]">
+                            {!isMockMode && wechatUrl ? (
+                                 <div className="w-[300px] h-[350px] overflow-hidden rounded-lg bg-white shadow-lg">
+                                    <iframe
+                                        src={wechatUrl}
+                                        frameBorder="0"
+                                        scrolling="no"
+                                        width="300px"
+                                        height="400px"
+                                        className="-mt-[50px]"
+                                    ></iframe>
+                                 </div>
+                            ) : (
+                            <div className="relative group/qr cursor-pointer transition-transform duration-300 hover:scale-[1.02]" onClick={handleMockLogin}>
+                                {/* 模拟二维码样式 */}
+                                <div className="w-48 h-48 bg-white rounded-lg flex items-center justify-center shadow-lg border-4 border-white">
+                                    <div className="w-full h-full border-2 border-dashed border-gray-300 p-2 flex flex-col items-center justify-center">
+                                         <ScanLine size={40} className="text-gray-800 opacity-80 mb-2" />
+                                         <div className="grid grid-cols-5 gap-1 w-24 h-24 opacity-80">
+                                             {[...Array(25)].map((_, i) => (
+                                                 <div key={i} className={`bg-black rounded-sm ${Math.random() > 0.5 ? 'opacity-100' : 'opacity-0'}`}></div>
+                                             ))}
+                                         </div>
+                                    </div>
+                                </div>
+
+                                {/* 悬停遮罩 */}
+                                <div className="absolute inset-0 bg-black/80 opacity-0 group-hover/qr:opacity-100 transition-opacity duration-300 flex items-center justify-center rounded-lg backdrop-blur-[2px]">
+                                    <div className="text-center">
+                                         <ScanLine className="w-10 h-10 text-white mx-auto mb-2 animate-pulse" />
+                                         <p className="text-white font-medium text-sm">点击模拟扫码成功</p>
+                                    </div>
+                                </div>
+
+                                {/* Loading 状态 */}
+                                {loading && (
+                                    <div className="absolute inset-0 bg-[#1c1c1e]/95 z-30 flex items-center justify-center rounded-lg">
+                                        <div className="flex flex-col items-center">
+                                            <div className="w-8 h-8 border-2 border-[#0a84ff] border-t-transparent rounded-full animate-spin mb-3"></div>
+                                            <span className="text-[#0a84ff] text-xs font-medium">安全验证中...</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            )}
+                        </div>
+
+                        <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+                            <span className="w-2 h-2 rounded-full bg-[#30d158] animate-pulse"></span>
+                            <span>{isMockMode ? "微信未配置，点击二维码模拟登录（开发模式）" : "请使用微信扫码登录"}</span>
+                        </div>
                     </div>
-                </div>
+                )}
 
             </div>
 
             {/* 底部帮助 */}
             <div className="mt-8 text-center">
-                <p className="text-xs text-gray-500 mb-2">
-                    {isMockMode ? "当前模式: 本地模拟开发 (Mock)" : "当前模式: 微信官方连接"}
-                </p>
-                <p className="text-xs text-gray-600 hover:text-gray-500 cursor-pointer transition">
-                    遇到问题？联系客服获取帮助
+                <p className="text-xs text-[#6e6e73] hover:text-[#86868b] cursor-pointer transition">
+                    遇到问题？联系管理员获取帮助
                 </p>
             </div>
          </div>
@@ -280,12 +383,12 @@ export default function LoginPage() {
 // 辅助组件：功能卡片 (竖向布局)
 function FeatureCard({icon: Icon, title, desc}: any) {
     return (
-        <div className="flex flex-col items-start p-4 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] hover:-translate-y-1 transition-all duration-300">
-            <div className="mb-3 p-2 bg-indigo-500/10 rounded-lg text-indigo-400">
+        <div className="flex flex-col items-start p-5 rounded-[20px] bg-[#1c1c1e]/70 border border-white/8 hover:bg-[#2c2c2e] transition-all duration-300">
+            <div className="mb-3 p-2 bg-white/6 rounded-xl text-[#0a84ff]">
                 <Icon size={20} />
             </div>
-            <h3 className="font-semibold text-sm text-white mb-2">{title}</h3>
-            <p className="text-xs text-gray-400 leading-relaxed font-light">{desc}</p>
+            <h3 className="font-semibold text-sm text-white mb-2 tracking-tight">{title}</h3>
+            <p className="text-[12px] text-[#86868b] leading-relaxed">{desc}</p>
         </div>
     )
 }

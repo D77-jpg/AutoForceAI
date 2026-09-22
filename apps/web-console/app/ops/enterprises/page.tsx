@@ -68,7 +68,7 @@ export default function EnterprisesPage() {
     // Member Delete Confirmation State
     const [memberToDelete, setMemberToDelete] = useState<User | null>(null);
 
-    const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8002'}/api/v1/admin`;
+    const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8010'}/api/v1/admin`;
 
     const fetchOrgUsers = async (orgId: number) => {
         try {
@@ -281,12 +281,12 @@ export default function EnterprisesPage() {
     );
 
     return (
-        <div className="h-full flex flex-col bg-[#0B0D14] overflow-hidden relative">
+        <div className="h-full flex flex-col bg-black overflow-hidden relative">
              {/* Header */}
-             <div className="flex-none p-6 border-b border-white/5 bg-[#0f172a] flex items-center justify-between z-20">
+             <div className="flex-none p-6 border-b border-white/5 bg-[#1c1c1e] flex items-center justify-between z-20">
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-indigo-600/20 flex items-center justify-center border border-indigo-500/30">
-                        <Building2 className="text-indigo-400" size={20} />
+                    <div className="w-10 h-10 rounded-lg bg-[#0a84ff]/16 flex items-center justify-center border border-[#0a84ff]/25">
+                        <Building2 className="text-[#0a84ff]" size={20} />
                     </div>
                     <div>
                         <h1 className="text-xl font-bold text-white">企业管理</h1>
@@ -301,7 +301,7 @@ export default function EnterprisesPage() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                         <input
                             placeholder="搜索企业名称..."
-                            className="w-full pl-9 h-9 bg-white/5 border border-white/10 rounded-md text-sm text-slate-300 focus:outline-none focus:border-indigo-500/50 transition-colors"
+                            className="w-full pl-9 h-9 bg-white/5 border border-white/10 rounded-md text-sm text-slate-300 focus:outline-none focus:border-[#0a84ff]/50 transition-colors"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
@@ -315,7 +315,7 @@ export default function EnterprisesPage() {
                     </button>
                     <button 
                         onClick={() => setIsCreating(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors shadow-lg shadow-indigo-500/20"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-[#0071e3] hover:bg-[#0077ed] text-white rounded-full text-sm font-medium transition-colors shadow-apple"
                     >
                         <Plus size={16} /> 创建企业
                     </button>
@@ -327,7 +327,7 @@ export default function EnterprisesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {loading ? (
                          <div className="col-span-full flex flex-col items-center justify-center text-slate-500 min-h-[400px]">
-                            <Loader2 className="animate-spin text-indigo-500" size={32} />
+                            <Loader2 className="animate-spin text-[#0a84ff]" size={32} />
                             <p className="mt-4 text-sm">正在加载企业数据...</p>
                         </div>
                     ) : filteredOrgs.length === 0 ? (
@@ -337,11 +337,11 @@ export default function EnterprisesPage() {
                         </div>
                     ) : (
                         filteredOrgs.map(org => (
-                            <div key={org.id} className="bg-[#141720] border border-white/5 rounded-xl overflow-hidden hover:border-indigo-500/30 transition-all group relative flex flex-col">
+                            <div key={org.id} className="bg-[#1c1c1e] border border-white/5 rounded-xl overflow-hidden hover:border-[#0a84ff]/30 transition-all group relative flex flex-col">
                                 <div className="p-6 flex-1 overflow-hidden">
                                     <div className="flex justify-between items-start mb-4">
-                                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-white/5 flex items-center justify-center">
-                                            <span className="text-xl font-bold text-indigo-400">{org.name[0]}</span>
+                                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-[#0a84ff]/10 to-[#bf5af2]/10 border border-white/5 flex items-center justify-center">
+                                            <span className="text-xl font-bold text-[#0a84ff]">{org.name[0]}</span>
                                         </div>
                                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                              <button 
@@ -382,8 +382,8 @@ export default function EnterprisesPage() {
                                                 </span>
                                                 <div className="flex-1 flex justify-end">
                                                     {org.invite_code ? (
-                                                        <div className="flex items-center gap-1 bg-indigo-500/10 border border-indigo-500/20 rounded px-1.5 py-0.5 max-w-full overflow-hidden" onClick={(e) => e.stopPropagation()}>
-                                                            <span className="text-xs text-indigo-400 font-mono select-all cursor-pointer whitespace-nowrap truncate" 
+                                                        <div className="flex items-center gap-1 bg-[#0a84ff]/10 border border-[#0a84ff]/20 rounded px-1.5 py-0.5 max-w-full overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                                                            <span className="text-xs text-[#0a84ff] font-mono select-all cursor-pointer whitespace-nowrap truncate" 
                                                                 title="点击复制" 
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
@@ -394,7 +394,7 @@ export default function EnterprisesPage() {
                                                                 企业邀请码：{org.invite_code}
                                                             </span>
                                                             <button 
-                                                                className="text-indigo-400 hover:text-indigo-300 p-0.5 rounded-full hover:bg-indigo-500/20 transition-colors shrink-0"
+                                                                className="text-[#0a84ff] hover:text-[#64d2ff] p-0.5 rounded-full hover:bg-[#0077ed]/20 transition-colors shrink-0"
                                                                 title="刷新邀请码"
                                                                 onClick={(e) => handleRefreshInviteCode(org, e)}
                                                             >
@@ -403,7 +403,7 @@ export default function EnterprisesPage() {
                                                         </div>
                                                     ) : (
                                                         <button 
-                                                            className="text-xs text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 px-2 py-1 rounded transition-colors"
+                                                            className="text-xs text-[#0a84ff] hover:text-[#64d2ff] hover:bg-[#0077ed]/10 px-2 py-1 rounded transition-colors"
                                                             onClick={(e) => handleRefreshInviteCode(org, e)}
                                                         >
                                                             生成邀请码
@@ -423,10 +423,10 @@ export default function EnterprisesPage() {
             {/* Create Modal */}
             {isCreating && (
                 <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center animate-in fade-in duration-200">
-                    <div className="bg-[#1e2230] border border-white/10 rounded-xl p-6 w-[400px] shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+                    <div className="bg-[#1c1c1e] border border-white/10 rounded-xl p-6 w-[400px] shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                <Plus size={20} className="text-indigo-500"/>
+                                <Plus size={20} className="text-[#0a84ff]"/>
                                 创建新企业
                             </h3>
                             <button onClick={() => setIsCreating(false)} className="text-slate-500 hover:text-white transition-colors">
@@ -438,7 +438,7 @@ export default function EnterprisesPage() {
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">企业名称</label>
                                 <input 
-                                    className="w-full bg-[#0B0D14] border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
+                                    className="w-full bg-black border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-[#0a84ff] transition-colors"
                                     placeholder="例如：星之光年"
                                     value={newOrgName}
                                     onChange={e => setNewOrgName(e.target.value)}
@@ -448,7 +448,7 @@ export default function EnterprisesPage() {
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">描述 (可选)</label>
                                 <textarea 
-                                    className="w-full h-24 bg-[#0B0D14] border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-indigo-500 transition-colors resize-none"
+                                    className="w-full h-24 bg-black border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-[#0a84ff] transition-colors resize-none"
                                     placeholder="企业简介..."
                                     value={newOrgDesc}
                                     onChange={e => setNewOrgDesc(e.target.value)}
@@ -464,7 +464,7 @@ export default function EnterprisesPage() {
                                 取消
                             </button>
                             <button 
-                                className="px-6 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors text-sm shadow-lg shadow-indigo-500/20"
+                                className="px-6 py-2 rounded-lg bg-[#0071e3] hover:bg-[#0077ed] text-white font-medium transition-colors text-sm shadow-apple"
                                 onClick={handleCreateOrg}
                             >
                                 立即创建
@@ -476,10 +476,10 @@ export default function EnterprisesPage() {
             {/* Detail / Edit Modal */}
             {selectedOrg && !isMembersModalOpen && (
                 <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center animate-in fade-in duration-200">
-                    <div className="bg-[#1e2230] border border-white/10 rounded-xl p-6 w-[480px] shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+                    <div className="bg-[#1c1c1e] border border-white/10 rounded-xl p-6 w-[480px] shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                <Building2 size={20} className="text-indigo-500"/>
+                                <Building2 size={20} className="text-[#0a84ff]"/>
                                 企业详情
                             </h3>
                             <button onClick={() => setSelectedOrg(null)} className="text-slate-500 hover:text-white transition-colors">
@@ -491,7 +491,7 @@ export default function EnterprisesPage() {
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">企业名称</label>
                                 <input 
-                                    className="w-full bg-[#0B0D14] border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
+                                    className="w-full bg-black border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-[#0a84ff] transition-colors"
                                     value={editName}
                                     onChange={e => setEditName(e.target.value)}
                                 />
@@ -499,7 +499,7 @@ export default function EnterprisesPage() {
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">描述</label>
                                 <textarea 
-                                    className="w-full h-24 bg-[#0B0D14] border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-indigo-500 transition-colors resize-none"
+                                    className="w-full h-24 bg-black border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-[#0a84ff] transition-colors resize-none"
                                     value={editDesc}
                                     onChange={e => setEditDesc(e.target.value)}
                                 />
@@ -508,7 +508,7 @@ export default function EnterprisesPage() {
                                 <div className="p-3 bg-white/5 rounded-lg border border-white/5 relative group cursor-pointer" onClick={() => setIsUserSelectorOpen(true)}>
                                     <span className="block text-xs text-slate-500 mb-1">管理员</span>
                                     <div className="flex items-center justify-between">
-                                        <span className={`text-sm font-medium truncate max-w-[120px] ${pendingAdmin ? 'text-green-400' : 'text-indigo-300'}`}>
+                                        <span className={`text-sm font-medium truncate max-w-[120px] ${pendingAdmin ? 'text-green-400' : 'text-[#64d2ff]'}`}>
                                             {pendingAdmin ? (pendingAdmin.nickname || pendingAdmin.username) : (selectedOrg.admin_username || "未设置")}
                                         </span>
                                         <div className="p-1 rounded bg-white/10 text-white opacity-0 group-hover:opacity-100 transition-opacity">
@@ -540,7 +540,7 @@ export default function EnterprisesPage() {
                                 关闭
                             </button>
                             <button 
-                                className="px-6 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors text-sm shadow-lg shadow-indigo-500/20"
+                                className="px-6 py-2 rounded-lg bg-[#0071e3] hover:bg-[#0077ed] text-white font-medium transition-colors text-sm shadow-apple"
                                 onClick={handleSaveOrg}
                             >
                                 保存修改
@@ -553,10 +553,10 @@ export default function EnterprisesPage() {
             {/* User Selector Modal */}
             {isUserSelectorOpen && (
                 <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center animate-in fade-in duration-200">
-                    <div className="bg-[#1e2230] border border-white/10 rounded-xl p-6 w-[400px] h-[500px] flex flex-col shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+                    <div className="bg-[#1c1c1e] border border-white/10 rounded-xl p-6 w-[400px] h-[500px] flex flex-col shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
                         <div className="flex justify-between items-center mb-4 flex-none">
                             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                <Users size={20} className="text-indigo-500"/>
+                                <Users size={20} className="text-[#0a84ff]"/>
                                 选择管理员
                             </h3>
                             <button onClick={() => setIsUserSelectorOpen(false)} className="text-slate-500 hover:text-white transition-colors">
@@ -568,7 +568,7 @@ export default function EnterprisesPage() {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                             <input
                                 placeholder="搜索用户..."
-                                className="w-full pl-9 h-9 bg-[#0B0D14] border border-white/10 rounded-md text-sm text-slate-300 focus:outline-none focus:border-indigo-500 transition-colors"
+                                className="w-full pl-9 h-9 bg-black border border-white/10 rounded-md text-sm text-slate-300 focus:outline-none focus:border-[#0a84ff] transition-colors"
                                 value={searchUserQuery}
                                 onChange={(e) => setSearchUserQuery(e.target.value)}
                                 autoFocus
@@ -588,7 +588,7 @@ export default function EnterprisesPage() {
                                     }}
                                     className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
                                         (pendingAdmin?.id === user.id || (!pendingAdmin && selectedOrg?.admin_username === user.username))
-                                            ? 'bg-indigo-500/20 border border-indigo-500/30' 
+                                            ? 'bg-[#0a84ff]/16 border border-[#0a84ff]/25' 
                                             : 'hover:bg-white/5 border border-transparent'
                                     }`}
                                 >
@@ -607,7 +607,7 @@ export default function EnterprisesPage() {
                                         </div>
                                     </div>
                                     {(pendingAdmin?.id === user.id || (!pendingAdmin && selectedOrg?.admin_username === user.username)) && (
-                                        <Check size={14} className="text-indigo-400"/>
+                                        <Check size={14} className="text-[#0a84ff]"/>
                                     )}
                                 </div>
                             ))}
@@ -618,12 +618,12 @@ export default function EnterprisesPage() {
             {/* Members Management Modal */}
             {isMembersModalOpen && selectedOrg && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
-                    <div className="bg-[#1e2230] border border-white/10 rounded-xl w-[600px] h-[600px] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
+                    <div className="bg-[#1c1c1e] border border-white/10 rounded-xl w-[600px] h-[600px] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
                         {/* Header */}
                         <div className="flex items-center justify-between p-6 border-b border-white/10">
                             <div>
                                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                    <Users className="text-indigo-500" size={24}/>
+                                    <Users className="text-[#0a84ff]" size={24}/>
                                     成员管理
                                 </h3>
                                 <p className="text-sm text-slate-400 mt-1">管理 {selectedOrg.name} 的成员列表</p>
@@ -650,7 +650,7 @@ export default function EnterprisesPage() {
                                         className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-white/5 hover:bg-black/40 transition-colors group"
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 font-bold border border-white/5">
+                                            <div className="w-10 h-10 rounded-full bg-[#2c2c2e] flex items-center justify-center text-slate-400 font-bold border border-white/5">
                                                 {user.nickname?.[0] || user.username?.[0] || '?'}
                                             </div>
                                             <div>
@@ -659,7 +659,7 @@ export default function EnterprisesPage() {
                                                         {user.nickname || user.username}
                                                     </span>
                                                     {user.role === 'enterprise_admin' && (
-                                                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                                                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#0a84ff]/16 text-[#64d2ff] border border-[#0a84ff]/25">
                                                             管理员
                                                         </span>
                                                     )}
@@ -700,7 +700,7 @@ export default function EnterprisesPage() {
             {/* Delete Confirmation Modal */}
             {memberToDelete && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-[#1e2230] border border-white/10 rounded-xl p-6 w-[400px] shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
+                    <div className="bg-[#1c1c1e] border border-white/10 rounded-xl p-6 w-[400px] shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
                         <div className="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center mb-4">
                             <Trash2 size={24} className="text-rose-500"/>
                         </div>

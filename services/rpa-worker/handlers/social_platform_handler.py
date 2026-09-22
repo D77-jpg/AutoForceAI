@@ -86,6 +86,16 @@ class SocialHandler(BaseHandler):
             return self.run_redbook(data)
         elif platform in ["tiktok", "douyin"]:
             return self.run_douyin(data)
+        elif platform in ["linkedin"]:
+            from .linkedin_handler import LinkedInHandler
+            h = LinkedInHandler(self.page)
+            h.set_task_context(self.task_id)
+            return h.run(data)
+        elif platform in ["x", "twitter"]:
+            from .x_handler import XHandler
+            h = XHandler(self.page)
+            h.set_task_context(self.task_id)
+            return h.run(data)
         else:
             return self.run_mock(data)
 

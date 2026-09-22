@@ -15,10 +15,16 @@ langchain-core
 langchain-text-splitters
 langchain-openai
 pypdf
+python-docx
 tiktoken
 pgvector
 python-jose[cryptography]
 passlib[bcrypt]
+# bcrypt must stay <4.1: passlib 1.7.4 reads bcrypt.__about__.__version__ which was
+# removed in bcrypt 4.1+, breaking password hashing at runtime.
+bcrypt==4.0.1
 python-multipart
 psutil
 python-pptx
+loguru
+markdown

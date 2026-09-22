@@ -15,10 +15,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh" className="dark">
-      <body>
+      <body className="bg-black text-[#f5f5f7] antialiased">
         <AuthWrapper>
             {children}
-            <Toaster position="top-right" richColors />
+            <Toaster
+              position="top-right"
+              theme="dark"
+              toastOptions={{
+                className: '!bg-[#1c1c1e] !text-[#f5f5f7] !border-white/10 !rounded-2xl !shadow-apple',
+              }}
+            />
         </AuthWrapper>
       </body>
     </html>

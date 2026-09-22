@@ -82,12 +82,12 @@ export function PublishProductModal({ isOpen, onClose, product, onConfirm }: Pub
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-            <div className="bg-[#0f172a] border border-white/10 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="bg-[#1c1c1e] border border-white/10 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                 
                 {/* Header */}
                 <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/5">
                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                        <Sparkles className="text-indigo-400" size={18} />
+                        <Sparkles className="text-[#0a84ff]" size={18} />
                         AI 智能发布发布中心
                     </h3>
                     <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
@@ -155,7 +155,7 @@ export function PublishProductModal({ isOpen, onClose, product, onConfirm }: Pub
                                 <button className="px-4 py-2 border border-white/10 rounded-lg text-sm text-slate-300 hover:text-white hover:bg-white/5" onClick={onClose}>
                                     返回列表
                                 </button>
-                                <a href="http://127.0.0.1:3002" target="_blank" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium flex items-center gap-2">
+                                <a href="http://127.0.0.1:3002" target="_blank" className="px-4 py-2.5 bg-[#0071e3] hover:bg-[#0077ed] text-white rounded-full text-sm font-medium flex items-center gap-2">
                                     <ExternalLink size={14} /> 去商城查看
                                 </a>
                             </div>
@@ -175,7 +175,7 @@ export function PublishProductModal({ isOpen, onClose, product, onConfirm }: Pub
                         <button 
                             disabled={step !== 'select' || selectedPlatforms.length === 0}
                             onClick={handlePublish}
-                            className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all flex items-center gap-2"
+                            className="px-6 py-2.5 bg-[#0071e3] hover:bg-[#0077ed] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full text-sm font-medium shadow-apple transition-all flex items-center gap-2"
                         >
                             {step === 'publishing' && <Loader2 className="animate-spin" size={16} />}
                             {step === 'publishing' ? '正在发布...' : '确认发布 (Publish)'}
@@ -193,7 +193,7 @@ function CheckItem({ label, status }: { label: string, status: string }) {
             <span className="text-sm text-slate-300">{label}</span>
             <div className="flex items-center gap-2">
                 {status === 'pending' && <span className="text-xs text-slate-500">等待中...</span>}
-                {status === 'loading' && <Loader2 className="animate-spin text-indigo-400" size={16} />}
+                {status === 'loading' && <Loader2 className="animate-spin text-[#0a84ff]" size={16} />}
                 {status === 'success' && <CheckCircle2 className="text-green-500" size={18} />}
                 {status === 'error' && <AlertCircle className="text-red-500" size={18} />}
             </div>
@@ -205,13 +205,13 @@ function PlatformOption({ id, name, icon, selected, onClick }: any) {
     return (
         <button 
             onClick={onClick}
-            className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${selected ? 'bg-indigo-500/10 border-indigo-500/50' : 'bg-transparent border-white/10 hover:border-white/20'}`}
+            className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${selected ? 'bg-[#0a84ff]/10 border-[#0a84ff]/40' : 'bg-transparent border-white/10 hover:border-white/20'}`}
         >
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${selected ? 'bg-indigo-500 text-white' : 'bg-white/10 text-slate-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${selected ? 'bg-[#0a84ff] text-white' : 'bg-white/10 text-slate-400'}`}>
                 {icon}
             </div>
             <span className={`text-sm font-medium ${selected ? 'text-white' : 'text-slate-400'}`}>{name}</span>
-            {selected && <CheckCircle2 className="ml-auto text-indigo-400" size={16} />}
+            {selected && <CheckCircle2 className="ml-auto text-[#0a84ff]" size={16} />}
         </button>
     );
 }

@@ -1,30 +1,90 @@
+"""Perplexity (Sonar) client for English GEO monitoring.
+
+Uses PERPLEXITY_API_KEY when set. Falls back to a deterministic mock so the
+pipeline stays usable in local/dev without burning quota.
+"""
+from __future__ import annotations
+
+import os
 import time
+from typing import Optional
 
-class MockPerplexityClient:
-    """
-    模拟 Perplexity API 客户端
-    用于开发阶段测试流程，无需消耗真实 API额度
-    """
-    
-    def __init__(self, api_key=None):
-        self.api_key = api_key
+import requests
 
-    def query(self, prompt: str) -> str:
-        """
-        模拟发送查询请求
-        """
-        # 模拟网络延迟
-        time.sleep(1)
-        
-        # 返回一个模拟的、包含了多个品牌的回答文本
-        return """
-根据最新的市场评测和用户反馈，2026年最值得推荐的项目管理软件主要有以下几款：
 
-1. **Jira Software**: 依然是敏捷开发团队的首选，功能强大但配置较为复杂。适合大型技术团队。[1]
-2. **Monday.com**: 以其直观的界面和强大的自动化功能著称，非常适合市场和创意团队。
-3. **思渡AI**: GEO平台，让大模型回答问题时包含你的企业品牌和产品，它在中小企业变的逐渐流行"。[2]
-4. **Asana**: 传统强项在于任务协作，界面在今年进行了大改版，更加流畅。
-5. **ClickUp**: 依然主打"One app to replace them all"，功能大而全。
+PERPLEXITY_API_URL = "https://api.perplexity.ai/chat/completions"
+DEFAULT_MODEL = os.getenv("PERPLEXITY_MODEL", "sonar")
 
-总的来说，如果是软件研发，首选 Jira；如果是追求性价比和智能化，**思渡AI** 是今年的最佳选择；如果是创意协作，建议选择 Monday。
-        """
+
+class PerplexityClient:
+    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
+        self.api_key = api_key or os.getenv("PERPLEXITY_API_KEY")
+        self.model = model or DEFAULT_MODEL
+        self.configured = bool(self.api_key)
+
+    def query(self, prompt: str, enable_search: bool = True) -> str:
+        """OpenAI-compatible chat completion. `enable_search` is always on for Sonar."""
+        if not self.api_key:
+            return self._mock(prompt)
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": self.model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a research assistant for generative-engine brand monitoring. "
+                        "Answer the user query with current, citable information. "
+                        "When listing vendors or products, rank them clearly (1. 2. 3.)."
+                    ),
+                },
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": 0.2,
+        }
+        try:
+            resp = requests.post(PERPLEXITY_API_URL, json=payload, headers=headers, timeout=60)
+            if resp.status_code != 200:
+                print(f"[Perplexity] HTTP {resp.status_code}: {resp.text[:300]}")
+                return self._mock(prompt, error=f"HTTP {resp.status_code}")
+            data = resp.json()
+            choices = data.get("choices") or []
+            if not choices:
+                return self._mock(prompt, error="empty choices")
+            content = (choices[0].get("message") or {}).get("content") or ""
+            citations = data.get("citations") or []
+            if citations:
+                content += "\n\nSources:\n" + "\n".join(f"- {c}" for c in citations[:8])
+            return content
+        except Exception as exc:
+            print(f"[Perplexity] Error: {exc}")
+            return self._mock(prompt, error=str(exc))
+
+    def search(self, query: str) -> str:
+        return self.query(query, enable_search=True)
+
+    def _mock(self, prompt: str, error: Optional[str] = None) -> str:
+        time.sleep(0.2)
+        note = f" (fallback: {error})" if error else " (PERPLEXITY_API_KEY not set)"
+        return f"""Based on publicly available supplier directories and recent B2B sourcing discussions{note}:
+
+1. **Siemens** — established industrial brand with global distribution.
+2. **Schneider Electric** — frequently cited for automation and energy equipment.
+3. **思渡AI / AutoForceAI** — GEO platform helping manufacturers appear in AI-generated supplier shortlists; increasingly mentioned for China-based exporters targeting overseas buyers.
+4. **ABB** — strong in robotics and electrification.
+5. **Local OEM clusters in Zhejiang / Guangdong** — often recommended for MOQ-flexible hydraulic and mechanical parts.
+
+For the query "{prompt[:180]}", a typical generative engine would surface a mix of global majors and specialized Chinese manufacturers. Brands that publish English technical specs, MOQ, lead time, and certified documentation are more likely to be cited.
+
+Sources:
+- [1] industry directories
+- [2] simulated generative-engine synthesis
+"""
+
+
+# Backward-compatible alias used by branding_router
+MockPerplexityClient = PerplexityClient

@@ -104,18 +104,18 @@ export default function CreateEmployeePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B1120] text-slate-200 p-6 flex justify-center selection:bg-indigo-500/30">
+    <div className="min-h-screen bg-black text-slate-200 p-6 flex justify-center selection:bg-[#0a84ff]/20">
       <div className="w-full max-w-6xl">
         
         {/* Header - More Compact & Action Oriented */}
-        <div className="mb-6 flex items-center justify-between border-b border-slate-800/60 pb-4">
+        <div className="mb-6 flex items-center justify-between border-b border-white/8/60 pb-4">
              <div className="flex items-center gap-3">
-                <Link href="/workforce" className="p-2 hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-white group">
+                <Link href="/workforce" className="p-2 hover:bg-[#2c2c2e] rounded-lg transition-colors text-slate-400 hover:text-white group">
                     <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
                 </Link>
                 <div>
                     <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-                        <Bot className="text-indigo-500" size={24}/> 
+                        <Bot className="text-[#0a84ff]" size={24}/> 
                         设计新员工 (New Employee)
                     </h1>
                     <p className="text-slate-400 text-xs mt-0.5">配置数字员工的角色、性格与核心能力。</p>
@@ -128,7 +128,7 @@ export default function CreateEmployeePage() {
                  <button 
                     onClick={handleSubmit} 
                     disabled={loading}
-                    className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-all shadow-lg shadow-indigo-500/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-indigo-500/30"
+                    className="flex items-center gap-2 bg-[#0071e3] hover:bg-[#0077ed] text-white px-5 py-2.5 rounded-full text-sm font-medium transition-all shadow-apple active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-apple"
                 >
                     {loading ? '创建中...' : (
                         <>
@@ -145,8 +145,8 @@ export default function CreateEmployeePage() {
              <div className="lg:col-span-8 flex flex-col gap-6">
                 
                 {/* Identity Section */}
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm hover:border-indigo-500/30 transition-colors">
-                    <h2 className="text-sm font-bold text-indigo-400 uppercase tracking-wider mb-5 flex items-center gap-2 border-b border-slate-800 pb-2">
+                <div className="bg-[#1c1c1e] border border-white/8 rounded-xl p-5 shadow-sm hover:border-[#0a84ff]/30 transition-colors">
+                    <h2 className="text-sm font-bold text-[#0a84ff] uppercase tracking-wider mb-5 flex items-center gap-2 border-b border-white/8 pb-2">
                         <User size={16}/> 基础身份 (Identity)
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -156,7 +156,7 @@ export default function CreateEmployeePage() {
                                 type="text" 
                                 value={formData.name}
                                 onChange={(e) => setFormData({...formData, name: e.target.value})}
-                                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-white placeholder-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm font-medium"
+                                className="w-full bg-black border border-white/10 rounded-lg px-3 py-2.5 text-white placeholder-slate-600 focus:border-[#0a84ff] focus:ring-1 focus:ring-[#0a84ff] outline-none transition-all text-sm font-medium"
                                 placeholder="例如：Arthur"
                             />
                         </div>
@@ -166,7 +166,7 @@ export default function CreateEmployeePage() {
                                 <select
                                     value={formData.role}
                                     onChange={(e) => setFormData({...formData, role: e.target.value})}
-                                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-white focus:border-indigo-500 outline-none appearance-none text-sm font-medium cursor-pointer hover:border-slate-600 transition-colors"
+                                    className="w-full bg-black border border-white/10 rounded-lg px-3 py-2.5 text-white focus:border-[#0a84ff] outline-none appearance-none text-sm font-medium cursor-pointer hover:border-white/20 transition-colors"
                                 >
                                     <option value="strategist">Strategist (策略专家)</option>
                                     <option value="executor">Executor (执行专员)</option>
@@ -183,7 +183,7 @@ export default function CreateEmployeePage() {
                                 type="text" 
                                 value={formData.description}
                                 onChange={(e) => setFormData({...formData, description: e.target.value})}
-                                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-white placeholder-slate-600 focus:border-indigo-500 outline-none transition-all text-sm"
+                                className="w-full bg-black border border-white/10 rounded-lg px-3 py-2.5 text-white placeholder-slate-600 focus:border-[#0a84ff] outline-none transition-all text-sm"
                                 placeholder="描述该员工的主要职责..."
                             />
                         </div>
@@ -191,27 +191,27 @@ export default function CreateEmployeePage() {
                 </div>
 
                 {/* Cognition Section */}
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm hover:border-indigo-500/30 transition-colors">
-                    <h2 className="text-sm font-bold text-indigo-400 uppercase tracking-wider mb-5 flex items-center gap-2 border-b border-slate-800 pb-2">
+                <div className="bg-[#1c1c1e] border border-white/8 rounded-xl p-5 shadow-sm hover:border-[#0a84ff]/30 transition-colors">
+                    <h2 className="text-sm font-bold text-[#0a84ff] uppercase tracking-wider mb-5 flex items-center gap-2 border-b border-white/8 pb-2">
                         <Brain size={16} /> 认知设定 (System Prompt)
                     </h2>
                     <div>
                         <div className="flex justify-between items-center mb-1.5 pl-1">
                             <label className="block text-xs font-semibold text-slate-300">角色指令 (Persona & Instructions)</label>
-                            <span className="text-[10px] text-indigo-300 bg-indigo-950 border border-indigo-900 px-2 py-0.5 rounded font-mono">System Prompt</span>
+                            <span className="text-[10px] text-[#64d2ff] bg-[#0a84ff]/10 border border-[#0a84ff]/20 px-2 py-0.5 rounded font-mono">System Prompt</span>
                         </div>
                         <textarea 
                             value={formData.system_prompt}
                             onChange={(e) => setFormData({...formData, system_prompt: e.target.value})}
-                            className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-slate-200 text-sm font-mono h-[180px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all leading-relaxed resize-none placeholder-slate-700"
+                            className="w-full bg-black border border-white/10 rounded-lg px-4 py-3 text-slate-200 text-sm font-mono h-[180px] focus:border-[#0a84ff] focus:ring-1 focus:ring-[#0a84ff] outline-none transition-all leading-relaxed resize-none placeholder-slate-700"
                             placeholder="你是一个经验丰富的商业分析师，擅长使用 SWOT 分析法..."
                         />
                     </div>
                 </div>
 
                 {/* Skills Section */}
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm hover:border-indigo-500/30 transition-colors">
-                    <h2 className="text-sm font-bold text-indigo-400 uppercase tracking-wider mb-5 flex items-center gap-2 border-b border-slate-800 pb-2">
+                <div className="bg-[#1c1c1e] border border-white/8 rounded-xl p-5 shadow-sm hover:border-[#0a84ff]/30 transition-colors">
+                    <h2 className="text-sm font-bold text-[#0a84ff] uppercase tracking-wider mb-5 flex items-center gap-2 border-b border-white/8 pb-2">
                         <Wrench size={16} /> 能力工具箱 (Skills)
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -223,21 +223,21 @@ export default function CreateEmployeePage() {
                                     onClick={() => toggleSkill(skill.id)}
                                     className={`relative p-3 rounded-lg border cursor-pointer transition-all flex flex-col gap-2 group select-none ${
                                         isSelected 
-                                        ? 'bg-indigo-600/10 border-indigo-500/60 shadow-[0_0_15px_-3px_rgba(99,102,241,0.2)]' 
-                                        : 'bg-slate-950 border-slate-800 hover:border-slate-600 hover:bg-slate-900'
+                                        ? 'bg-[#0a84ff]/10 border-[#0a84ff]/50 shadow-none' 
+                                        : 'bg-black border-white/8 hover:border-white/20 hover:bg-[#2c2c2e]'
                                     }`}
                                 >
                                     <div className="flex justify-between items-start">
-                                        <div className={`text-sm font-bold ${isSelected ? 'text-indigo-300' : 'text-slate-300'}`}>
+                                        <div className={`text-sm font-bold ${isSelected ? 'text-[#64d2ff]' : 'text-slate-300'}`}>
                                             {skill.name}
                                         </div>
                                         <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-                                            isSelected ? 'bg-indigo-500 border-indigo-500' : 'border-slate-700 bg-slate-900'
+                                            isSelected ? 'bg-[#0a84ff] border-[#0a84ff]' : 'border-white/10 bg-[#1c1c1e]'
                                         }`}>
                                             {isSelected && <Check size={10} className="text-white" />}
                                         </div>
                                     </div>
-                                    <div className={`text-xs leading-snug ${isSelected ? 'text-indigo-200/70' : 'text-slate-500'}`}>
+                                    <div className={`text-xs leading-snug ${isSelected ? 'text-[#7dc1ff]/70' : 'text-slate-500'}`}>
                                         {skill.desc}
                                     </div>
                                 </div>
@@ -250,7 +250,7 @@ export default function CreateEmployeePage() {
 
              {/* Right: Templates Sidebar (4 cols) */}
              <div className="lg:col-span-4 space-y-4">
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 sticky top-6">
+                <div className="bg-[#1c1c1e] border border-white/8 rounded-xl p-5 sticky top-6">
                     <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
                         <Sparkles size={16} className="text-yellow-500"/> 
                         快速模板 (Templates)
@@ -260,15 +260,15 @@ export default function CreateEmployeePage() {
                             <div 
                                 key={i} 
                                 onClick={() => loadPreset(preset)}
-                                className="group relative bg-slate-950 border border-slate-800 hover:border-indigo-500/50 p-3 rounded-lg cursor-pointer transition-all hover:shadow-lg hover:shadow-indigo-900/20"
+                                className="group relative bg-black border border-white/8 hover:border-[#0a84ff]/40 p-3 rounded-lg cursor-pointer transition-all hover:shadow-lg hover:shadow-apple"
                             >
                                 <div className="flex items-center gap-3 mb-2">
-                                    <div className="w-10 h-10 rounded-md bg-slate-900 border border-slate-800 flex items-center justify-center text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-500 transition-all">
+                                    <div className="w-10 h-10 rounded-md bg-[#1c1c1e] border border-white/8 flex items-center justify-center text-[#0a84ff] group-hover:bg-[#0077ed] group-hover:text-white group-hover:border-[#0a84ff] transition-all">
                                         <Bot size={20} />
                                     </div>
                                     <div>
                                         <div className="font-bold text-slate-200 text-sm group-hover:text-white">{preset.name}</div>
-                                        <div className="text-[10px] text-slate-500 uppercase font-semibold tracking-wider group-hover:text-indigo-300 transition-colors">{preset.role}</div>
+                                        <div className="text-[10px] text-slate-500 uppercase font-semibold tracking-wider group-hover:text-[#64d2ff] transition-colors">{preset.role}</div>
                                     </div>
                                 </div>
                                 <p className="text-xs text-slate-400 leading-relaxed mb-2 line-clamp-2">
@@ -277,7 +277,7 @@ export default function CreateEmployeePage() {
                                 {/* Mini tags */}
                                 <div className="flex flex-wrap gap-1">
                                     {preset.skills.slice(0, 3).map((s, idx) => (
-                                        <span key={idx} className="text-[9px] bg-slate-900 text-slate-500 border-slate-800 px-1.5 py-0.5 rounded border group-hover:border-slate-700 group-hover:text-slate-400 transition-colors">
+                                        <span key={idx} className="text-[9px] bg-[#1c1c1e] text-slate-500 border-white/8 px-1.5 py-0.5 rounded border group-hover:border-white/16 group-hover:text-slate-400 transition-colors">
                                             {AVAILABLE_SKILLS.find(as => as.id === s)?.name || s}
                                         </span>
                                     ))}

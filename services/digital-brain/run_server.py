@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-port = int(os.getenv("PORT", 8002))
+port = int(os.getenv("PORT", 8010))
 
 if __name__ == "__main__":
     print(f"Starting server on port {port}...")

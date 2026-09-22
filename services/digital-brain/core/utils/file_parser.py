@@ -6,9 +6,12 @@ from fastapi import UploadFile
 
 # Try to import optional dependencies
 try:
-    from PyPDF2 import PdfReader
+    from pypdf import PdfReader
 except ImportError:
-    PdfReader = None
+    try:
+        from PyPDF2 import PdfReader
+    except ImportError:
+        PdfReader = None
 
 try:
     from docx import Document

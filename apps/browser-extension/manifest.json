@@ -13,7 +13,9 @@
     "*://*.xiaohongshu.com/*",
     "*://creator.xiaohongshu.com/*",
     "*://*.douyin.com/*",
-    "*://creator.douyin.com/*"
+    "*://creator.douyin.com/*",
+    "*://*.linkedin.com/*",
+    "*://linkedin.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -26,6 +28,11 @@
     {
       "matches": ["*://creator.xiaohongshu.com/*"],
       "js": ["scripts/xiaohongshu_handler.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://www.linkedin.com/*", "*://linkedin.com/*"],
+      "js": ["scripts/linkedin_handler.js"],
       "run_at": "document_idle"
     }
   ],

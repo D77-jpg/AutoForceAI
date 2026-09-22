@@ -74,7 +74,7 @@ async def generate_content(request: ContentGenerationRequest):
     1. Title: Catchy, viral hook.
     2. Body: Engaging, well-formatted (use emojis), addressing the pain points or interests.
     3. Tags: 3-5 relevant hashtags.
-    4. Language: Simplified Chinese (unless Topic implies otherwise).
+    4. Language: Use English if the topic/platform is LinkedIn, WordPress, X/Twitter, SEO blog, or otherwise clearly overseas; otherwise Simplified Chinese.
 
     RESPONSE FORMAT:
     You MUST output ONLY valid JSON. Structure:
@@ -193,10 +193,7 @@ class ImageGenRequest(BaseModel):
 
 @router.post("/generate-image")
 async def generate_image(req: ImageGenRequest):
-    dash_key = os.getenv("DASHSCOPE_API_KEY")
-    if not dash_key:
-        # Fallback to hardcoded key for demo stability if env missing
-        dash_key = "sk-19b36fce884a412c898f2d9d42eec073" 
+    dash_key = os.getenv("DASHSCOPE_API_KEY") 
     
     if not dash_key:
          raise HTTPException(status_code=500, detail="Server Configuration Error: Missing DASHSCOPE_API_KEY")

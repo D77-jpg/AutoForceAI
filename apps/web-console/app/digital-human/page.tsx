@@ -11,8 +11,8 @@ export default function DigitalHumanPage() {
       </div>
       <h1 className="text-3xl font-bold text-white mb-2">数字人梦工厂</h1>
       <p className="text-slate-400 max-w-md mb-8">
-        Digital Human Factory 渲染引擎初始化中。<br/>
-        高保真虚拟人视频生成与直播流管理。
+        数字人模块规划中（远期）。将提供高保真虚拟人视频生成与直播流管理。<br/>
+        Digital Human module is planned for a future release.
       </p>
       <Link href="/" className="flex items-center gap-2 px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-white transition-colors">
          <ArrowLeft size={16} /> 返回门户

@@ -11,8 +11,8 @@ export default function OrganizationPage() {
       </div>
       <h1 className="text-3xl font-bold text-white mb-2">虚拟组织中心</h1>
       <p className="text-slate-400 max-w-md mb-8">
-        Virtual Organization Center 正在构建中。<br/>
-        您将在此编排您的 AI 员工团队。
+        虚拟组织中心正在构建中。您将在此编排您的 AI 员工团队。<br/>
+        Virtual Organization Center is under construction.
       </p>
       <Link href="/" className="flex items-center gap-2 px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-white transition-colors">
          <ArrowLeft size={16} /> 返回门户

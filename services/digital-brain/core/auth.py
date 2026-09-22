@@ -1,10 +1,19 @@
 from datetime import datetime, timedelta
 from typing import Optional
+import os
+import sys
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-# Secret key for JWT (Should be in env)
-SECRET_KEY = "PLEASE_CHANGE_THIS_TO_A_SUPER_SECRET_KEY"
+# Secret key for JWT — read from env; fall back to a dev default with a loud warning.
+SECRET_KEY = os.getenv("JWT_SECRET")
+if not SECRET_KEY:
+    SECRET_KEY = "autoforce-dev-only-insecure-secret-key"
+    print(
+        "WARNING: JWT_SECRET is not set. Using an insecure development default. "
+        "Set JWT_SECRET in your .env for any non-local deployment.",
+        file=sys.stderr,
+    )
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 # 7 days persistence
 

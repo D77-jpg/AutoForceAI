@@ -39,6 +39,9 @@ export default function GEODashboard() {
   
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
+  const [engine, setEngine] = useState('perplexity');
+  const [watches, setWatches] = useState<any[]>([]);
+  const [intervalHours, setIntervalHours] = useState(24);
   const router = useRouter();
 
   // Metrics Calculation
@@ -141,12 +144,15 @@ export default function GEODashboard() {
   const fetchHistory = async () => {
     try {
       const res = await api.get(`/api/v1/branding/tasks?limit=50`); 
-      // API returns Newest First (Desc). 
-      // We want to show Newest at the Top, so DO NOT reverse.
-      // Reversing puts the oldest at the top.
       setTasks(res.data); 
     } catch (err) {
       console.error("加载历史失败", err);
+    }
+    try {
+      const w = await api.get(`/api/v1/branding/watches`);
+      setWatches(w.data.items || []);
+    } catch (err) {
+      // unauthenticated pages may skip
     }
   };
 
@@ -162,9 +168,40 @@ export default function GEODashboard() {
     // Sync to Diagnosis Page State
     setDiagBrand(brand);
     setDiagUserQueries(query);
+    setLoading(true);
+    try {
+      await api.post('/api/v1/branding/analyze', {
+        target_brand: brand,
+        query,
+        engine_name: engine,
+        language: /[A-Za-z]/.test(query) ? 'en' : 'zh',
+      });
+      showToast("监测任务已提交（Perplexity / 选定引擎）", "success");
+      fetchHistory();
+    } catch (e: any) {
+      showToast(e?.response?.data?.detail || "提交失败，改为打开诊断页", "error");
+      router.push('/diagnosis?auto=true');
+      return;
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // Navigate to diagnosis with auto-start flag
-    router.push('/diagnosis?auto=true');
+  const handleSchedule = async () => {
+    if (!brand || !query) return showToast("请填写品牌和查询词", "error");
+    try {
+      await api.post('/api/v1/branding/watches', {
+        target_brand: brand,
+        query,
+        engine_name: engine,
+        language: 'en',
+        interval_hours: intervalHours,
+      });
+      showToast(`已加入定时监测，每 ${intervalHours} 小时查询一次`, "success");
+      fetchHistory();
+    } catch (e: any) {
+      showToast(e?.response?.data?.detail || "创建监测失败", "error");
+    }
   };
 
   const handleDeleteTask = async (e: React.MouseEvent, id: number) => {
@@ -198,17 +235,17 @@ export default function GEODashboard() {
       {/* 1. Practical Action Header */}
       <div className="flex flex-col md:flex-row gap-6 items-stretch">
         {/* Left: Quick Launch */}
-        <div className="flex-[2] glass-card bg-gradient-to-br from-indigo-900/40 to-slate-900/40 border-indigo-500/20 p-6 flex flex-col justify-between relative overflow-hidden">
+        <div className="flex-[2] bg-[#1c1c1e] border border-white/8 rounded-[24px] p-6 flex flex-col justify-between relative overflow-hidden">
              <div className="relative z-10">
-                <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-                   <Zap className="text-yellow-400 fill-current" size={20}/> 
+                <h2 className="text-[22px] font-semibold tracking-tight text-white mb-2 flex items-center gap-2">
+                   <Zap className="text-[#ffd60a] fill-current" size={20}/> 
                    GEO 优化引擎
                 </h2>
-                <p className="text-sm text-slate-400 mb-6 max-w-lg">
-                   输入目标品牌与用户查询词（Query），模拟 AI 搜索引擎的回答逻辑，检测品牌是否被推荐及情感倾向。
+                <p className="text-[15px] text-[#86868b] mb-6 max-w-lg">
+                   输入品牌与英文查询词（如 best hydraulic pump supplier China），定时查询 Perplexity 等生成式引擎，记录品牌是否被提及。
                 </p>
                 
-                <div className="flex gap-2 w-full max-w-2xl bg-slate-900/60 p-2 rounded-xl border border-white/10 backdrop-blur-sm">
+                <div className="flex gap-2 w-full max-w-3xl bg-black/40 p-2 rounded-full border border-white/10">
                     <input 
                       type="text" 
                       value={brand}
@@ -225,25 +262,53 @@ export default function GEODashboard() {
                       type="text" 
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
-                      placeholder="用户查询词 (e.g. 20万以内最好的SUV)"
+                      placeholder='英文查询词 e.g. best hydraulic pump supplier China'
                       className="flex-1 bg-transparent text-white placeholder-slate-500 focus:outline-none px-4 text-sm"
                     />
+                    <select
+                      value={engine}
+                      onChange={(e) => setEngine(e.target.value)}
+                      className="bg-transparent text-xs text-slate-300 border-l border-white/10 px-2 outline-none"
+                    >
+                      <option value="perplexity">Perplexity</option>
+                      <option value="qwen">Qwen</option>
+                      <option value="zhipu">Zhipu</option>
+                    </select>
                     <button 
                       onClick={handleStartTask}
                       disabled={loading}
-                      className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-lg text-sm font-bold transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50"
+                      className="bg-[#0071e3] hover:bg-[#0077ed] text-white px-4 py-2 rounded-full text-sm font-medium transition-all shadow-apple disabled:opacity-50"
                     >
-                      {loading ? <span className="animate-pulse">Analyzing...</span> : "开始诊断"}
+                      {loading ? <span className="animate-pulse">Running...</span> : "立即监测"}
                     </button>
+                    <button
+                      onClick={handleSchedule}
+                      className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-xs"
+                    >
+                      定时
+                    </button>
+                </div>
+                <div className="flex items-center gap-2 mt-2 text-[11px] text-slate-500">
+                  <span>间隔</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={168}
+                    value={intervalHours}
+                    onChange={(e) => setIntervalHours(Number(e.target.value) || 24)}
+                    className="w-16 bg-black/30 border border-white/10 rounded px-1 py-0.5"
+                  />
+                  <span>小时 · 历史趋势见下方卡片</span>
+                  {watches.length > 0 && <span className="text-[#64d2ff]">已启用 {watches.filter(w => w.enabled).length} 条监测</span>}
                 </div>
              </div>
              
              {/* Background Decoration */}
-             <div className="absolute right-0 bottom-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -z-0"></div>
+             <div className="absolute right-0 bottom-0 w-64 h-64 bg-[#0a84ff]/10 rounded-full blur-3xl -z-0"></div>
         </div>
 
         {/* Right: Real-time Score */}
-        <div className="flex-1 glass-card p-6 flex flex-col justify-center items-center text-center relative overflow-hidden bg-slate-900/60">
+        <div className="flex-1 glass-card p-6 flex flex-col justify-center items-center text-center relative overflow-hidden bg-[#1c1c1e]/80">
             {metrics ? (
                 <>
                     <h3 className="text-sm font-medium text-slate-400 uppercase tracking-widest mb-1">GEO 健康度评分</h3>
@@ -297,11 +362,11 @@ export default function GEODashboard() {
 
                           <div className="flex items-center gap-2 mt-auto">
                              <div className="text-[10px] text-slate-500 bg-black/20 px-2 py-0.5 rounded border border-white/5 flex items-center gap-1">
-                                 <Zap size={10} className="text-indigo-400"/>
+                                 <Zap size={10} className="text-[#0a84ff]"/>
                                  {task.engine_name || 'AI Engine'}
                              </div>
                               <button 
-                                className="ml-auto text-[10px] text-indigo-400 flex items-center gap-1 hover:text-indigo-300 transition-colors"
+                                className="ml-auto text-[10px] text-[#0a84ff] flex items-center gap-1 hover:text-[#64d2ff] transition-colors"
                               >
                                   Diagnose <Play size={10} />
                               </button>
@@ -355,7 +420,7 @@ export default function GEODashboard() {
 
                           <div className="flex items-center gap-2 mt-auto">
                               <div className="text-[10px] text-slate-500 bg-black/20 px-2 py-0.5 rounded border border-white/5 flex items-center gap-1">
-                                 <Zap size={10} className="text-indigo-400"/>
+                                 <Zap size={10} className="text-[#0a84ff]"/>
                                  {task.engine_name || 'AI Engine'}
                              </div>
                              <div className="flex items-center gap-1 ml-auto">
@@ -395,7 +460,7 @@ export default function GEODashboard() {
                           <XAxis dataKey="date" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false}/>
                           <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} domain={[0, 100]}/>
                           <RechartsTooltip 
-                              contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', fontSize: '12px' }}
+                              contentStyle={{ backgroundColor: '#1c1c1e', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
                               itemStyle={{ color: '#e2e8f0' }}
                           />
                           <Area type="monotone" dataKey="visibility" stroke="#6366f1" fillOpacity={1} fill="url(#colorVis)" strokeWidth={2} name="可见性 %"/>
@@ -403,9 +468,9 @@ export default function GEODashboard() {
                   </ResponsiveContainer>
               </div>
               {/* Recommendations Footer */}
-              <div className="p-4 border-t border-white/5 bg-slate-900/30">
+              <div className="p-4 border-t border-white/5 bg-[#1c1c1e]/50">
                   <div className="flex items-start gap-3">
-                      <FileText size={16} className="text-indigo-400 mt-1"/>
+                      <FileText size={16} className="text-[#0a84ff] mt-1"/>
                       <div>
                           <h4 className="text-xs font-bold text-slate-300">优化建议 (AI Insights)</h4>
                           <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">

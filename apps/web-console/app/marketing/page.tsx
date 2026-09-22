@@ -1,34 +1,37 @@
 "use client";
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
-  BarChart, 
   PenTool, 
   Image as ImageIcon, 
   Send, 
   Cpu, 
-  TrendingUp,
   ArrowUpRight,
   MousePointerClick,
   Eye,
   Share2
 } from 'lucide-react';
 import Link from 'next/link';
+import api from '../../lib/api';
 
 export default function MarketingDashboard() {
+  const [kpis, setKpis] = useState<any>(null);
+  useEffect(() => {
+    api.get('/api/v1/marketing/funnel?days=30').then(r => setKpis(r.data.kpis)).catch(() => {});
+  }, []);
   return (
     <div className="h-full w-full p-6 text-slate-100 flex flex-col gap-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-rose-400">AI 营销云看板</h1>
-        <p className="text-sm text-slate-400 mt-1">AIGC Content Creation & Automated Marketing Operations</p>
+        <p className="text-sm text-slate-400 mt-1">外贸获客引擎 · 英文内容 · 海外分发 · GEO 监测</p>
       </div>
 
       {/* Quick Access Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <KpiCard icon={Eye} title="总曝光量 (Impressions)" value="2.4M" trend="+18.2%" trendUp />
-          <KpiCard icon={MousePointerClick} title="互动点击 (Clicks)" value="45.2k" trend="+5.4%" trendUp />
-          <KpiCard icon={Share2} title="内容分发 (Posts)" value="128" sub="This Week" />
-          <KpiCard icon={Cpu} title="RPA 任务执行" value="89%" trend="Success Rate" trendUp={true} />
+          <KpiCard icon={PenTool} title="内容产出 (30d)" value={String(kpis?.content ?? "—")} sub="英文文案" />
+          <KpiCard icon={Eye} title="GEO 曝光" value={String(kpis?.mentions ?? "—")} trend={kpis ? `${kpis.mention_rate}%` : undefined} trendUp />
+          <KpiCard icon={Share2} title="内容分发" value={String(kpis?.jobs ?? "—")} sub="RPA 任务" />
+          <KpiCard icon={Cpu} title="RPA 成功率" value={kpis ? `${kpis.success_rate}%` : "—"} trend="Success Rate" trendUp={true} />
       </div>
 
       {/* Main Sections */}
@@ -67,16 +70,16 @@ export default function MarketingDashboard() {
               <div className="grid grid-cols-2 gap-4">
                   <ActionCard 
                     href="/marketing/distribution"
-                    title="一键投放 (Distribute)"
-                    desc="多平台内容同步 (微信/知乎/小红书)。"
+                    title="海外投放 (Distribute)"
+                    desc="LinkedIn / WordPress / X 一键入队。"
                     icon={Share2}
                     color="bg-blue-500"
                   />
                   <ActionCard 
-                    href="/marketing/rpa"
-                    title="RPA 执行 (RPA Worker)"
-                    desc="自动点赞评论、私信触达、数据采集。"
-                    icon={Cpu}
+                    href="/marketing/analytics"
+                    title="获客漏斗 (Analytics)"
+                    desc="内容 → 发布 → 曝光 → 本地询盘。"
+                    icon={MousePointerClick}
                     color="bg-cyan-500"
                   />
               </div>

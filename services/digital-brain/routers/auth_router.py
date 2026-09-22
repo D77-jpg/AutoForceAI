@@ -12,7 +12,7 @@ from pydantic import BaseModel
 
 from core.db_manager import get_shared_db
 from database.shared_models import User, Organization, UserRole
-from core.auth import create_access_token
+from core.auth import create_access_token, get_password_hash, verify_password
 from core.dependencies import get_current_user_id
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -21,10 +21,21 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 WECHAT_APP_ID = os.getenv("WECHAT_APP_ID")
 WECHAT_APP_SECRET = os.getenv("WECHAT_APP_SECRET")
 WECHAT_REDIRECT_URI = os.getenv("WECHAT_REDIRECT_URI")
+# Whether to allow open email registration (first user always becomes system admin)
+ALLOW_EMAIL_REGISTER = os.getenv("ALLOW_EMAIL_REGISTER", "true").lower() == "true"
 
 # --- Schemas ---
 class WeChatLoginRequest(BaseModel):
     code: str
+
+class EmailRegisterRequest(BaseModel):
+    email: str
+    password: str
+    nickname: Optional[str] = None
+
+class EmailLoginRequest(BaseModel):
+    email: str
+    password: str
 
 class OrganizationCreateRequest(BaseModel):
     name: str
@@ -47,6 +58,90 @@ class LoginResponse(BaseModel):
     invite_code: Optional[str] = None # Added invite code for admins
 
 # --- Endpoints ---
+
+def _build_login_response(user: User, db: Session) -> dict:
+    """Shared response builder for all login/register paths."""
+    org_name = user.organization.name if user.organization else None
+    role_str = user.role.value if hasattr(user.role, 'value') else user.role
+    invite_code = None
+    if user.organization and role_str == UserRole.ENTERPRISE_ADMIN.value:
+        invite_code = user.organization.invite_code
+
+    access_token = create_access_token(
+        data={
+            "sub": user.username,
+            "user_id": user.id,
+            "role": role_str,
+            "org_id": user.organization_id,
+            "nickname": user.nickname,
+            "avatar": user.avatar,
+        }
+    )
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user_id": user.id,
+        "username": user.username,
+        "nickname": user.nickname,
+        "avatar": user.avatar,
+        "role": role_str,
+        "organization_id": user.organization_id,
+        "organization_name": org_name,
+        "invite_code": invite_code,
+    }
+
+
+@router.post("/register", response_model=LoginResponse, status_code=status.HTTP_201_CREATED)
+def email_register(request: EmailRegisterRequest, db: Session = Depends(get_shared_db)):
+    """
+    Email + password registration (formal account system).
+    The very first user in the system becomes the system admin.
+    """
+    if not ALLOW_EMAIL_REGISTER:
+        raise HTTPException(status_code=403, detail="邮箱注册未开放，请联系管理员开通账号")
+
+    email = request.email.strip().lower()
+    if not email or "@" not in email or "." not in email.split("@")[-1]:
+        raise HTTPException(status_code=400, detail="邮箱格式不正确")
+    if len(request.password) < 6:
+        raise HTTPException(status_code=400, detail="密码长度至少 6 位")
+
+    existing = db.query(User).filter(User.email == email).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="该邮箱已注册，请直接登录")
+
+    # First user becomes system admin
+    user_count = db.query(User).count()
+    role = UserRole.ADMIN if user_count == 0 else UserRole.USER
+
+    user = User(
+        username=f"e_{uuid.uuid4().hex[:12]}",  # clean ASCII system username
+        nickname=request.nickname or email.split("@")[0],
+        email=email,
+        hashed_password=get_password_hash(request.password),
+        role=role,
+        is_active=True,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    return _build_login_response(user, db)
+
+
+@router.post("/login", response_model=LoginResponse)
+def email_login(request: EmailLoginRequest, db: Session = Depends(get_shared_db)):
+    """Email + password login."""
+    email = request.email.strip().lower()
+    user = db.query(User).filter(User.email == email).first()
+    if not user or not user.hashed_password:
+        raise HTTPException(status_code=401, detail="邮箱或密码错误")
+    if not verify_password(request.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="邮箱或密码错误")
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="账号已被停用，请联系管理员")
+
+    return _build_login_response(user, db)
 
 
 @router.post("/organization/create", response_model=LoginResponse)

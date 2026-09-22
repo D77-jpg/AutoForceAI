@@ -50,6 +50,12 @@ class OrganizationUpdate(BaseModel):
 class SetOrgAdminRequest(BaseModel):
     user_id: int
 
+class UserUpdateRequest(BaseModel):
+    nickname: Optional[str] = None
+    email: Optional[str] = None
+    role: Optional[str] = None  # admin / enterprise_admin / user
+    is_active: Optional[bool] = None
+
 # --- Endpoints ---
 
 @router.get("/users", response_model=List[UserSchema])
@@ -142,6 +148,77 @@ def get_user(
         "organization_name": org_name,
         "created_at": user.created_at,
         "is_active": user.is_active or True
+    }
+
+@router.patch("/users/{user_id}", response_model=UserSchema)
+def update_user(
+    user_id: int,
+    updates: UserUpdateRequest,
+    current_user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_shared_db)
+):
+    """Admin: update a user's profile / role / active status."""
+    current_user = db.query(User).filter(User.id == current_user_id).first()
+    if not current_user:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Permission: system admin can edit anyone; enterprise admin only within own org
+    if current_user.role == UserRole.ADMIN.value:
+        pass
+    elif current_user.role == UserRole.ENTERPRISE_ADMIN.value:
+        if user.organization_id != current_user.organization_id:
+            raise HTTPException(status_code=403, detail="Access denied: Different Organization")
+        # Enterprise admin cannot promote to system admin or edit system admins
+        if updates.role == UserRole.ADMIN.value or user.role == UserRole.ADMIN.value:
+            raise HTTPException(status_code=403, detail="Insufficient permission")
+    else:
+        raise HTTPException(status_code=403, detail="Admin permission required")
+
+    # Self-protection: cannot deactivate / demote yourself
+    if user.id == current_user.id:
+        if updates.is_active is False:
+            raise HTTPException(status_code=400, detail="不能停用自己的账号")
+        if updates.role and updates.role != user.role:
+            raise HTTPException(status_code=400, detail="不能修改自己的角色")
+
+    # Role validation
+    valid_roles = {r.value for r in UserRole}
+    if updates.role is not None and updates.role not in valid_roles:
+        raise HTTPException(status_code=400, detail=f"非法角色: {updates.role}")
+
+    # Email uniqueness
+    if updates.email is not None and updates.email != user.email:
+        email = updates.email.strip().lower()
+        if email:
+            conflict = db.query(User).filter(User.email == email, User.id != user_id).first()
+            if conflict:
+                raise HTTPException(status_code=409, detail="该邮箱已被其他账号使用")
+            user.email = email
+
+    if updates.nickname is not None:
+        user.nickname = updates.nickname
+    if updates.role is not None:
+        user.role = updates.role
+    if updates.is_active is not None:
+        user.is_active = updates.is_active
+
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "id": user.id,
+        "username": user.username,
+        "nickname": user.nickname,
+        "email": user.email,
+        "role": user.role,
+        "organization_id": user.organization_id,
+        "organization_name": user.organization.name if user.organization else None,
+        "created_at": user.created_at,
+        "is_active": user.is_active
     }
 
 @router.get("/organizations", response_model=List[OrganizationSchema])

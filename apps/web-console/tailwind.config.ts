@@ -9,6 +9,44 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      colors: {
+        apple: {
+          bg: '#000000',
+          surface: '#1c1c1e',
+          raised: '#2c2c2e',
+          overlay: '#3a3a3c',
+          blue: '#0a84ff',
+          blueStrong: '#0071e3',
+          label: '#f5f5f7',
+          secondary: '#86868b',
+          tertiary: '#6e6e73',
+          green: '#30d158',
+          orange: '#ff9f0a',
+          red: '#ff453a',
+          yellow: '#ffd60a',
+        },
+      },
+      fontFamily: {
+        sans: [
+          '-apple-system',
+          'BlinkMacSystemFont',
+          '"SF Pro Text"',
+          '"SF Pro Display"',
+          '"Helvetica Neue"',
+          'Inter',
+          'system-ui',
+          'sans-serif',
+        ],
+      },
+      borderRadius: {
+        apple: '14px',
+        'apple-lg': '20px',
+        'apple-xl': '28px',
+      },
+      boxShadow: {
+        apple: '0 8px 30px rgba(0,0,0,0.32)',
+        'apple-lg': '0 18px 50px rgba(0,0,0,0.4)',
+      },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic':

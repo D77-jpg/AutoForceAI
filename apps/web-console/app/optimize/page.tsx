@@ -33,8 +33,10 @@ interface LogStep {
 // --- Data ---
 
 const PLATFORMS = [
+  { id: 'linkedin', name: 'LinkedIn', icon: 'in', color: 'bg-blue-600' },
+  { id: 'wordpress', name: 'WordPress', icon: '🅦', color: 'bg-[#0071e3]' },
+  { id: 'x', name: 'X / Twitter', icon: '𝕏', color: 'bg-slate-700' },
   { id: 'redbook', name: '小红书', icon: '📕', color: 'bg-red-500' },
-  { id: 'tiktok', name: '抖音', icon: '🎵', color: 'bg-black' },
   { id: 'zhihu', name: '知乎', icon: '❓', color: 'bg-blue-500' },
   { id: 'baidu_baike', name: '百度词条', icon: '📖', color: 'bg-blue-600' },
 ];
@@ -371,7 +373,7 @@ export default function ContentFactory() {
       <main className="flex-1 flex h-screen">
           
           {/* LEFT: Strategic Brief (Input) */}
-          <div className="w-[400px] border-r border-white/5 p-6 flex flex-col gap-6 overflow-y-auto bg-slate-900/20">
+          <div className="w-[400px] border-r border-white/5 p-6 flex flex-col gap-6 overflow-y-auto bg-[#1c1c1e]/40">
               <div>
                   <h2 className="text-lg font-bold text-white mb-1">战略简报 (Strategic Brief)</h2>
                   <p className="text-xs text-slate-500">为 Leo 定义内容生成任务。</p>
@@ -453,7 +455,7 @@ export default function ContentFactory() {
                     disabled={isGenerating || !topic}
                     className={`w-full py-3 rounded-lg flex items-center justify-center gap-2 font-bold text-sm transition-all ${
                         isGenerating || !topic 
-                        ? 'bg-slate-800 text-slate-500 cursor-not-allowed' 
+                        ? 'bg-[#2c2c2e] text-slate-500 cursor-not-allowed' 
                         : 'bg-pink-600 hover:bg-pink-500 text-white shadow-lg shadow-pink-600/20'
                     }`}
                   >
@@ -495,9 +497,9 @@ export default function ContentFactory() {
                                   <div className={`w-3 h-3 rounded-full border-2 z-10 bg-[#050912] ${
                                       log.status === 'completed' ? 'border-pink-500 bg-pink-500' :
                                       log.status === 'active' ? 'border-pink-500 animate-pulse' :
-                                      'border-slate-700'
+                                      'border-white/10'
                                   }`} />
-                                  <div className="w-px h-full bg-slate-800 absolute top-3" />
+                                  <div className="w-px h-full bg-[#2c2c2e] absolute top-3" />
                               </div>
                               <div className="pb-4">
                                   <div className={`text-sm font-mono mb-1 ${

@@ -11,12 +11,14 @@ export default function CrmPage() {
       </div>
       <h1 className="text-3xl font-bold text-white mb-2">AI 客户关系管理 CRM</h1>
       <p className="text-slate-400 max-w-md mb-8">
-        Intelligent CRM System is under construction.<br/>
-        全渠道客户画像与自动化销售线索挖掘引擎。
+        Genesis_CRM 集成暂缓。当前询盘先落入本地线索池，可筛选、改状态、导出 CSV；CRM 稳定后再由投递器同步，无需返工。
       </p>
-      <Link href="/" className="flex items-center gap-2 px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-white transition-colors">
-         <ArrowLeft size={16} /> 返回门户
-      </Link>
+      <div className="flex gap-3">
+        <Link href="/leads" className="px-6 py-2.5 bg-[#0071e3] hover:bg-[#0077ed] rounded-lg text-sm text-white">打开本地线索池</Link>
+        <Link href="/" className="flex items-center gap-2 px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-white transition-colors">
+           <ArrowLeft size={16} /> 返回门户
+        </Link>
+      </div>
     </div>
   );
 }

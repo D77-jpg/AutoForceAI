@@ -15,11 +15,10 @@ import Link from 'next/link';
 
 export default function PlatformDashboard() {
   return (
-    <div className="h-full w-full p-6 text-slate-100 flex flex-col gap-6">
-      {/* Header */}
+    <div className="h-full w-full p-6 text-[#f5f5f7] flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">AI 中台总览</h1>
-        <p className="text-sm text-slate-400 mt-1">Enterprise AI Infrastructure & Model Routing</p>
+        <h1 className="text-[28px] font-semibold tracking-tight text-[#f5f5f7]">AI 中台总览</h1>
+        <p className="text-[15px] text-[#86868b] mt-1.5">Enterprise AI Infrastructure & Model Routing</p>
       </div>
 
       {/* KPI Cards */}
@@ -37,10 +36,10 @@ export default function PlatformDashboard() {
           <div className="lg:col-span-2 glass-panel p-6 overflow-y-auto">
              <div className="flex justify-between items-center mb-6">
                 <h3 className="font-semibold flex items-center gap-2">
-                    <Database size={18} className="text-indigo-400" />
+                    <Database size={18} className="text-[#0a84ff]" />
                     核心模型服务状态
                 </h3>
-                <Link href="/platform/models" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
+                <Link href="/platform/models" className="text-xs text-[#0a84ff] hover:text-[#64d2ff] flex items-center gap-1">
                     管理模型 <ArrowRight size={12}/>
                 </Link>
              </div>
@@ -66,7 +65,7 @@ export default function PlatformDashboard() {
                  {/* Visual Placeholder for Chart */}
                  <div className="flex items-end justify-between h-32 gap-1 px-2">
                     {[30, 45, 35, 60, 75, 50, 65, 80, 70, 90, 85, 95].map((h, i) => (
-                        <div key={i} className="w-full bg-gradient-to-t from-indigo-500/20 to-indigo-500/80 rounded-t-sm" style={{height: `${h}%`}}></div>
+                        <div key={i} className="w-full bg-gradient-to-t from-[#0a84ff]/20 to-[#0a84ff]/70 rounded-t-sm" style={{height: `${h}%`}}></div>
                     ))}
                  </div>
                  <div className="mt-4 flex justify-between text-xs text-slate-500">
@@ -81,7 +80,7 @@ export default function PlatformDashboard() {
                   <h3 className="font-semibold mb-4 text-sm text-slate-300">系统健康度</h3>
                   <div className="flex items-center gap-4">
                       <div className="relative w-16 h-16 flex items-center justify-center">
-                          <div className="absolute inset-0 border-4 border-slate-700 rounded-full"></div>
+                          <div className="absolute inset-0 border-4 border-white/10 rounded-full"></div>
                           <div className="absolute inset-0 border-4 border-emerald-500 rounded-full border-l-transparent border-r-transparent rotate-45"></div>
                           <span className="text-lg font-bold text-emerald-400">98</span>
                       </div>

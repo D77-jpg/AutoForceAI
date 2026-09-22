@@ -13,6 +13,8 @@ async function handleRPATask(taskData) {
         targetUrl = "https://creator.xiaohongshu.com/publish/publish";
     } else if (taskData.platform === "douyin") {
         targetUrl = "https://creator.douyin.com/";
+    } else if (taskData.platform === "linkedin") {
+        targetUrl = "https://www.linkedin.com/feed/";
     }
 
     if (!targetUrl) return;

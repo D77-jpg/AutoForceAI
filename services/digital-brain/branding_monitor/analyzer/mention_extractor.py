@@ -157,7 +157,8 @@ class MentionExtractor:
         sentiment = "neutral"
         sentiment_score = 5
         if is_mentioned:
-            if "最佳" in content or "推荐" in content or "黑马" in content:
+            positive_hits = ("最佳", "推荐", "黑马", "best", "recommend", "leading", "top", "preferred")
+            if any(w in content.lower() for w in positive_hits):
                 sentiment = "positive"
                 sentiment_score = 9
         
