@@ -29,6 +29,10 @@ module.exports = {
         success: ch('success'),
         warning: ch('warning'),
         danger: ch('danger'),
+        'tint-growth': ch('tint-growth'),
+        'tint-revenue': ch('tint-revenue'),
+        'tint-decision': ch('tint-decision'),
+        'tint-ops': ch('tint-ops'),
       },
       fontFamily: {
         sans: ['var(--ui-font-sans)'],

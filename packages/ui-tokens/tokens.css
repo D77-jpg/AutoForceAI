@@ -21,6 +21,12 @@
   --ui-warning: 255 159 10;        /* #FF9F0A */
   --ui-danger: 255 59 48;          /* #FF3B30 */
 
+  /* ── 分区主题色（macOS 系统设置风格实心图标底） ────── */
+  --ui-tint-growth: 255 59 48;     /* 增长 #FF3B30 */
+  --ui-tint-revenue: 0 122 255;    /* 营收 #007AFF */
+  --ui-tint-decision: 88 86 214;   /* 决策 #5856D6 */
+  --ui-tint-ops: 255 149 0;        /* 运营 #FF9500 */
+
   /* ── 圆角 ─────────────────────────────────────────── */
   --ui-radius-sm: 8px;
   --ui-radius-md: 10px;
@@ -58,6 +64,11 @@
     --ui-text-tertiary: 134 134 139; /* #86868B */
     --ui-accent: 41 151 255;         /* #2997FF */
     --ui-accent-hover: 76 166 255;
+    --ui-success: 48 209 88;         /* #30D158 */
+    --ui-tint-growth: 255 69 58;     /* #FF453A */
+    --ui-tint-revenue: 10 132 255;   /* #0A84FF */
+    --ui-tint-decision: 94 92 230;   /* #5E5CE6 */
+    --ui-tint-ops: 255 159 10;       /* #FF9F0A */
     --ui-separator: 255 255 255;
     --ui-separator-alpha: 0.1;
     --ui-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3);
@@ -76,6 +87,11 @@
   --ui-text-tertiary: 134 134 139;
   --ui-accent: 41 151 255;
   --ui-accent-hover: 76 166 255;
+  --ui-success: 48 209 88;           /* #30D158 */
+  --ui-tint-growth: 255 69 58;       /* #FF453A */
+  --ui-tint-revenue: 10 132 255;     /* #0A84FF */
+  --ui-tint-decision: 94 92 230;     /* #5E5CE6 */
+  --ui-tint-ops: 255 159 10;         /* #FF9F0A */
   --ui-separator: 255 255 255;
   --ui-separator-alpha: 0.1;
   --ui-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3);

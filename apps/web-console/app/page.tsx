@@ -59,9 +59,17 @@ const MARKET_METRICS = [
 ];
 
 const TASKS = [
-  { id: 1, name: "Q3 行业趋势分析报告", progress: 85, status: "Generating" },
-  { id: 2, name: "新品上市社媒文案矩阵", progress: 42, status: "Queued" },
+  { id: 1, name: "Q3 行业趋势分析报告", progress: 85, status: "生成中" },
+  { id: 2, name: "新品上市社媒文案矩阵", progress: 42, status: "排队中" },
 ];
+
+// 柱状图：最近 12 天，最新一根全不透明、其余 50%
+const BAR_HEIGHTS = [30, 45, 35, 60, 50, 70, 55, 80, 65, 75, 60, 90];
+const BAR_DATES = BAR_HEIGHTS.map((_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (BAR_HEIGHTS.length - 1 - i));
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+});
 
 const AGENTS = [
   { name: "Alpha (分析师)", task: "Google Search 爬取中...", status: "busy" },
@@ -74,51 +82,47 @@ const DEPARTMENTS = [
     {
         title: "增长中心",
         enTitle: "MARKETING & GROWTH",
-        colorVar: "pink",
-        description: "品牌声量与获客流量引擎",
+        tint: "tint-growth",
         icon: Megaphone, // Abstract icon
         apps: [
-            { href: "/optimize", label: "内容工场", agent: "Leo (首席内容官)", icon: PenTool, color: "text-danger", desc: "全平台爆款内容批量生产", tag: "AI中台" },
-            { href: "/geo", label: "全域洞察", agent: "Sophie (品牌经理)", icon: Radar, color: "text-danger", desc: "品牌舆情与心智份额追踪", tag: "GEO" },
-            { href: "/marketing", label: "投放参谋", agent: "Max (投放专员)", icon: Target, color: "text-danger", desc: "广告投放ROI实时优化", tag: "数字员工" },
+            { href: "/optimize", label: "内容工场", agent: "Leo (首席内容官)", icon: PenTool, desc: "全平台爆款内容批量生产", tag: "AI中台" },
+            { href: "/geo", label: "全域洞察", agent: "Sophie (品牌经理)", icon: Radar, desc: "品牌舆情与心智份额追踪", tag: "GEO" },
+            { href: "/marketing", label: "投放参谋", agent: "Max (投放专员)", icon: Target, desc: "广告投放ROI实时优化", tag: "数字员工" },
         ]
     },
     {
         title: "营收中心",
         enTitle: "SALES & REVENUE",
-        colorVar: "blue",
-        description: "全渠道转化与客户服务中枢",
+        tint: "tint-revenue",
         icon: Coins,
         apps: [
-            { href: "/digital-human", label: "数字人直播", agent: "Emma (金牌主播)", icon: Mic2, color: "text-accent", desc: "7x24小时不间断带货直播", tag: "数字人" },
-            { href: "/service/sessions", label: "智能接待", agent: "Ray (销售代表)", icon: MessageSquare, color: "text-accent", desc: "全渠道客户自动接待转化", tag: "AI客服" },
-            { href: "/leads", label: "本地线索池", agent: "Outbox", icon: Briefcase, color: "text-accent", desc: "询盘入库、去重、导出，待 CRM 对接", tag: "线索" },
-            { href: "/service/stats", label: "服务质检", agent: "AI Judge (裁判)", icon: Activity, color: "text-accent", desc: "AI 自动评分与问题诊断大屏", tag: "质量监控" },
-            { href: "/service/rules", label: "质检规则", agent: "SOP Manager", icon: ShieldCheck, color: "text-accent", desc: "配置服务标准与评分SOP", tag: "配置" },
+            { href: "/digital-human", label: "数字人直播", agent: "Emma (金牌主播)", icon: Mic2, desc: "7x24小时不间断带货直播", tag: "数字人" },
+            { href: "/service/sessions", label: "智能接待", agent: "Ray (销售代表)", icon: MessageSquare, desc: "全渠道客户自动接待转化", tag: "AI客服" },
+            { href: "/leads", label: "本地线索池", agent: "Outbox", icon: Briefcase, desc: "询盘入库、去重、导出，待 CRM 对接", tag: "线索" },
+            { href: "/service/stats", label: "服务质检", agent: "AI Judge (裁判)", icon: Activity, desc: "AI 自动评分与问题诊断大屏", tag: "质量监控" },
+            { href: "/service/rules", label: "质检规则", agent: "SOP Manager", icon: ShieldCheck, desc: "配置服务标准与评分SOP", tag: "配置" },
         ]
     },
     {
         title: "决策中心",
         enTitle: "DECISION & INSIGHT",
-        colorVar: "blue",
-        description: "竞争情报与战略决策大脑",
+        tint: "tint-decision",
         icon: Crown,
         apps: [
-            { href: "/diagnosis", label: "竞争诊断", agent: "Arthur (行业分析师)", icon: Compass, color: "text-accent", desc: "竞品策略拆解与红黑榜", tag: "GEO" },
-            { href: "/diagnosis", label: "市场扫描", agent: "Data Scout (情报员)", icon: Globe, color: "text-accent", desc: "全球前沿市场信号捕捉", tag: "数字员工" },
-            { href: "/diagnosis", label: "深度调研", agent: "Insight Bot (研究员)", icon: Activity, color: "text-accent", desc: "定制化行业深度研报生成", tag: "数字员工" },
+            { href: "/diagnosis", label: "竞争诊断", agent: "Arthur (行业分析师)", icon: Compass, desc: "竞品策略拆解与红黑榜", tag: "GEO" },
+            { href: "/diagnosis", label: "市场扫描", agent: "Data Scout (情报员)", icon: Globe, desc: "全球前沿市场信号捕捉", tag: "数字员工" },
+            { href: "/diagnosis", label: "深度调研", agent: "Insight Bot (研究员)", icon: Activity, desc: "定制化行业深度研报生成", tag: "数字员工" },
         ]
     },
     {
         title: "运营中心",
         enTitle: "OPERATIONS & CORE",
-        colorVar: "orange",
-        description: "组织资产与系统效能保障",
+        tint: "tint-ops",
         icon: LayersIcon,
         apps: [
-            { href: "/knowledge", label: "企业知识库", agent: "Doc (知识总管)", icon: Brain, color: "text-warning", desc: "核心知识资产沉淀与分发", tag: "AI知识库" },
-            { href: "/organization", label: "组织编排", agent: "Monica (HRBP)", icon: Network, color: "text-warning", desc: "数字员工权限与团队管理", tag: "AI中台" },
-            { href: "/ops", label: "系统运维", agent: "System (工程师)", icon: Terminal, color: "text-warning", desc: "全平台运行状态监控", tag: "智能运维" },
+            { href: "/knowledge", label: "企业知识库", agent: "Doc (知识总管)", icon: Brain, desc: "核心知识资产沉淀与分发", tag: "AI知识库" },
+            { href: "/organization", label: "组织编排", agent: "Monica (HRBP)", icon: Network, desc: "数字员工权限与团队管理", tag: "AI中台" },
+            { href: "/ops", label: "系统运维", agent: "System (工程师)", icon: Terminal, desc: "全平台运行状态监控", tag: "智能运维" },
         ]
     }
 ];
@@ -130,9 +134,9 @@ const SYSTEM_PRODUCTS = [
         slogan: "组织智慧的数字大脑",
         desc: "非结构化数据的清洗、向量化与检索",
         icon: Library,
-        keyData: "1.2TB Data",
+        keyData: "1.2TB 数据",
         href: "/knowledge",
-        color: "text-warning"
+        tint: "tint-ops"
     },
     {
         id: "geo",
@@ -140,9 +144,9 @@ const SYSTEM_PRODUCTS = [
         slogan: "让AI主动推荐你的品牌",
         desc: "基于生成式引擎优化的品牌资产管理系统",
         icon: Radar,
-        keyData: "32.4% Share",
+        keyData: "32.4% 份额",
         href: "/geo",
-        color: "text-accent"
+        tint: "tint-growth"
     },
     {
         id: "service",
@@ -150,9 +154,9 @@ const SYSTEM_PRODUCTS = [
         slogan: "全渠道自动接单机器",
         desc: "基于RAG的智能问答与销售线索转化",
         icon: MessageSquare,
-        keyData: "99% Resp",
+        keyData: "99% 响应率",
         href: "/service/sessions",
-        color: "text-accent"
+        tint: "tint-revenue"
     },     
     {
         id: "ecommerce",
@@ -160,9 +164,9 @@ const SYSTEM_PRODUCTS = [
         slogan: "高定时尚电商平台",
         desc: "基于大模型的沉浸式购物体验与智能导购",
         icon: ShoppingBag,
-        keyData: "2024 Collection",
+        keyData: "128 件商品",
         href: "/ecommerce", 
-        color: "text-warning"
+        tint: "tint-ops"
     },
     {
         id: "marketing",
@@ -170,9 +174,9 @@ const SYSTEM_PRODUCTS = [
         slogan: "AIGC 内容生产与投放",
         desc: "文生文、文生图、视频生成与全域自动化投放",
         icon: Megaphone,
-        keyData: "ROI +30%",
+        keyData: "投产比 +30%",
         href: "/marketing",
-        color: "text-danger"
+        tint: "tint-growth"
     },
     {
         id: "crm",
@@ -180,9 +184,9 @@ const SYSTEM_PRODUCTS = [
         slogan: "智能客户关系管理",
         desc: "全渠道数据沉淀与销售线索智能化挖掘",
         icon: Briefcase,
-        keyData: "Leads +45%",
+        keyData: "线索 +45%",
         href: "/crm",
-        color: "text-danger"
+        tint: "tint-revenue"
     },
     {
         id: "digital-human",
@@ -190,9 +194,9 @@ const SYSTEM_PRODUCTS = [
         slogan: "7x24小时的一线明星",
         desc: "高保真数字人视频生成与直播推流",
         icon: Mic2,
-        keyData: "24h Live",
+        keyData: "24h 直播",
         href: "/digital-human",
-        color: "text-danger"
+        tint: "tint-growth"
     },
     {
         id: "workforce",
@@ -200,9 +204,9 @@ const SYSTEM_PRODUCTS = [
         slogan: "企业级AI劳动力编排",
         desc: "创建、管理与评估您的数字化员工团队",
         icon: Users,
-        keyData: "14 Active",
+        keyData: "14 名在线",
         href: "/workforce",
-        color: "text-accent-hover"
+        tint: "tint-decision"
     },
     {
         id: "ops",
@@ -210,9 +214,9 @@ const SYSTEM_PRODUCTS = [
         slogan: "全链路系统健康卫士",
         desc: "基础设施监控与自动化异常熔断",
         icon: Terminal,
-        keyData: "99.9% Up",
+        keyData: "99.9% 可用",
         href: "/ops",
-        color: "text-success"
+        tint: "tint-ops"
     },
     {
         id: "mid-platform",
@@ -220,9 +224,9 @@ const SYSTEM_PRODUCTS = [
         slogan: "企业级模型与插件中心",
         desc: "统一的LLM网关与私有插件市场",
         icon: Cpu,
-        keyData: "API Gateway",
+        keyData: "模型网关",
         href: "/platform",
-        color: "text-accent"
+        tint: "tint-decision"
     }
 ];
 
@@ -235,27 +239,31 @@ function LayersIcon(props: any) { return <Database {...props} /> }
 
 // --- Sub-Components ---
 
-const HudPanel = ({ title, icon: Icon, color, children, href }: any) => {
+// 静态映射：保证 Tailwind 能扫描到完整类名
+const TINT_BG: Record<string, string> = {
+    'tint-growth': 'bg-tint-growth',
+    'tint-revenue': 'bg-tint-revenue',
+    'tint-decision': 'bg-tint-decision',
+    'tint-ops': 'bg-tint-ops',
+};
+
+const HudPanel = ({ title, icon: Icon, tint, children, href }: any) => {
     const Content = (
-      <div className={`relative h-full group overflow-hidden bg-surface border border-separator rounded-[22px] p-5 hover:bg-surface-2 transition-all duration-300 shadow-card ${href ? 'cursor-pointer' : ''}`}>
-          <div className="absolute top-0 right-0 p-4 opacity-[0.08]">
-               <Icon size={48} className={color} />
-          </div>
-          
-          <div className="flex items-center gap-2 mb-4 relative z-10">
-              <div className={`p-1.5 rounded-xl bg-text/5 ${color}`}>
-                  <Icon size={16} />
+      <div className={`relative group bg-surface border border-separator rounded-[22px] p-5 hover:bg-surface-2 transition-all duration-300 shadow-card ${href ? 'cursor-pointer' : ''}`}>
+          <div className="flex items-center gap-2 mb-4">
+              <div className={`w-7 h-7 rounded-[22%] flex items-center justify-center ${TINT_BG[tint] || 'bg-accent'} text-white shrink-0`}>
+                  <Icon size={15} />
               </div>
               <h3 className="text-sm font-semibold text-text tracking-tight">{title}</h3>
-              {href && <ArrowUpRight size={12} className="text-text-tertiary opacity-0 group-hover:opacity-100 transition-opacity" />}
+              {href && <ArrowUpRight size={12} className="ml-auto text-text-tertiary opacity-0 group-hover:opacity-100 transition-opacity" />}
           </div>
-          <div className="relative z-10">
+          <div>
               {children}
           </div>
       </div>
     );
 
-    return href ? <Link href={href} className="block h-full">{Content}</Link> : Content;
+    return href ? <Link href={href} className="block">{Content}</Link> : Content;
 };
 
 const IconButton = ({ icon: Icon, onClick, badge }: any) => (
@@ -268,69 +276,56 @@ const IconButton = ({ icon: Icon, onClick, badge }: any) => (
   </button>
 );
 
-const DepartmentCard = ({ dept, className = "" }: { dept: any, className?: string }) => {
+const DepartmentSection = ({ dept }: { dept: any }) => {
     return (
-        <div className={`relative overflow-hidden bg-surface border border-separator rounded-2xl p-6 hover:bg-surface-2 transition-all duration-300 group/card ${className}`}>
-            
-            <div className="relative z-10 flex items-start justify-between mb-6 pb-4 border-b border-separator">
-                <div>
-                    <div className="flex items-center gap-3 mb-1">
-                        <div className={`p-2 rounded-2xl bg-text/5 ${dept.apps[0].color}`}>
-                             <dept.icon size={20} />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-semibold text-white tracking-tight">{dept.title}</h3>
-                            <div className="text-[11px] text-text-tertiary tracking-[0.12em] uppercase">
-                                {dept.enTitle}
-                            </div>
-                        </div>
-                    </div>
+        <section className="mb-10 last:mb-0">
+            {/* 分区标题直接放在页面背景上，无外层卡片 */}
+            <div className="flex items-center gap-3 mb-4 px-1">
+                <div className={`w-7 h-7 rounded-[22%] flex items-center justify-center ${TINT_BG[dept.tint]} text-white shrink-0`}>
+                     <dept.icon size={15} />
                 </div>
+                <h3 className="text-[17px] font-semibold text-text tracking-tight">{dept.title}</h3>
+                <span className="text-[11px] text-text-tertiary/60 tracking-[0.08em] uppercase">
+                    {dept.enTitle}
+                </span>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 relative z-10">
+            {/* 通栏响应式网格：大屏 4 列 / 中屏 3 列 / 小屏 2 列 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                 {dept.apps.map((app:any, idx:number) => (
                     <Link 
                         key={idx} 
                         href={app.href}
-                        className="flex flex-col p-3 rounded-[16px] bg-surface-2/70 border border-separator hover:bg-surface-2 transition-all duration-300 group/item relative overflow-hidden"
+                        className="flex flex-col gap-2.5 p-4 rounded-[16px] bg-surface border border-separator hover:bg-surface-2 transition-all duration-300 group/item shadow-card"
                     >
-                        <div className="flex items-start justify-between mb-2">
-                             <div className="flex items-center gap-2">
-                                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center bg-bg/40 ${app.color} group-hover/item:scale-105 transition-transform`}>
-                                     <app.icon size={16} />
-                                 </div>
-                                 <div>
-                                     <div className="text-sm font-semibold text-text flex items-center gap-1">
-                                         {app.label}
-                                     </div>
-                                 </div>
+                        <div className="flex items-center gap-2.5">
+                             <div className={`w-9 h-9 rounded-[22%] flex items-center justify-center ${TINT_BG[dept.tint]} text-white group-hover/item:scale-105 transition-transform shrink-0`}>
+                                 <app.icon size={18} />
                              </div>
-                             <ChevronRight size={14} className="text-text-tertiary group-hover/item:text-white -translate-x-2 opacity-0 group-hover/item:translate-x-0 group-hover/item:opacity-100 transition-all" />
+                             <div className="text-sm font-semibold text-text truncate">
+                                 {app.label}
+                             </div>
+                             {app.tag && (
+                                 <span className="ml-auto shrink-0 px-2 py-0.5 rounded-full bg-surface-2 text-[11px] text-text-secondary">
+                                     {app.tag}
+                                 </span>
+                             )}
                         </div>
                         
-                        <div className="mt-1 mb-2">
-                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-bg/30 text-[10px] text-text-secondary">
-                                <Bot size={10} className={app.color} />
-                                <span>{app.agent}</span>
+                        <div>
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-2 text-[11px] text-text-secondary max-w-full">
+                                <Bot size={11} className="text-text-tertiary shrink-0" />
+                                <span className="truncate">{app.agent}</span>
                             </span>
                         </div>
 
-                        <div className="text-[11px] text-text-secondary leading-normal line-clamp-1 border-t border-separator pt-2 mt-auto">
+                        <div className="text-[11px] text-text-secondary leading-normal line-clamp-2">
                             {app.desc}
                         </div>
-                        
-                        {app.tag && (
-                             <div className="absolute bottom-0 right-0">
-                                 <span className="inline-block px-1.5 py-0.5 bg-text/10 text-text text-[9px] font-medium rounded-tl-xl">
-                                     {app.tag}
-                                 </span>
-                             </div>
-                        )}
                     </Link>
                 ))}
             </div>
-        </div>
+        </section>
     );
 };
 
@@ -507,50 +502,61 @@ export default function HomePage() {
                </div>
           </div>
 
-          {/* HUD Widgets - Strategic Overview */}
-          <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-              <HudPanel title="市场态势" icon={Radar} color="text-success" href="/diagnosis">
-                   <div className="space-y-4">
-                       <div className="flex justify-between items-end pb-2 border-b border-separator">
+          {/* HUD Widgets - Strategic Overview（高度自适应内容，items-start 不强制等高） */}
+          <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10 items-start">
+              <HudPanel title="市场态势" icon={Radar} tint="tint-growth" href="/diagnosis">
+                   <div className="space-y-3">
+                       <div className="flex justify-between items-end">
                             <span className="text-xs text-text-secondary">品牌心智份额</span>
                             <div className="text-right">
-                                <span className="text-xl font-bold text-white font-mono">32.4%</span>
-                                <span className="text-[10px] text-success ml-2">▲ 2.1%</span>
+                                <span className="text-xl font-bold text-text tabular-nums">32.4%</span>
+                                <span className="text-[10px] text-success ml-2 tabular-nums">▲ 2.1%</span>
                             </div>
                        </div>
-                       <div className="h-10 flex items-end gap-1">
-                          {[30, 45, 35, 60, 50, 70, 55, 80, 65, 75, 60, 90].map((h, i) => (
-                              <div key={i} className="flex-1 bg-success/30 rounded-[1px] hover:bg-success transition-colors" style={{ height: `${h}%` }} />
-                          ))}
+                       <div>
+                           <div className="h-10 flex items-end gap-1">
+                              {BAR_HEIGHTS.map((h, i) => (
+                                  <div
+                                      key={i}
+                                      className={`flex-1 rounded-[1px] transition-colors ${i === BAR_HEIGHTS.length - 1 ? 'bg-success' : 'bg-success/50'}`}
+                                      style={{ height: `${h}%` }}
+                                  />
+                              ))}
+                           </div>
+                           <div className="flex gap-1 mt-1">
+                              {BAR_DATES.map((d, i) => (
+                                  <div key={i} className="flex-1 text-center text-[8px] leading-none text-text-tertiary tabular-nums truncate">
+                                      {d}
+                                  </div>
+                              ))}
+                           </div>
                        </div>
                    </div>
               </HudPanel>
 
-              <HudPanel title="任务流水线" icon={Factory} color="text-accent" href="/ops">
+              <HudPanel title="任务流水线" icon={Factory} tint="tint-revenue" href="/ops">
                    <div className="space-y-3 pt-1">
                        {TASKS.map(task => (
                            <div key={task.id} className="group/item">
-                               <div className="flex justify-between text-xs mb-1">
+                               <div className="flex justify-between text-xs mb-1.5">
                                    <span className="text-text font-medium">{task.name}</span>
-                                   <span className="text-[10px] text-accent bg-accent/10 px-1.5 rounded">{task.status}</span>
+                                   <span className={`text-[10px] px-1.5 rounded ${task.status === '生成中' ? 'text-accent bg-accent/10' : 'text-text-secondary bg-surface-2'}`}>{task.status}</span>
                                </div>
                                <div className="h-1 w-full bg-text/10 rounded-full overflow-hidden">
-                                   <div className="h-full bg-accent rounded-full relative" style={{ width: `${task.progress}%` }}>
-                                       <div className="absolute right-0 top-0 bottom-0 w-2 bg-text/15 blur-[2px]" />
-                                   </div>
+                                   <div className={`h-full rounded-full ${task.status === '生成中' ? 'bg-accent' : 'bg-text-tertiary/60'}`} style={{ width: `${task.progress}%` }} />
                                </div>
                            </div>
                        ))}
                    </div>
               </HudPanel>
 
-              <HudPanel title="员工状态" icon={Users} color="text-accent" href="/workforce">
+              <HudPanel title="员工状态" icon={Users} tint="tint-decision" href="/workforce">
                    <div className="space-y-3">
                        {AGENTS.map((agent, i) => (
                            <div key={i} className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-text/5 transition-colors cursor-pointer">
                                <div className="w-8 h-8 rounded-xl bg-surface-2 flex items-center justify-center relative">
-                                   <Bot size={16} className={agent.status === 'busy' ? "text-accent" : "text-text-tertiary"} />
-                                   {agent.status === 'busy' && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-warning rounded-full" />}
+                                   <Bot size={16} className={agent.status === 'busy' ? "text-text" : "text-text-tertiary"} />
+                                   <span className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ${agent.status === 'busy' ? 'bg-success' : 'bg-text-tertiary'}`} />
                                </div>
                                <div className="min-w-0 flex-1">
                                    <div className="text-xs font-bold text-text">{agent.name}</div>
@@ -563,8 +569,7 @@ export default function HomePage() {
           </section>
 
           {/* --- 3. App Matrix (Departmental Grid) --- */}
-          <section className="">
-             
+          <section>
              {/* Section Header */}
              <div className="flex items-center gap-4 mb-6">
                  <div className="h-px flex-1 bg-text/10" />
@@ -575,9 +580,9 @@ export default function HomePage() {
                  <div className="h-px flex-1 bg-text/10" />
              </div>
 
-             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+             <div>
                  {DEPARTMENTS.map((dept, index) => (
-                     <DepartmentCard key={index} dept={dept} />
+                     <DepartmentSection key={index} dept={dept} />
                  ))}
              </div>
           </section>
