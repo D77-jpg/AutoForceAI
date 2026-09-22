@@ -3,6 +3,22 @@ import React, { useEffect, useState } from "react";
 import { Cpu, RefreshCw, CheckCircle, AlertTriangle, Clock } from "lucide-react";
 import api from "../../../lib/api";
 import Link from "next/link";
+import { PageHeader } from "@/components/PageHeader";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from "@/components/ui/table";
+
+const STATUS_LABELS: Record<string, string> = {
+  queued: "排队中",
+  claimed: "执行中",
+  running: "执行中",
+  pending: "等待中",
+  success: "成功",
+  failed: "失败",
+  paused: "已暂停",
+};
+
+const statusLabel = (s: string) => STATUS_LABELS[s] || s;
 
 export default function RPAPage() {
   const [jobs, setJobs] = useState<any[]>([]);
@@ -36,15 +52,16 @@ export default function RPAPage() {
 
   return (
     <div className="h-full w-full p-6 text-text flex flex-col gap-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-white">RPA 执行</h1>
-          <p className="text-sm text-text-secondary">Worker 认领队列与海外渠道任务状态。详情请到营销矩阵。</p>
-        </div>
-        <button onClick={load} className="px-3 py-2 text-xs rounded bg-text/10 hover:bg-text/15 flex items-center gap-1">
-          <RefreshCw size={12} /> 刷新
-        </button>
-      </div>
+      <PageHeader
+        title="RPA 执行"
+        description="Worker 认领队列与海外渠道任务状态。详情请到营销矩阵。"
+        className="mb-0"
+        actions={
+          <Button variant="outline" size="sm" onClick={load}>
+            <RefreshCw size={12} className="mr-1" /> 刷新
+          </Button>
+        }
+      />
 
       <div className="grid grid-cols-4 gap-3">
         <Kpi icon={Cpu} label="执行中 / 排队" value={running} />
@@ -57,32 +74,37 @@ export default function RPAPage() {
         {loading ? (
           <div className="p-10 text-center text-text-secondary">同步 Worker 状态...</div>
         ) : jobs.length === 0 ? (
-          <div className="p-10 text-center text-text-secondary">暂无任务。从「海外投放」创建 LinkedIn / WordPress / X 任务。</div>
+          <EmptyState
+            size="sm"
+            icon={Cpu}
+            title="暂无任务"
+            description="从「海外投放」创建 LinkedIn / WordPress / X 任务"
+          />
         ) : (
-          <table className="w-full text-sm">
-            <thead className="text-xs text-text-secondary uppercase">
-              <tr>
-                <th className="p-3 text-left">ID</th>
-                <th className="p-3 text-left">平台</th>
-                <th className="p-3 text-left">状态</th>
-                <th className="p-3 text-left">标题</th>
-                <th className="p-3 text-right">时间</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableHeaderCell>ID</TableHeaderCell>
+                <TableHeaderCell>平台</TableHeaderCell>
+                <TableHeaderCell>状态</TableHeaderCell>
+                <TableHeaderCell>标题</TableHeaderCell>
+                <TableHeaderCell className="text-right">时间</TableHeaderCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {jobs.map((j) => (
-                <tr key={j.id} className="border-t border-separator">
-                  <td className="p-3 font-mono text-xs">#{j.id}</td>
-                  <td className="p-3">{j.platform}</td>
-                  <td className="p-3">{j.status}</td>
-                  <td className="p-3 truncate max-w-xs">{j.payload?.title || "—"}</td>
-                  <td className="p-3 text-right text-xs text-text-secondary">
+                <TableRow key={j.id}>
+                  <TableCell className="font-mono text-xs tabular-nums">#{j.id}</TableCell>
+                  <TableCell>{j.platform}</TableCell>
+                  <TableCell>{statusLabel(j.status)}</TableCell>
+                  <TableCell className="truncate max-w-xs">{j.payload?.title || "—"}</TableCell>
+                  <TableCell className="text-right text-xs text-text-secondary tabular-nums">
                     {j.created_at ? new Date(j.created_at).toLocaleString() : ""}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
       </div>
       <Link href="/distribution" className="text-xs text-accent hover:underline">
@@ -98,7 +120,7 @@ function Kpi({ icon: Icon, label, value }: any) {
       <div className="text-[10px] uppercase text-text-secondary flex items-center gap-1">
         <Icon size={12} /> {label}
       </div>
-      <div className="text-2xl font-bold mt-1">{value}</div>
+      <div className="text-2xl font-bold mt-1 tabular-nums">{value}</div>
     </div>
   );
 }

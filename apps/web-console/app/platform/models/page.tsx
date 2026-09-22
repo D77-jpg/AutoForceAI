@@ -2,15 +2,20 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Search, 
-  Filter, 
   Plus, 
   Settings, 
   Trash2, 
-  CheckCircle2, 
-  X
+  CheckCircle2,
+  Box
 } from 'lucide-react';
 import api from '../../../lib/api';
 import { useToast } from '../../../contexts/ToastContext';
+import { PageHeader } from '@/components/PageHeader';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Modal } from '@/components/ui/modal';
+import { Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface Model {
   id: number;
@@ -125,27 +130,24 @@ export default function ModelsPage() {
     
       return (
         <div className="h-full flex flex-col p-6 text-text">
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                     <h1 className="text-2xl font-bold text-white">模型纳管 (Model Registry)</h1>
-                     <p className="text-sm text-text-secondary">管理与配置您的 AI 模型资产与路由。</p>
-                </div>
-                <button 
-                    onClick={openCreateModal}
-                    className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-white rounded-full text-sm font-medium transition-colors flex items-center gap-2"
-                >
-                    <Plus size={16} /> 接入新模型
-                </button>
-            </div>
+            <PageHeader
+                title="模型纳管"
+                description="管理与配置您的 AI 模型资产与路由。"
+                actions={
+                    <Button onClick={openCreateModal} className="gap-2">
+                        <Plus size={16} /> 接入新模型
+                    </Button>
+                }
+            />
     
             {/* Filters */}
             <div className="flex items-center gap-4 mb-6">
                 <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={16} />
-                    <input 
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary z-10" size={16} />
+                    <Input 
                         type="text" 
                         placeholder="搜索模型..." 
-                        className="w-full pl-10 pr-4 py-2 bg-bg/20 border border-separator rounded-lg text-sm text-text focus:outline-none focus:border-accent/50"
+                        className="pl-10"
                     />
                 </div>
                 <div className="flex items-center gap-2">
@@ -154,27 +156,37 @@ export default function ModelsPage() {
                 </div>
             </div>
     
-            {/* Table - Added min-h-0 to allow proper flex scrolling */}
+            {/* Content Area */}
+            {loading ? (
+                 <div className="glass-panel min-h-0 flex-1 border border-separator bg-surface rounded-xl p-12 text-center text-text-secondary">正在加载模型配置...</div>
+            ) : models.length === 0 ? (
+                <EmptyState
+                    icon={Box}
+                    size="lg"
+                    title="还没有接入任何模型"
+                    description="接入您的第一个 AI 模型，即可在聊天与业务技能中使用。"
+                    actionLabel="接入新模型"
+                    onAction={openCreateModal}
+                    className="flex-1"
+                />
+            ) : (
             <div className="glass-panel min-h-0 flex-1 flex flex-col overflow-hidden border border-separator bg-surface rounded-xl">
-                {loading ? (
-                     <div className="p-12 text-center text-text-secondary">正在加载模型配置...</div>
-                ) : (
                     <div className="flex-1 overflow-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-surface text-text-secondary font-medium border-b border-separator sticky top-0 z-10">
-                                <tr>
-                                    <th className="p-4 pl-6">显示名称</th>
-                                    <th className="p-4">类型</th>
-                                    <th className="p-4">Context</th>
-                                    <th className="p-4">GEO搜索</th>
-                                    <th className="p-4">状态</th>
-                                    <th className="p-4 text-right pr-6">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-separator">
+                        <Table>
+                            <TableHead className="bg-surface sticky top-0 z-10">
+                                <TableRow>
+                                    <TableHeaderCell className="pl-6">显示名称</TableHeaderCell>
+                                    <TableHeaderCell>类型</TableHeaderCell>
+                                    <TableHeaderCell>上下文</TableHeaderCell>
+                                    <TableHeaderCell>GEO 搜索</TableHeaderCell>
+                                    <TableHeaderCell>状态</TableHeaderCell>
+                                    <TableHeaderCell className="text-right pr-6">操作</TableHeaderCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
                                 {models.map((model) => (
-                                    <tr key={model.id} className="hover:bg-text/[0.02] transition-colors group">
-                                        <td className="p-4 pl-6 font-medium text-white">
+                                    <TableRow key={model.id} className="group">
+                                        <TableCell className="pl-6 font-medium">
                                             <div className="flex items-center gap-2">
                                                 {model.display_name}
                                                 {model.is_default && (
@@ -188,44 +200,44 @@ export default function ModelsPage() {
                                                     </span>
                                                 )}
                                             </div>
-                                        </td>
-                                        <td className="p-4">
+                                        </TableCell>
+                                        <TableCell>
                                             <span className="px-2 py-0.5 rounded border border-separator text-xs bg-text/5 font-mono text-text">{model.type}</span>
-                                        </td>
-                                        <td className="p-4 text-text-secondary font-mono">{model.context_window}</td>
-                                        <td className="p-4">
+                                        </TableCell>
+                                        <TableCell className="text-text-secondary font-mono tabular-nums">{model.context_window}</TableCell>
+                                        <TableCell>
                                             {model.supports_geo ? (
                                                 <span className="text-success text-xs flex items-center gap-1"><CheckCircle2 size={12}/> 支持</span>
                                             ) : (
                                                 <span className="text-text-tertiary text-xs">-</span>
                                             )}
-                                        </td>
-                                        <td className="p-4">
+                                        </TableCell>
+                                        <TableCell>
                                             <StatusBadge active={model.is_active !== false} />
-                                        </td>
-                                        <td className="p-4 text-right pr-6">
+                                        </TableCell>
+                                        <TableCell className="text-right pr-6">
                                             <div className="flex items-center justify-end gap-2 text-text-secondary opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button 
                                                     onClick={() => openEditModal(model)}
-                                                    className="p-1.5 hover:bg-text/10 rounded text-text hover:text-white transition-colors" title="配置"
+                                                    className="p-1.5 hover:bg-text/10 rounded text-text-secondary hover:text-text transition-colors" title="配置"
                                                 >
                                                     <Settings size={14} />
                                                 </button>
                                                 <button 
                                                     onClick={() => setDeleteTargetId(model.id)}
-                                                    className="p-1.5 hover:bg-danger/10 hover:text-danger rounded text-text transition-colors" title="下线"
+                                                    className="p-1.5 hover:bg-danger/10 hover:text-danger rounded text-text-secondary transition-colors" title="下线"
                                                 >
                                                     <Trash2 size={14} />
                                                 </button>
                                             </div>
-                                        </td>
-                                    </tr>
+                                        </TableCell>
+                                    </TableRow>
                                 ))}
-                            </tbody>
-                        </table>
+                            </TableBody>
+                        </Table>
                     </div>
-                )}
             </div>
+            )}
     
             {showModal && (
                 <ModelModal 
@@ -239,29 +251,20 @@ export default function ModelsPage() {
                 />
             )}
 
-            {/* Custom Delete Confirmation Modal */}
-            {deleteTargetId && (
-                <div className="fixed inset-0 bg-bg/50 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="bg-surface border border-separator rounded-xl p-6 w-full max-w-sm shadow-modal animate-modal-in">
-                        <h3 className="text-lg font-bold text-white mb-2">确认删除</h3>
-                        <p className="text-sm text-text-secondary mb-6">确定要删除此模型配置吗？此操作不可恢复。</p>
-                        <div className="flex justify-end gap-3">
-                            <button 
-                                onClick={() => setDeleteTargetId(null)}
-                                className="px-4 py-2 hover:bg-text/5 text-text rounded-lg text-sm transition-colors"
-                            >
-                                取消
-                            </button>
-                            <button 
-                                onClick={confirmDelete}
-                                className="px-4 py-2 bg-danger hover:bg-danger text-white rounded-full text-sm font-medium transition-colors"
-                            >
-                                确认删除
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Delete Confirmation Modal */}
+            <Modal
+                open={!!deleteTargetId}
+                onClose={() => setDeleteTargetId(null)}
+                title="确认删除"
+                footer={
+                    <>
+                        <Button variant="outline" onClick={() => setDeleteTargetId(null)}>取消</Button>
+                        <Button variant="destructive" onClick={confirmDelete}>确认删除</Button>
+                    </>
+                }
+            >
+                <p className="text-sm text-text-secondary">确定要删除此模型配置吗？此操作不可恢复。</p>
+            </Modal>
         </div>
       );
     }
@@ -350,18 +353,13 @@ function ModelModal({ model, providers, onClose, onSuccess }: { model: Model | n
     };
 
     return (
-        <div className="fixed inset-0 bg-bg/50 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto py-10">
-            <div className="bg-surface border border-separator rounded-xl w-full max-w-3xl shadow-modal my-auto animate-modal-in">
-                <div className="flex justify-between items-center p-6 border-b border-separator">
-                    <h2 className="text-xl font-bold text-white">
-                        {isEdit ? '编辑模型配置' : '接入新模型'}
-                    </h2>
-                    <button onClick={onClose} className="text-text-secondary hover:text-white transition-colors">
-                        <X size={20} />
-                    </button>
-                </div>
-                
-                <form onSubmit={handleSubmit} className="p-6">
+        <Modal
+            open
+            onClose={onClose}
+            title={isEdit ? '编辑模型配置' : '接入新模型'}
+            className="max-w-3xl"
+        >
+            <form onSubmit={handleSubmit} className="max-h-[70vh] overflow-y-auto -m-1 p-1">
                     {/* Hidden Provider Select - Auto Handled */}
                     <input type="hidden" value={formData.provider_id} />
 
@@ -370,14 +368,14 @@ function ModelModal({ model, providers, onClose, onSuccess }: { model: Model | n
                         <div className="space-y-4">
                             {!isEdit && (
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-medium text-text-secondary">选择预设 (Preset)</label>
+                                    <label className="text-xs font-medium text-text-secondary">选择预设</label>
                                     <div className="relative">
                                         <select
                                             onChange={handlePresetChange}
-                                            className="w-full bg-bg border border-separator rounded-lg pl-3 pr-8 py-2.5 text-sm text-white focus:border-accent outline-none appearance-none transition-colors hover:border-separator"
+                                            className="w-full bg-surface-2 border border-transparent rounded-lg pl-3 pr-8 py-2.5 text-sm text-text focus:border-accent/50 outline-none appearance-none transition-colors"
                                             defaultValue=""
                                         >
-                                            <option value="" disabled>-- 请选择模型 (Please Select) --</option>
+                                            <option value="" disabled>请选择模型</option>
                                             {MODEL_PRESETS.map(p => (
                                                 <option key={p.value} value={p.value}>{p.label}</option>
                                             ))}
@@ -397,7 +395,7 @@ function ModelModal({ model, providers, onClose, onSuccess }: { model: Model | n
                                     type="text" 
                                     value={formData.name}
                                     onChange={e => setFormData({...formData, name: e.target.value})}
-                                    className="w-full bg-bg/20 border border-separator rounded-lg p-2.5 text-sm text-text font-mono focus:border-accent/50 outline-none transition-colors"
+                                    className="w-full bg-surface-2 border border-transparent rounded-lg p-2.5 text-sm text-text font-mono focus:border-accent/50 outline-none transition-colors"
                                     placeholder="e.g. gpt-4, ep-202406..."
                                     required
                                 />
@@ -408,13 +406,13 @@ function ModelModal({ model, providers, onClose, onSuccess }: { model: Model | n
 
                             <div className="space-y-1.5">
                                 <label className="text-xs font-medium text-text-secondary">
-                                    显示名称 (Display Name) <span className="text-danger">*</span>
+                                    显示名称 <span className="text-danger">*</span>
                                 </label>
                                 <input 
                                     type="text" 
                                     value={formData.display_name}
                                     onChange={e => setFormData({...formData, display_name: e.target.value})}
-                                    className="w-full bg-bg/20 border border-separator rounded-lg p-2.5 text-sm text-text focus:border-accent/50 outline-none transition-colors"
+                                    className="w-full bg-surface-2 border border-transparent rounded-lg p-2.5 text-sm text-text focus:border-accent/50 outline-none transition-colors"
                                     placeholder="e.g. GPT-4 Turbo"
                                     required
                                 />
@@ -422,22 +420,22 @@ function ModelModal({ model, providers, onClose, onSuccess }: { model: Model | n
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-medium text-text-secondary">上下文 (Context)</label>
+                                    <label className="text-xs font-medium text-text-secondary">上下文窗口</label>
                                     <input 
                                         type="text" 
                                         value={formData.context_window}
                                         onChange={e => setFormData({...formData, context_window: e.target.value})}
-                                        className="w-full bg-bg/20 border border-separator rounded-lg p-2.5 text-sm text-text"
+                                        className="w-full bg-surface-2 border border-transparent rounded-lg p-2.5 text-sm text-text"
                                         placeholder="e.g. 128k"
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-medium text-text-secondary">模型类型 (Type)</label>
+                                    <label className="text-xs font-medium text-text-secondary">模型类型</label>
                                     <div className="relative">
                                         <select
                                             value={formData.type}
                                             onChange={e => setFormData({...formData, type: e.target.value})}
-                                            className="w-full bg-bg border border-separator rounded-lg pl-3 pr-8 py-2.5 text-sm text-white focus:border-accent outline-none appearance-none hover:border-separator"
+                                            className="w-full bg-surface-2 border border-transparent rounded-lg pl-3 pr-8 py-2.5 text-sm text-text focus:border-accent/50 outline-none appearance-none"
                                         >
                                             <option value="LLM">LLM</option>
                                             <option value="Embedding">Embedding</option>
@@ -455,12 +453,12 @@ function ModelModal({ model, providers, onClose, onSuccess }: { model: Model | n
                         {/* Right Column: API & Config */}
                         <div className="space-y-4">
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium text-text-secondary">API 地址 (Base URL)</label>
+                                <label className="text-xs font-medium text-text-secondary">API 地址</label>
                                 <input 
                                     type="text" 
                                     value={formData.base_url}
                                     onChange={e => setFormData({...formData, base_url: e.target.value})}
-                                    className="w-full bg-bg/20 border border-separator rounded-lg p-2.5 text-sm text-text font-mono focus:border-accent/50 outline-none transition-colors"
+                                    className="w-full bg-surface-2 border border-transparent rounded-lg p-2.5 text-sm text-text font-mono focus:border-accent/50 outline-none transition-colors"
                                     placeholder="https://api.openai.com/v1"
                                 />
                             </div>
@@ -470,7 +468,7 @@ function ModelModal({ model, providers, onClose, onSuccess }: { model: Model | n
                                 <textarea 
                                     value={formData.api_key}
                                     onChange={e => setFormData({...formData, api_key: e.target.value})}
-                                    className="w-full h-[120px] bg-bg/20 border border-separator rounded-lg p-2.5 text-sm text-text font-mono focus:border-accent/50 outline-none transition-colors resize-none"
+                                    className="w-full h-[120px] bg-surface-2 border border-transparent rounded-lg p-2.5 text-sm text-text font-mono focus:border-accent/50 outline-none transition-colors resize-none"
                                     placeholder="sk-..."
                                 />
                             </div>
@@ -481,10 +479,10 @@ function ModelModal({ model, providers, onClose, onSuccess }: { model: Model | n
                                         type="checkbox" 
                                         checked={formData.is_active}
                                         onChange={e => setFormData({...formData, is_active: e.target.checked})}
-                                        className="w-4 h-4 mt-0.5 rounded border-separator bg-bg/20 text-success focus:ring-offset-0 focus:ring-0"
+                                        className="w-4 h-4 mt-0.5 rounded border-separator bg-surface-2 text-success focus:ring-offset-0 focus:ring-0"
                                     />
                                     <div className="flex flex-col">
-                                        <span className="text-sm text-white">启用模型 (Enable Model)</span>
+                                        <span className="text-sm text-text">启用模型</span>
                                         <span className="text-[10px] text-text-secondary">禁用后将无法在聊天中使用</span>
                                     </div>
                                 </label>
@@ -494,9 +492,9 @@ function ModelModal({ model, providers, onClose, onSuccess }: { model: Model | n
                                         type="checkbox" 
                                         checked={formData.supports_geo}
                                         onChange={e => setFormData({...formData, supports_geo: e.target.checked})}
-                                        className="w-4 h-4 rounded border-separator bg-bg/20 text-accent focus:ring-offset-0 focus:ring-0"
+                                        className="w-4 h-4 rounded border-separator bg-surface-2 text-accent focus:ring-offset-0 focus:ring-0"
                                     />
-                                    <span className="text-sm text-text">支持 GEO 搜索 (Supports GEO)</span>
+                                    <span className="text-sm text-text">支持 GEO 搜索</span>
                                 </label>
                                 
                                 <label className="flex items-start gap-3 cursor-pointer p-1.5 rounded hover:bg-text/5 transition-colors">
@@ -504,10 +502,10 @@ function ModelModal({ model, providers, onClose, onSuccess }: { model: Model | n
                                         type="checkbox" 
                                         checked={formData.is_default}
                                         onChange={e => setFormData({...formData, is_default: e.target.checked})}
-                                        className="w-4 h-4 mt-0.5 rounded border-separator bg-bg/20 text-accent focus:ring-offset-0 focus:ring-0"
+                                        className="w-4 h-4 mt-0.5 rounded border-separator bg-surface-2 text-accent focus:ring-offset-0 focus:ring-0"
                                     />
                                     <div className="flex flex-col">
-                                        <span className="text-sm text-white">设为默认模型 (Default Model)</span>
+                                        <span className="text-sm text-text">设为默认模型</span>
                                         <span className="text-[10px] text-text-secondary">未指定模型时优先使用</span>
                                     </div>
                                 </label>
@@ -517,10 +515,10 @@ function ModelModal({ model, providers, onClose, onSuccess }: { model: Model | n
                                         type="checkbox" 
                                         checked={formData.is_kb_search_default}
                                         onChange={e => setFormData({...formData, is_kb_search_default: e.target.checked})}
-                                        className="w-4 h-4 mt-0.5 rounded border-separator bg-bg/20 text-accent focus:ring-offset-0 focus:ring-0"
+                                        className="w-4 h-4 mt-0.5 rounded border-separator bg-surface-2 text-accent focus:ring-offset-0 focus:ring-0"
                                     />
                                     <div className="flex flex-col">
-                                        <span className="text-sm text-white">默认知识库搜索 (KB Default)</span>
+                                        <span className="text-sm text-text">默认知识库搜索</span>
                                         <span className="text-[10px] text-text-secondary">知识库相关任务优先使用</span>
                                     </div>
                                 </label>
@@ -528,25 +526,23 @@ function ModelModal({ model, providers, onClose, onSuccess }: { model: Model | n
                         </div>
                     </div>
 
-                    <div className="flex justify-end gap-3 pt-4 border-t border-separator">
-                        <button 
+                    <div className="flex justify-end gap-2 pt-4 border-t border-separator">
+                        <Button 
                             type="button" 
+                            variant="outline"
                             onClick={onClose}
-                            className="px-6 py-2 hover:bg-text/5 text-text rounded-lg text-sm transition-colors"
                         >
                             取消
-                        </button>
-                        <button 
+                        </Button>
+                        <Button 
                             type="submit" 
                             disabled={loading}
-                            className="px-6 py-2.5 bg-accent hover:bg-accent-hover text-white rounded-full text-sm font-medium transition-colors shadow-card disabled:opacity-50 disabled:shadow-none"
                         >
                             {loading ? '保存中...' : '保存配置'}
-                        </button>
+                        </Button>
                     </div>
                 </form>
-            </div>
-        </div>
+        </Modal>
     )
 }
 
@@ -554,16 +550,15 @@ function StatusBadge({ active }: { active: boolean }) {
     return (
         <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${active ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-success' : 'bg-danger'}`}></span>
-            {active ? '激活 (Active)' : '禁用 (Disabled)'}
+            {active ? '已启用' : '已禁用'}
         </span>
     )
 }
 
 function FilterButton({ label, active }: any) {
     return (
-        <button className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${active ? 'bg-accent/15 text-accent border-accent/25' : 'bg-text/5 text-text-secondary border-separator hover:bg-text/10'}`}>
+        <button className={`px-3 h-10 rounded-md text-xs font-medium border transition-colors ${active ? 'bg-accent/15 text-accent border-accent/25' : 'bg-text/5 text-text-secondary border-separator hover:bg-text/10'}`}>
             {label}
         </button>
     )
 }
-

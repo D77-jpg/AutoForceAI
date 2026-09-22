@@ -4,6 +4,10 @@ import { PenTool, Wand2, Copy, Share2, RefreshCw, Check } from "lucide-react";
 import api from "../../../lib/api";
 import { useToast } from "../../../contexts/ToastContext";
 import { useRouter } from "next/navigation";
+import { PageHeader } from "@/components/PageHeader";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const TYPES = [
   { id: "product_article", label: "产品软文", hint: "500–700 词英文产品文" },
@@ -11,6 +15,8 @@ const TYPES = [
   { id: "seo_blog", label: "SEO 博客", hint: "800+ 词可发布长文" },
   { id: "outreach_email", label: "开发信", hint: "短开发信 + 主题行" },
 ];
+
+const typeLabel = (id: string) => TYPES.find((t) => t.id === id)?.label || id;
 
 export default function TextGenPage() {
   const { showToast } = useToast();
@@ -83,20 +89,17 @@ export default function TextGenPage() {
 
   return (
     <div className="h-full w-full p-6 text-text flex flex-col gap-4 overflow-hidden">
-      <div className="flex justify-between items-center shrink-0">
-        <div>
-          <h1 className="text-2xl font-bold text-white">文生文 · 外贸获客</h1>
-          <p className="text-sm text-text-secondary">英文产品软文 / LinkedIn / SEO 博客 / 开发信，接入企业大脑默认模型。</p>
-        </div>
-        <button
-          onClick={generate}
-          disabled={loading}
-          className="px-4 py-2 bg-warning hover:bg-warning disabled:opacity-50 text-white rounded-full text-sm font-medium flex items-center gap-2"
-        >
-          {loading ? <RefreshCw size={16} className="animate-spin" /> : <Wand2 size={16} />}
-          {loading ? "生成中..." : "开始创作"}
-        </button>
-      </div>
+      <PageHeader
+        title="文生文 · 外贸获客"
+        description="英文产品软文 / LinkedIn / SEO 博客 / 开发信，接入企业大脑默认模型。"
+        className="mb-0 shrink-0"
+        actions={
+          <Button onClick={generate} disabled={loading} className="bg-warning text-on-accent hover:bg-warning/90">
+            {loading ? <RefreshCw size={16} className="animate-spin mr-2" /> : <Wand2 size={16} className="mr-2" />}
+            {loading ? "生成中..." : "开始创作"}
+          </Button>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 flex-1 min-h-0">
         <div className="glass-panel p-4 flex flex-col gap-4 overflow-y-auto">
@@ -107,7 +110,7 @@ export default function TextGenPage() {
                 onClick={() => setContentType(t.id)}
                 className={`text-left p-3 rounded-lg border text-xs ${
                   contentType === t.id
-                    ? "border-warning bg-warning/10 text-white"
+                    ? "border-warning bg-warning/10 text-text"
                     : "border-separator text-text-secondary hover:bg-text/5"
                 }`}
               >
@@ -118,16 +121,16 @@ export default function TextGenPage() {
           </div>
           <label className="text-xs text-text-secondary">
             产品名
-            <input
-              className="mt-1 w-full bg-bg/30 border border-separator rounded p-2 text-sm text-white"
+            <Input
+              className="mt-1"
               value={productName}
               onChange={(e) => setProductName(e.target.value)}
             />
           </label>
           <label className="text-xs text-text-secondary">
             目标受众
-            <input
-              className="mt-1 w-full bg-bg/30 border border-separator rounded p-2 text-sm text-white"
+            <Input
+              className="mt-1"
               value={audience}
               onChange={(e) => setAudience(e.target.value)}
             />
@@ -135,7 +138,7 @@ export default function TextGenPage() {
           <label className="text-xs text-text-secondary flex-1">
             卖点 / 规格
             <textarea
-              className="mt-1 w-full h-32 bg-bg/30 border border-separator rounded p-2 text-sm text-white resize-none"
+              className="mt-1 w-full h-32 bg-surface-2 border border-transparent rounded-md p-2 text-sm text-text resize-none focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-accent/30"
               value={sellingPoints}
               onChange={(e) => setSellingPoints(e.target.value)}
             />
@@ -149,7 +152,7 @@ export default function TextGenPage() {
                   onClick={() => setResult(h)}
                   className="w-full text-left text-xs p-2 rounded bg-text/5 hover:bg-text/10 truncate"
                 >
-                  <span className="text-text-secondary mr-2">{h.content_type}</span>
+                  <span className="text-text-secondary mr-2">{typeLabel(h.content_type)}</span>
                   {h.title}
                 </button>
               ))}
@@ -159,38 +162,42 @@ export default function TextGenPage() {
 
         <div className="glass-panel p-5 flex flex-col min-h-0">
           {!result ? (
-            <div className="flex-1 flex items-center justify-center text-text-secondary">
-              <div className="text-center">
-                <PenTool size={48} className="mx-auto mb-4 opacity-40" />
-                <p>填写产品与卖点，生成可直接发布的英文内容</p>
-              </div>
+            <div className="flex-1 flex items-center justify-center">
+              <EmptyState
+                size="lg"
+                icon={PenTool}
+                title="尚未生成内容"
+                description="填写产品与卖点，生成可直接发布的英文内容"
+                actionLabel="开始创作"
+                onAction={generate}
+              />
             </div>
           ) : (
             <>
               <div className="flex items-start justify-between gap-3 mb-3 shrink-0">
                 <div>
                   <div className="text-[10px] uppercase tracking-wider text-warning mb-1">
-                    {result.content_type} · {result.word_count || 0} words
-                    {result.mock ? " · template fallback" : ""}
+                    {typeLabel(result.content_type)} · <span className="tabular-nums">{result.word_count || 0}</span> 词
+                    {result.mock ? " · 模板回退" : ""}
                   </div>
-                  <h2 className="text-xl font-bold text-white">{result.title}</h2>
+                  <h2 className="text-xl font-bold text-text">{result.title}</h2>
                   {result.subject && (
-                    <p className="text-sm text-text-secondary mt-1">Subject: {result.subject}</p>
+                    <p className="text-sm text-text-secondary mt-1">主题：{result.subject}</p>
                   )}
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={copyBody} className="px-3 py-1.5 text-xs rounded bg-text/10 hover:bg-text/15 flex items-center gap-1">
-                    {copied ? <Check size={12} /> : <Copy size={12} />} 复制
-                  </button>
-                  <button onClick={() => sendTo("linkedin")} className="px-3 py-1.5 text-xs rounded bg-accent hover:bg-accent flex items-center gap-1">
-                    <Share2 size={12} /> LinkedIn
-                  </button>
-                  <button onClick={() => sendTo("wordpress")} className="px-3 py-1.5 text-xs rounded bg-accent hover:bg-accent-hover flex items-center gap-1">
+                  <Button variant="outline" size="sm" onClick={copyBody}>
+                    {copied ? <Check size={12} className="mr-1" /> : <Copy size={12} className="mr-1" />} 复制
+                  </Button>
+                  <Button size="sm" onClick={() => sendTo("linkedin")}>
+                    <Share2 size={12} className="mr-1" /> LinkedIn
+                  </Button>
+                  <Button size="sm" onClick={() => sendTo("wordpress")}>
                     WordPress
-                  </button>
-                  <button onClick={() => sendTo("x")} className="px-3 py-1.5 text-xs rounded bg-surface-2 hover:bg-text/10 flex items-center gap-1">
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => sendTo("x")}>
                     X
-                  </button>
+                  </Button>
                 </div>
               </div>
               <pre className="flex-1 overflow-y-auto whitespace-pre-wrap text-sm text-text leading-relaxed font-sans bg-bg/20 rounded-lg p-4 border border-separator">

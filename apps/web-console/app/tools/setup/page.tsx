@@ -3,6 +3,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/PageHeader";
 
 export default function BookmarkletSetup() {
   // 生成书签代码：加载远程 JS 并执行
@@ -11,8 +12,11 @@ export default function BookmarkletSetup() {
   const bookmarkHref = `javascript:(function(){var s=document.createElement('script');s.src='${scriptUrl}?t='+new Date().getTime();document.body.appendChild(s);})();`;
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">全自动发布助手 (免安装版)</h1>
+    <div className="apple-page max-w-4xl">
+      <PageHeader
+        title="全自动发布助手（免安装版）"
+        description="通过浏览器书签脚本完成一键发布，无需安装任何插件。"
+      />
       
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
@@ -27,7 +31,7 @@ export default function BookmarkletSetup() {
               {/* 这是一个特殊的链接，拖动它就是添加书签 */}
               <a 
                 href={bookmarkHref}
-                className="px-6 py-3 bg-accent text-white font-bold rounded-full hover:bg-accent shadow-lg cursor-grab active:cursor-grabbing"
+                className="px-6 py-3 bg-accent text-on-accent font-bold rounded-pill hover:bg-accent-hover shadow-card cursor-grab active:cursor-grabbing"
                 onClick={(e) => e.preventDefault()} // 防止点击跳转
                 title="拖动我到书签栏"
               >
@@ -56,7 +60,7 @@ export default function BookmarkletSetup() {
         </Card>
       </div>
 
-      <div className="mt-8 p-4 bg-warning/10 text-warning rounded border border-warning">
+      <div className="mt-8 p-4 bg-warning/10 text-warning rounded-lg border border-warning">
         <h3 className="font-bold">为什么使用书签脚本？</h3>
         <p className="text-sm mt-1">
           由于浏览器安全限制，网页无法直接操作其他网站。书签脚本是最安全的“轻量级辅助”方案，

@@ -3,6 +3,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { User, Phone, Mail, FileText, CheckCircle, XCircle, Save, Loader2, PenLine, Camera } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/contexts/ToastContext";
+import { PageHeader } from "@/components/PageHeader";
 
 export default function UserProfilePage() {
     const router = useRouter();
@@ -213,9 +214,10 @@ export default function UserProfilePage() {
 
     return (
         <div className="p-8 max-w-4xl mx-auto animate-fade-in">
-            <h1 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                <User className="text-accent" /> 用户中心
-            </h1>
+            <PageHeader
+                title="用户中心"
+                description="管理您的个人资料、联系方式与账户绑定。"
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
                 {/* Left Column: Avatar & Signature Area (4 cols) */}
@@ -236,11 +238,11 @@ export default function UserProfilePage() {
                              {/* Overlay for upload hint */}
                              <div className="absolute inset-0 bg-bg/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
                                  {uploadingAvatar ? (
-                                     <Loader2 className="animate-spin text-white mb-1" size={24} /> 
+                                     <Loader2 className="animate-spin text-text mb-1" size={24} /> 
                                  ) : (
                                      <>
-                                        <Camera className="text-white mb-1" size={24} />
-                                        <span className="text-[10px] text-white/80">更换头像</span>
+                                        <Camera className="text-text mb-1" size={24} />
+                                        <span className="text-[10px] text-text/80">更换头像</span>
                                      </>
                                  )}
                              </div>
@@ -253,7 +255,7 @@ export default function UserProfilePage() {
                             onChange={handleFileChange}
                         />
 
-                        <h2 className="text-xl font-bold text-white mb-2 tracking-tight">
+                        <h2 className="text-xl font-bold text-text mb-2 tracking-tight">
                             {profile.nickname || profile.username}
                         </h2>
                         {/* ID and Role tags removed as requested */}
@@ -277,7 +279,7 @@ export default function UserProfilePage() {
                                 <textarea
                                     value={tempSignature}
                                     onChange={(e) => setTempSignature(e.target.value)}
-                                    className="w-full bg-bg border border-accent/40 rounded-lg p-3 text-sm text-white focus:outline-none resize-none placeholder:text-text-tertiary"
+                                    className="w-full bg-bg border border-accent/40 rounded-lg p-3 text-sm text-text focus:outline-none resize-none placeholder:text-text-tertiary"
                                     rows={3}
                                     placeholder="输入个性签名..."
                                     autoFocus
@@ -288,11 +290,11 @@ export default function UserProfilePage() {
                                 <div className="flex gap-2 justify-end">
                                     <button 
                                         onClick={() => setIsEditingSignature(false)}
-                                        className="text-xs text-text-secondary hover:text-white px-2 py-1 transition-colors"
+                                        className="text-xs text-text-secondary hover:text-text px-2 py-1 transition-colors"
                                     >取消</button>
                                     <button 
                                         onClick={saveSignature}
-                                        className="text-xs bg-accent hover:bg-accent-hover text-white px-3 py-1 rounded transition-colors"
+                                        className="text-xs bg-accent hover:bg-accent-hover text-on-accent px-3 py-1 rounded transition-colors"
                                     >保存</button>
                                 </div>
                             </div>
@@ -315,7 +317,7 @@ export default function UserProfilePage() {
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-text-secondary">组织 ID</span>
                                 <span className="text-text font-mono text-xs bg-surface-2 px-1.5 py-0.5 rounded">
-                                    {profile.organization_id || 'N/A'}
+                                    {profile.organization_id || '未分配'}
                                 </span>
                             </div>
                         </div>
@@ -326,7 +328,7 @@ export default function UserProfilePage() {
                 <div className="md:col-span-8 space-y-6">
                     <div className="glass-card p-8 rounded-xl space-y-6">
                         <div className="flex items-center justify-between border-b border-separator pb-4 mb-2">
-                            <h3 className="text-lg font-semibold text-white">账户资料</h3>
+                            <h3 className="text-lg font-semibold text-text">账户资料</h3>
                             <span className="text-xs text-text-secondary">如果不保存，更改将丢失</span>
                         </div>
                         
@@ -339,7 +341,7 @@ export default function UserProfilePage() {
                                         type="text" 
                                         value={profile.nickname || ''} 
                                         onChange={(e) => setProfile({...profile, nickname: e.target.value})}
-                                        className="w-full bg-surface/70 border border-separator rounded-xl py-2.5 pl-10 pr-3 text-white text-sm focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all placeholder:text-text-tertiary"
+                                        className="w-full bg-surface/70 border border-separator rounded-xl py-2.5 pl-10 pr-3 text-text text-sm focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all placeholder:text-text-tertiary"
                                         placeholder="设置您的显示名称"
                                     />
                                 </div>
@@ -367,7 +369,7 @@ export default function UserProfilePage() {
                                         value={profile.phone || ''}
                                         onChange={(e) => setProfile({...profile, phone: e.target.value})}
                                         placeholder="输入手机号码"
-                                        className="w-full bg-surface/70 border border-separator rounded-xl py-2.5 pl-10 pr-3 text-white text-sm focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all placeholder:text-text-tertiary"
+                                        className="w-full bg-surface/70 border border-separator rounded-xl py-2.5 pl-10 pr-3 text-text text-sm focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all placeholder:text-text-tertiary"
                                     />
                                 </div>
                             </div>
@@ -381,7 +383,7 @@ export default function UserProfilePage() {
                                         value={profile.email || ''} 
                                         onChange={(e) => setProfile({...profile, email: e.target.value})}
                                         placeholder="name@company.com"
-                                        className="w-full bg-surface/70 border border-separator rounded-xl py-2.5 pl-10 pr-3 text-white text-sm focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all placeholder:text-text-tertiary"
+                                        className="w-full bg-surface/70 border border-separator rounded-xl py-2.5 pl-10 pr-3 text-text text-sm focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all placeholder:text-text-tertiary"
                                     />
                                 </div>
                             </div>
@@ -391,7 +393,7 @@ export default function UserProfilePage() {
                             <button 
                                 onClick={handleSave}
                                 disabled={saving}
-                                className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-all shadow-card hover:shadow-card disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                                className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-on-accent px-6 py-2.5 rounded-xl text-sm font-medium transition-all shadow-card hover:shadow-card disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                             >
                                 {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
                                 保存修改

@@ -16,6 +16,8 @@ import {
 } from 'recharts';
 
 import { useRouter, useSearchParams } from 'next/navigation';
+import { EmptyState } from '@/components/ui/empty-state';
+import { PageHeader } from '@/components/PageHeader';
 
 interface Model {
     id: number;
@@ -56,7 +58,7 @@ const TypewriterEffect = ({ text }: { text: string }) => {
 
     return (
         <p dangerouslySetInnerHTML={{ 
-            __html: displayedText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white bg-accent/15 px-1 rounded">$1</strong>').replace(/\n/g, '<br/>') 
+            __html: displayedText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-accent bg-accent/15 px-1 rounded">$1</strong>').replace(/\n/g, '<br/>') 
         }} />
     );
 };
@@ -115,7 +117,7 @@ export default function Diagnosis() {
                 queryAnalysis: (s.recent || []).map((t: any) => ({
                     question: t.query,
                     mentioned: t.is_mentioned,
-                    sentiment: (t.sentiment_score || 0) > 5 ? '正面 (Positive)' : '中性 (Neutral)',
+                    sentiment: (t.sentiment_score || 0) > 5 ? '正面' : '中性',
                     snippet: '',
                     snippet_raw: '',
                     rank: t.rank_position || -1,
@@ -142,7 +144,7 @@ export default function Diagnosis() {
 
     setAnalyzing(true);
     setProgress(5);
-    setProgressText("正在初始化分析任务 (Initializing)...");
+    setProgressText("正在初始化分析任务…");
     setResult(null);
     setStreamingSnippet(null); // Reset streaming
 
@@ -171,7 +173,7 @@ export default function Diagnosis() {
         }
         
         setProgress(20);
-        setProgressText("正在全网搜索品牌相关信息 (Searching)...");
+        setProgressText("正在全网搜索品牌相关信息…");
 
         // 3. Polling Logic
         const maxRetries = 120; 
@@ -219,11 +221,11 @@ export default function Diagnosis() {
              setProgress(Math.floor(percent));
 
              if (percent < 50) {
-                 setProgressText("正在获取搜索引擎反馈 (Fetching)...");
+                 setProgressText("正在获取搜索引擎反馈…");
              } else if (percent < 80) {
-                 setProgressText("正在进行语义分析及情感计算 (Analyzing)...");
+                 setProgressText("正在进行语义分析及情感计算…");
              } else {
-                 setProgressText("正在生成最终诊断报告 (Generating)...");
+                 setProgressText("正在生成最终诊断报告…");
              }
 
              if (pending === 0) {
@@ -242,7 +244,7 @@ export default function Diagnosis() {
   const processFinalResults = (tasks: any[], originalQueries: string[]) => {
       setAnalyzing(false);
       setProgress(100);
-      setProgressText("分析完成 (Completed)");
+      setProgressText("分析完成");
       
       const analysisItems = tasks.map((t, idx) => {
           // Parse snippet from raw_response if available
@@ -271,7 +273,7 @@ export default function Diagnosis() {
           return {
              question: t.query,
              mentioned: isMentioned,
-             sentiment: t.sentiment_score > 5 ? "正面 (Positive)" : (t.sentiment_score < 5 ? "负面 (Negative)" : "中性 (Neutral)"),
+             sentiment: t.sentiment_score > 5 ? "正面" : (t.sentiment_score < 5 ? "负面" : "中性"),
              snippet: snippet,
              snippet_raw: snippet, // Keep raw for display
              rank: t.rank_position || -1
@@ -302,8 +304,8 @@ export default function Diagnosis() {
               { subject: '创新程度', A: mentionCount > 0 ? Math.min(150, 45 + sovScore * 0.6) : 0, B: competitor ? 75 : 0, fullMark: 150 },
           ],
           pieData: [
-              { name: '品牌提及 (Mentioned)', value: mentionCount },
-              { name: '未被提及 (Missed)', value: queriesCount - mentionCount },
+              { name: '品牌提及', value: mentionCount },
+              { name: '未被提及', value: queriesCount - mentionCount },
           ],
           insights: [
               mentionCount < queriesCount 
@@ -347,7 +349,7 @@ export default function Diagnosis() {
   };
 
   const getModelDisplayName = () => {
-      if (selectedModel === 'auto') return '智谱 GLM-4 (Auto)';
+      if (selectedModel === 'auto') return '智谱 GLM-4（自动）';
       const m = geoModels.find(x => x.name === selectedModel);
       return m ? m.display_name : selectedModel;
   }
@@ -371,10 +373,16 @@ export default function Diagnosis() {
   }, [searchParams]); // Only run on mount/params change to avoid loops
 
   return (
-    <div className="min-h-screen bg-bg text-text font-sans p-6 overflow-y-auto w-full custom-scrollbar">
+    <div className="min-h-screen bg-bg text-text font-sans p-6 overflow-y-auto w-full custom-scrollbar flex flex-col">
       
+      <PageHeader
+        title="竞争诊断"
+        description="输入品牌与用户问题，AI 自动完成竞品可见度诊断与战略洞察。"
+        className="mb-6 shrink-0"
+      />
+
       {/* Main Grid */}
-      <div className="grid grid-cols-12 gap-6 h-[calc(100vh-60px)]">
+      <div className="grid grid-cols-12 gap-6 flex-1 min-h-0">
         
         {/* Left: Configuration (3 Cols) */}
         <div className="col-span-3 bg-surface/60 rounded-2xl border border-separator flex flex-col h-full overflow-hidden">
@@ -389,12 +397,12 @@ export default function Diagnosis() {
             {/* Form Content */}
             <div className="p-5 overflow-y-auto custom-scrollbar flex-1 space-y-4">
                 <div>
-                     <label className="block text-[10px] uppercase tracking-wider text-accent font-bold mb-1.5">您的品牌 (Your Brand)</label>
+                     <label className="block text-[10px] uppercase tracking-wider text-accent font-bold mb-1.5">您的品牌</label>
                      <div className="relative group">
                         <input 
                             value={brand}
                             onChange={e => setBrand(e.target.value)}
-                            className="w-full bg-bg border border-separator rounded-lg px-3 py-2.5 text-sm text-white focus:border-accent outline-none transition-all group-hover:border-separator"
+                            className="w-full bg-bg border border-separator rounded-lg px-3 py-2.5 text-sm text-text focus:border-accent outline-none transition-all group-hover:border-separator"
                             placeholder="输入您的品牌名称"
                         />
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary">
@@ -409,18 +417,18 @@ export default function Diagnosis() {
                 </div>
 
                 <div>
-                    <label className="block text-[10px] uppercase tracking-wider text-text-secondary font-bold mb-1.5">竞品品牌 (Competitor)</label>
+                    <label className="block text-[10px] uppercase tracking-wider text-text-secondary font-bold mb-1.5">竞品品牌</label>
                     <input 
                         placeholder="例如: 特斯拉 (选填)"
                         value={competitor}
                         onChange={e => setCompetitor(e.target.value)}
-                        className="w-full bg-bg border border-separator rounded-lg px-3 py-2.5 text-sm text-white focus:border-accent outline-none transition-all placeholder:text-text-tertiary"
+                        className="w-full bg-bg border border-separator rounded-lg px-3 py-2.5 text-sm text-text focus:border-accent outline-none transition-all placeholder:text-text-tertiary"
                     />
                 </div>
 
                 <div>
                     <label className="block text-[10px] uppercase tracking-wider text-text-secondary font-bold mb-1.5">
-                        用户拟提问 (Test Queries)
+                        用户拟提问
                         <span className="ml-2 text-[9px] text-text-tertiary bg-surface-2 px-1 py-0.5 rounded">一行一个</span>
                     </label>
                     <textarea
@@ -432,14 +440,14 @@ export default function Diagnosis() {
                 </div>
 
                 <div>
-                    <label className="block text-[10px] uppercase tracking-wider text-text-secondary font-bold mb-1.5">搜索范围 (Search Scope)</label>
+                    <label className="block text-[10px] uppercase tracking-wider text-text-secondary font-bold mb-1.5">搜索范围</label>
                     <div className="relative">
                         <select 
                             value={selectedModel}
                             onChange={(e) => setSelectedModel(e.target.value)}
                             className="w-full bg-bg border border-separator rounded-lg px-3 py-2.5 text-sm text-text outline-none appearance-none cursor-pointer hover:border-separator transition-all"
                         >
-                            <option value="auto">⚡ 自动选择 (Auto Mode)</option>
+                            <option value="auto">⚡ 自动选择</option>
                             <option disabled>──────────</option>
                             {geoModels.length > 0 ? (
                                 geoModels.map(m => (
@@ -467,7 +475,7 @@ export default function Diagnosis() {
                     className={`w-full py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
                         analyzing 
                             ? 'bg-surface-2 text-text-secondary border border-separator cursor-not-allowed' 
-                            : 'bg-gradient-to-r from-accent to-accent hover:from-accent hover:to-accent text-white shadow-card active:scale-[0.98]'
+                            : 'bg-accent hover:bg-accent-hover text-on-accent shadow-card active:scale-[0.98]'
                     }`}
                 >
                     {analyzing ? (
@@ -493,7 +501,7 @@ export default function Diagnosis() {
                 {/* Radar Chart (2/3) */}
                 <div className="flex-[2] bg-surface/60 rounded-2xl border border-separator p-6 relative overflow-hidden flex flex-col">
                     <div className="flex justify-between items-start mb-2 z-10 relative">
-                        <h3 className="text-sm font-bold text-text">品牌维度分析 (Brand Dimensions)</h3>
+                        <h3 className="text-sm font-bold text-text">品牌维度分析</h3>
                         <div className="flex items-center gap-2 bg-bg/40 rounded-full px-1 pl-3 py-1 border border-separator">
                             <span className="text-[10px] text-accent font-mono flex items-center gap-1">
                                 <BrainCircuit size={10} />
@@ -501,8 +509,8 @@ export default function Diagnosis() {
                             </span>
                             <button 
                                 onClick={handleTestModel}
-                                className="bg-accent hover:bg-accent-hover text-white p-1 rounded-full transition-colors"
-                                title="测试此模型 (Test Model)"
+                                className="bg-accent hover:bg-accent-hover text-on-accent p-1 rounded-full transition-colors"
+                                title="测试此模型"
                             >
                                 <ArrowRightCircle size={12} />
                             </button>
@@ -513,7 +521,7 @@ export default function Diagnosis() {
                             {!result && (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
                                     <div className="bg-surface/90 backdrop-blur-sm px-4 py-2 rounded-full border border-separator"> 
-                                        <p className="text-text-secondary font-bold text-xs">等待分析数据 (Waiting)</p>
+                                        <p className="text-text-secondary font-bold text-xs">等待分析数据</p>
                                     </div>
                                 </div>
                             )}
@@ -541,10 +549,13 @@ export default function Diagnosis() {
                                         />
                                     </RadarChart>
                                 ) : (
-                                    <div className="flex flex-col items-center justify-center h-full text-text-secondary text-xs">
-                                        <Map size={32} className="opacity-20 mb-2" />
-                                        {result ? '未上榜，相关指标无法计算' : '暂无数据'}
-                                    </div>
+                                    <EmptyState
+                                        size="sm"
+                                        icon={Map}
+                                        title={result ? '未上榜，相关指标无法计算' : '暂无数据'}
+                                        description="完成一次诊断后，这里将展示品牌维度雷达图。"
+                                        className="h-full"
+                                    />
                                 )}
                             </ResponsiveContainer>
                         </div>
@@ -568,14 +579,18 @@ export default function Diagnosis() {
                                <div className="absolute inset-4 rounded-full border-4 border-separator border-b-text/50 animate-spin-reverse"></div>
                             </div>
                             <div className="text-center space-y-1">
-                                <p className="text-white text-xs font-bold">正在进行 AI 深度思考...</p>
+                                <p className="text-text text-xs font-bold">正在进行 AI 深度思考...</p>
                                 <p className="text-text-secondary text-[10px] font-mono">实时获取搜索引擎数据中...</p>
                             </div>
                         </div>
                      ) : !result ? (
-                         <div className="flex-1 flex items-center justify-center">
-                             <div className="w-32 h-32 rounded-full border-4 border-separator border-t-slate-700 animate-spin opacity-50"></div>
-                         </div>
+                         <EmptyState
+                             size="sm"
+                             icon={BarChart2}
+                             title="暂无数据"
+                             description="运行诊断后，这里将展示品牌提及率。"
+                             className="flex-1"
+                         />
                      ) : (
                         <div className="flex-1 min-h-0">
                              <ResponsiveContainer width="100%" height="100%">
@@ -596,15 +611,18 @@ export default function Diagnosis() {
                                         </Pie>
                                         <Tooltip 
                                             contentStyle={{ backgroundColor: 'rgb(var(--ui-surface))', borderColor: 'rgb(var(--ui-separator) / var(--ui-separator-alpha))' }} 
-                                            itemStyle={{ color: '#fff' }}
+                                            itemStyle={{ color: 'rgb(var(--ui-text))' }}
                                         />
                                         <Legend verticalAlign="bottom" height={36} iconSize={8} wrapperStyle={{ fontSize: '10px' }}/>
                                     </PieChart>
                                 ) : (
-                                    <div className="flex flex-col items-center justify-center h-full text-text-secondary text-xs text-center px-4">
-                                        <AlertTriangle size={32} className="opacity-20 mb-2" />
-                                        未从搜索结果中发现{brand}，<br/>无法计算声量份额
-                                    </div>
+                                    <EmptyState
+                                        size="sm"
+                                        icon={AlertTriangle}
+                                        title={`未从搜索结果中发现${brand || '该品牌'}`}
+                                        description="无法计算声量份额。"
+                                        className="h-full"
+                                    />
                                 )}
                             </ResponsiveContainer>
                         </div>
@@ -617,7 +635,7 @@ export default function Diagnosis() {
                  {/* 1. Status Display Panel */}
                  <div className="bg-surface/60 rounded-2xl border border-separator p-6 relative overflow-hidden h-32 shrink-0 flex items-center justify-between">
                      <div>
-                         <h3 className="text-lg font-bold text-white mb-1">分析状态</h3>
+                         <h3 className="text-lg font-bold text-text mb-1">分析状态</h3>
                          {analyzing ? (
                              <div className="text-accent font-mono text-sm flex items-center gap-2">
                                  <Cpu size={14} className="animate-pulse"/> 
@@ -646,16 +664,16 @@ export default function Diagnosis() {
                          <div className="flex gap-8 mr-4 animate-fade-in-up">
                              <div className="text-center">
                                  <div className="text-[10px] text-text-secondary uppercase tracking-widest">综合排名预测</div>
-                                 <div className="text-2xl font-bold text-white">
+                                 <div className="text-2xl font-bold text-text tabular-nums">
                                      {result.bestRank > 0 
-                                        ? (result.bestRank <= 3 ? '前三 (Top 3)' : `第 ${result.bestRank} 名`) 
-                                        : (result.pieData[0].value > 0 ? '已收录 (Visible)' : '未上榜')
+                                        ? (result.bestRank <= 3 ? '前三' : `第 ${result.bestRank} 名`) 
+                                        : (result.pieData[0].value > 0 ? '已收录' : '未上榜')
                                      }
                                  </div>
                              </div>
                              <div className="text-center">
                                  <div className="text-[10px] text-text-secondary uppercase tracking-widest">品牌可见性</div>
-                                 <div className="text-2xl font-bold text-accent">
+                                 <div className="text-2xl font-bold text-accent tabular-nums">
                                      {result.pieData[0].value > 0
                                         ? ((result.pieData[0].value / (result.pieData[0].value + result.pieData[1].value)) * 100).toFixed(0) + "%"
                                         : '-'
@@ -666,7 +684,7 @@ export default function Diagnosis() {
                                  <div className="text-[10px] text-text-secondary uppercase tracking-widest">情感倾向</div>
                                  <div className="text-2xl font-bold text-success">
                                      {result.pieData[0].value > 0
-                                        ? (result.sov.find((s: any) => s.subject === '情感倾向')?.A > 50 ? '正面 (Positive)' : ((result as any).sov.find((s: any) => s.subject === '情感倾向')?.A < 50 && (result as any).sov.find((s: any) => s.subject === '情感倾向')?.A > 0 ? '负面' : '中性 (Neutral)'))
+                                        ? (result.sov.find((s: any) => s.subject === '情感倾向')?.A > 50 ? '正面' : ((result as any).sov.find((s: any) => s.subject === '情感倾向')?.A < 50 && (result as any).sov.find((s: any) => s.subject === '情感倾向')?.A > 0 ? '负面' : '中性'))
                                         : '-'
                                      }
                                  </div>
@@ -682,35 +700,35 @@ export default function Diagnosis() {
                             <div className="flex-1 flex flex-col animate-fade-in">
                                 <div className="p-8 flex items-start gap-4">
                                     <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-accent to-accent-hover flex items-center justify-center shadow-card shrink-0">
-                                        <Cpu size={20} className="text-white"/>
+                                        <Cpu size={20} className="text-on-accent"/>
                                     </div>
                                     <div className="flex-1 space-y-2">
                                         <div className="flex items-center justify-between mb-1">
                                             <div className="text-sm text-text-secondary font-bold">
-                                                {selectedModel === 'auto' ? '智能优选模型 (Auto-Mode)' : selectedModel} 
-                                                <span className="text-[10px] font-normal px-1.5 py-0.5 rounded bg-text/10 ml-2">Live Engine</span>
+                                                {selectedModel === 'auto' ? '智能优选模式' : selectedModel} 
+                                                <span className="text-[10px] font-normal px-1.5 py-0.5 rounded bg-text/10 ml-2">实时引擎</span>
                                             </div>
 
                                             {result && result.queryAnalysis && result.queryAnalysis[0] && !result.queryAnalysis[0].mentioned && (
                                                 <button 
                                                     onClick={() => router.push(`/optimize?q=${encodeURIComponent(result.queryAnalysis[0].question)}&brand=${encodeURIComponent(brand)}`)}
-                                                    className="flex items-center gap-2 text-xs font-bold text-white bg-accent hover:bg-accent-hover hover:scale-105 active:scale-95 transition-all px-4 py-2 rounded-lg shadow-card animate-pulse border border-accent"
+                                                    className="flex items-center gap-2 text-xs font-bold text-on-accent bg-accent hover:bg-accent-hover hover:scale-105 active:scale-95 transition-all px-4 py-2 rounded-lg shadow-card animate-pulse border border-accent"
                                                 >
                                                     <TrendingUp size={14} className="fill-current" /> 
-                                                    立即优化 (Optimize Now)
+                                                    立即优化
                                                 </button>
                                             )}
                                         </div>
                                         <div className="text-base text-text leading-relaxed p-4 bg-text/[0.03] rounded-xl border border-separator min-h-[100px]">
                                             {analyzing ? (
                                                 <div className="whitespace-pre-wrap font-mono text-sm text-accent/80">
-                                                    {streamingSnippet || "Initializing connection to neural network..."}
+                                                    {streamingSnippet || "正在连接分析引擎…"}
                                                     <span className="inline-block w-2 h-4 ml-1 align-middle bg-accent/50 animate-pulse"/>
                                                 </div>
                                             ) : result && result.queryAnalysis[0] ? (
                                                 <TypewriterEffect text={result.queryAnalysis[0].snippet_raw || result.queryAnalysis[0].snippet} />
                                             ) : (
-                                                <p className="text-text-secondary italic">未返回有效数据 (No data returned).</p>
+                                                <p className="text-text-secondary italic">未返回有效数据。</p>
                                             )}
                                         </div>
                                         {result && result.queryAnalysis && result.queryAnalysis[0] && (
@@ -728,11 +746,11 @@ export default function Diagnosis() {
                                                 
                                                 {result.queryAnalysis[0].mentioned && (
                                                     <span className="text-xs text-text-secondary bg-bg/20 px-2 py-1 rounded border border-separator">
-                                                        排名: {result.queryAnalysis[0].rank > 0 ? `Top ${result.queryAnalysis[0].rank}` : '已上榜'}
+                                                        排名: {result.queryAnalysis[0].rank > 0 ? `第 ${result.queryAnalysis[0].rank} 名` : '已上榜'}
                                                     </span>
                                                 )}
                                                 
-                                                <span className="text-xs text-text-secondary bg-bg/20 px-2 py-1 rounded border border-separator">置信度: High</span>
+                                                <span className="text-xs text-text-secondary bg-bg/20 px-2 py-1 rounded border border-separator">置信度: 高</span>
                                             </div>
                                         )}
                                     </div>
@@ -748,7 +766,7 @@ export default function Diagnosis() {
                                              <div className="flex justify-between mb-2">
                                                  <span className="text-sm text-text">GEO 推荐概率</span>
                                                  <span className="text-success font-bold">
-                                                     {result.bestRank > 0 ? 'High' : '-'}
+                                                     {result.bestRank > 0 ? '高' : '-'}
                                                  </span>
                                              </div>
                                              <div className="w-full bg-surface-2 h-1.5 rounded-full overflow-hidden">
@@ -764,7 +782,7 @@ export default function Diagnosis() {
                                              <div className="flex justify-between mb-2">
                                                  <span className="text-sm text-text">品牌关联度</span>
                                                  <span className="text-accent font-bold">
-                                                     {result.bestRank > 0 ? 'Strong' : '-'}
+                                                     {result.bestRank > 0 ? '强' : '-'}
                                                  </span>
                                              </div>
                                              <div className="w-full bg-surface-2 h-1.5 rounded-full overflow-hidden">
@@ -788,10 +806,15 @@ export default function Diagnosis() {
             <div className="bg-surface/60 rounded-2xl border border-separator p-6 shrink-0 mb-6 mt-4">
                 <h3 className="text-sm font-bold text-text mb-4 flex items-center gap-2">
                     <ShieldCheck size={16} className="text-success" />
-                    Arthur 战略备忘录 (Strategic Insights)
+                    Arthur 战略备忘录
                 </h3>
                  {!result ? (
-                    <div className="text-xs text-text-secondary">暂无数据。</div>
+                    <EmptyState
+                        size="sm"
+                        icon={ShieldCheck}
+                        title="暂无战略洞察"
+                        description="完成诊断后，这里将生成可执行的战略建议。"
+                    />
                  ) : (
                     <ul className="space-y-3">
                         {result.insights.map((insight: string, i: number) => (

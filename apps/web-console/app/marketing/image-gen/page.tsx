@@ -3,6 +3,10 @@ import React, { useEffect, useState } from "react";
 import { Image as ImageIcon, Wand2, RefreshCw } from "lucide-react";
 import api from "../../../lib/api";
 import { useToast } from "../../../contexts/ToastContext";
+import { PageHeader } from "@/components/PageHeader";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const PRESETS = [
   { id: "product_scene", label: "产品场景图" },
@@ -52,20 +56,17 @@ export default function ImageGenPage() {
 
   return (
     <div className="h-full w-full p-6 text-text flex flex-col gap-4 overflow-hidden">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-white">文生图 · 获客视觉</h1>
-          <p className="text-sm text-text-secondary">产品场景图 / Banner / 社媒配图。接入 DashScope Wanx，无 Key 时保存提示词。</p>
-        </div>
-        <button
-          onClick={generate}
-          disabled={loading}
-          className="px-4 py-2 bg-danger hover:bg-danger disabled:opacity-50 text-white rounded-full text-sm font-medium flex items-center gap-2"
-        >
-          {loading ? <RefreshCw size={16} className="animate-spin" /> : <Wand2 size={16} />}
-          生成图片
-        </button>
-      </div>
+      <PageHeader
+        title="文生图 · 获客视觉"
+        description="产品场景图 / Banner / 社媒配图。接入 DashScope Wanx，无 Key 时保存提示词。"
+        className="mb-0"
+        actions={
+          <Button variant="destructive" onClick={generate} disabled={loading}>
+            {loading ? <RefreshCw size={16} className="animate-spin mr-2" /> : <Wand2 size={16} className="mr-2" />}
+            生成图片
+          </Button>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4 flex-1 min-h-0">
         <div className="glass-panel p-4 flex flex-col gap-3">
@@ -75,15 +76,14 @@ export default function ImageGenPage() {
                 key={p.id}
                 onClick={() => setPreset(p.id)}
                 className={`flex-1 text-xs py-2 rounded border ${
-                  preset === p.id ? "border-danger bg-danger/15 text-white" : "border-separator text-text-secondary"
+                  preset === p.id ? "border-danger bg-danger/15 text-text" : "border-separator text-text-secondary"
                 }`}
               >
                 {p.label}
               </button>
             ))}
           </div>
-          <input
-            className="w-full bg-bg/30 border border-separator rounded p-2 text-sm"
+          <Input
             value={productName}
             onChange={(e) => setProductName(e.target.value)}
             placeholder="产品名"
@@ -95,17 +95,21 @@ export default function ImageGenPage() {
             placeholder="可选：自定义英文提示词。留空则按预设自动生成。"
           />
           {latest?.prompt && (
-            <p className="text-[11px] text-text-secondary leading-relaxed">Prompt: {latest.prompt}</p>
+            <p className="text-[11px] text-text-secondary leading-relaxed">提示词：{latest.prompt}</p>
           )}
         </div>
 
         <div className="overflow-y-auto">
           {items.length === 0 && !latest ? (
-            <div className="h-full flex items-center justify-center border border-dashed border-separator rounded-xl text-text-secondary">
-              <div className="text-center">
-                <ImageIcon size={48} className="mx-auto mb-4 opacity-40" />
-                <p>还没有图片，点击生成</p>
-              </div>
+            <div className="h-full flex items-center justify-center border border-dashed border-separator rounded-xl">
+              <EmptyState
+                size="lg"
+                icon={ImageIcon}
+                title="还没有图片"
+                description="选择预设并填写产品名，生成获客视觉素材"
+                actionLabel="生成图片"
+                onAction={generate}
+              />
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">

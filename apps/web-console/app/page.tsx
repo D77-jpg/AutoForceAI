@@ -5,14 +5,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { 
   Search, 
-  BarChart3, 
   Activity, 
   Bot, 
   Radar, 
   Compass, 
   Brain, 
   Factory, 
-  Share2, 
   Settings, 
   Users,
   Grid,
@@ -22,13 +20,10 @@ import {
   Globe,
   Bell,
   MessageSquare,
-  Sparkles,
-  Command,
   LayoutGrid,
   Terminal,
   ShieldCheck,
   User as UserIcon,
-  Maximize2,
   Briefcase,
   Target,
   PenTool,
@@ -52,11 +47,6 @@ interface UserProfile {
   role: string;
   avatar?: string;
 }
-
-const MARKET_METRICS = [
-  { label: "品牌心智份额", value: "32.4%", trend: "+2.1%", isPositive: true },
-  { label: "竞对活跃指数", value: "High", trend: "Critical", isPositive: false },
-];
 
 const TASKS = [
   { id: 1, name: "Q3 行业趋势分析报告", progress: 85, status: "生成中" },
@@ -336,12 +326,6 @@ export default function HomePage() {
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showProductMenu, setShowProductMenu] = useState(false);
-  const [isMac, setIsMac] = useState(true);
-
-  useEffect(() => {
-    // 快捷键提示按平台显示：macOS ⌘K，其他 Ctrl K
-    setIsMac(/Mac|iPhone|iPad/i.test(window.navigator.userAgent));
-  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -358,6 +342,10 @@ export default function HomePage() {
   }, [showProductMenu]);
 
   if (!mounted) return null;
+
+  // 快捷键提示按平台显示：macOS ⌘K，其他系统 Ctrl K
+  // （组件在 mounted 之后才渲染，此处读取 navigator 安全）
+  const isMac = /Mac|iPhone|iPad/i.test(window.navigator.userAgent);
 
   return (
     <div className="min-h-screen bg-bg text-text font-sans w-full overflow-x-hidden">

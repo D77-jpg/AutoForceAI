@@ -1,12 +1,14 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import {
-  Terminal, Cpu, HardDrive, Activity, Users, Building2,
+  Cpu, HardDrive, Activity, Users, Building2,
   RefreshCw, AlertTriangle, ArrowRight, BrainCircuit, Bot
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
+import { PageHeader } from '@/components/PageHeader';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8010';
 
@@ -62,35 +64,33 @@ export default function OpsPage() {
 
   return (
     <div className="h-full flex flex-col bg-bg overflow-hidden">
-      <div className="flex-none p-6 border-b border-separator">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-[28px] font-semibold tracking-tight text-white flex items-center gap-3">
-              <Terminal className="text-accent" />
-              运维控制台
-            </h1>
-            <p className="text-sm text-text-secondary mt-1">
-              系统运行状态概览与快捷操作中心
-              {sys && <span className="ml-2 text-text-secondary">· {sys.system_info.platform} {sys.system_info.release} · Python {sys.system_info.python_version}</span>}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-             {loadError ? (
+      <div className="flex-none px-6 pt-6">
+        <PageHeader
+          title="运维控制台"
+          description={
+            '系统运行状态概览与快捷操作中心' +
+            (sys ? ` · ${sys.system_info.platform} ${sys.system_info.release} · Python ${sys.system_info.python_version}` : '')
+          }
+          className="mb-0"
+          actions={
+            <>
+              {loadError ? (
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-danger/10 border border-danger/20 rounded-full">
-                   <div className="w-2 h-2 rounded-full bg-danger"></div>
-                   <span className="text-xs text-danger font-medium">后端连接异常</span>
+                  <div className="w-2 h-2 rounded-full bg-danger"></div>
+                  <span className="text-xs text-danger font-medium">后端连接异常</span>
                 </div>
-             ) : (
+              ) : (
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-success/10 border border-success/20 rounded-full">
-                   <div className="w-2 h-2 rounded-full bg-success animate-pulse"></div>
-                   <span className="text-xs text-success font-medium">系统运行正常</span>
+                  <div className="w-2 h-2 rounded-full bg-success animate-pulse"></div>
+                  <span className="text-xs text-success font-medium">系统运行正常</span>
                 </div>
-             )}
-             <button onClick={fetchStatus} className="p-1.5 text-text-secondary hover:text-white transition-colors" title="刷新">
+              )}
+              <button onClick={fetchStatus} className="p-1.5 text-text-secondary hover:text-text transition-colors" title="刷新">
                 <RefreshCw size={14} />
-             </button>
-          </div>
-        </div>
+              </button>
+            </>
+          }
+        />
       </div>
 
       <div className="flex-1 overflow-auto p-6 space-y-6">
@@ -107,7 +107,7 @@ export default function OpsPage() {
               <div className="space-y-1">
                 <p className="text-[11px] text-text-secondary uppercase font-semibold tracking-[0.12em]">{stat.label}</p>
                 <div className="flex items-end gap-2">
-                  <span className="text-[26px] font-semibold tracking-tight text-white">{stat.value}</span>
+                  <span className="text-[26px] font-semibold tracking-tight text-text tabular-nums">{stat.value}</span>
                   {stat.total && <span className="text-xs text-text-secondary mb-1">/ {stat.total}</span>}
                   {stat.sub && <span className="text-xs text-text-secondary mb-1">{stat.sub}</span>}
                 </div>
@@ -115,18 +115,23 @@ export default function OpsPage() {
             </div>
           ))}
         </div>
+        ) : loadError ? (
+          <EmptyState
+            icon={AlertTriangle}
+            title="无法加载系统状态"
+            description={loadError}
+            size="lg"
+          />
         ) : (
           <div className="flex items-center justify-center h-40 text-text-secondary gap-2">
-            {loadError ? ('无法加载系统状态：' + loadError) : (
-              <><RefreshCw size={16} className="animate-spin" /> 正在加载系统状态...</>
-            )}
+            <RefreshCw size={16} className="animate-spin" /> 正在加载系统状态...
           </div>
         )}
 
         <div className="grid grid-cols-1 gap-6">
            <div className="bg-surface border border-separator rounded-xl p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <h3 className="text-lg font-bold text-text flex items-center gap-2">
                   <Activity size={18} className="text-accent"/>
                   快捷操作
                 </h3>
@@ -139,7 +144,7 @@ export default function OpsPage() {
                          <action.icon size={20} className="text-text-secondary group-hover:text-accent transition-colors" />
                          <ArrowRight className="opacity-0 group-hover:opacity-100 transition-opacity -rotate-45 text-accent" size={14} />
                       </div>
-                      <span className="text-sm font-medium text-text group-hover:text-white">{action.label}</span>
+                      <span className="text-sm font-medium text-text">{action.label}</span>
                       <span className="text-xs text-text-secondary mt-1 line-clamp-1">{action.desc}</span>
                     </Link>
                 ))}

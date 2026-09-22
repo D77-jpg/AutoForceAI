@@ -2,6 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import { BarChart4, Coins, Layers, Zap, Calendar, TrendingUp } from 'lucide-react';
 import api from '@/lib/api';
+import { PageHeader } from '@/components/PageHeader';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from '@/components/ui/table';
 
 export default function TrafficPage() {
   const [data, setData] = useState<any>(null);
@@ -26,21 +29,19 @@ export default function TrafficPage() {
 
   return (
     <div className="h-full w-full p-6 text-text flex flex-col overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-            <div>
-                 <h1 className="text-2xl font-bold text-white">流量统计 (Traffic Stats)</h1>
-                 <p className="text-sm text-text-secondary">LLM 调用量、Token 消耗与成本分析。</p>
-            </div>
-             <div className="flex gap-2">
-                <button className="px-3 py-1.5 bg-text/5 border border-separator rounded-lg text-xs text-text flex items-center gap-2">
-                    <Calendar size={14}/> Last 7 Days
+        <PageHeader
+            title="流量统计"
+            description="LLM 调用量、Token 消耗与成本分析。"
+            actions={
+                <button className="h-10 px-4 bg-text/5 border border-separator rounded-md text-sm text-text flex items-center gap-2">
+                    <Calendar size={14}/> 近 7 天
                 </button>
-             </div>
-        </div>
+            }
+        />
         
         {loading ? (
              <div className="flex-1 flex items-center justify-center text-text-secondary">
-                <BarChart4 className="animate-pulse mr-2" /> Loading analytics...
+                <BarChart4 className="animate-pulse mr-2" /> 正在加载分析数据…
              </div>
         ) : (
             <div className="space-y-6">
@@ -51,12 +52,12 @@ export default function TrafficPage() {
                             <Coins size={64} />
                         </div>
                         <h3 className="text-sm font-medium text-text-secondary mb-2 flex items-center gap-2">
-                            <Coins size={16} className="text-warning"/> 总消耗 (Total Tokens)
+                            <Coins size={16} className="text-warning"/> 总消耗（Tokens）
                         </h3>
-                        <div className="text-3xl font-bold text-white font-mono">
+                        <div className="text-3xl font-bold text-text font-mono tabular-nums">
                             {(totalTokens / 1000).toFixed(1)}k
                         </div>
-                        <div className="text-xs text-text-secondary mt-1">Estimate: ${(totalTokens * 0.00001).toFixed(4)}</div>
+                        <div className="text-xs text-text-secondary mt-1 tabular-nums">预估成本：${(totalTokens * 0.00001).toFixed(4)}</div>
                      </div>
 
                      <div className="bg-surface border border-separator p-6 rounded-xl relative overflow-hidden">
@@ -66,10 +67,10 @@ export default function TrafficPage() {
                         <h3 className="text-sm font-medium text-text-secondary mb-2 flex items-center gap-2">
                             <Zap size={16} className="text-accent"/> API 调用次数
                         </h3>
-                        <div className="text-3xl font-bold text-white font-mono">
+                        <div className="text-3xl font-bold text-text font-mono tabular-nums">
                             {totalCalls}
                         </div>
-                        <div className="text-xs text-text-secondary mt-1">Avg: {(totalCalls / 7).toFixed(1)} / day</div>
+                        <div className="text-xs text-text-secondary mt-1 tabular-nums">日均 {(totalCalls / 7).toFixed(1)} 次</div>
                      </div>
 
                      <div className="bg-surface border border-separator p-6 rounded-xl relative overflow-hidden">
@@ -79,10 +80,10 @@ export default function TrafficPage() {
                         <h3 className="text-sm font-medium text-text-secondary mb-2 flex items-center gap-2">
                             <Layers size={16} className="text-accent"/> 活跃供应商
                         </h3>
-                        <div className="text-3xl font-bold text-white font-mono">
+                        <div className="text-3xl font-bold text-text font-mono tabular-nums">
                             {Object.keys(data?.by_provider || {}).length}
                         </div>
-                        <div className="text-xs text-text-secondary mt-1">Providers</div>
+                        <div className="text-xs text-text-secondary mt-1">家供应商</div>
                      </div>
                 </div>
 
@@ -92,12 +93,15 @@ export default function TrafficPage() {
                          <TrendingUp size={16} className="text-accent"/> 每日消耗趋势
                      </h3>
                      
+                     {data?.daily_trend?.length === 0 ? (
+                        <EmptyState
+                            icon={BarChart4}
+                            size="sm"
+                            title="暂无消耗数据"
+                            description="所选时间范围内没有 LLM 调用记录。"
+                        />
+                     ) : (
                      <div className="flex-1 flex items-end gap-2 h-full">
-                        {data?.daily_trend?.length === 0 && (
-                            <div className="w-full text-center text-text-secondary text-sm py-10">
-                                暂无数据 (No Data Available)
-                            </div>
-                        )}
                         {data?.daily_trend?.map((day: any) => (
                             <div key={day.date} className="flex-1 flex flex-col items-center gap-2 group">
                                 <div className="w-full relative flex-1 flex items-end bg-text/[0.02] rounded-t-lg hover:bg-text/[0.05] transition-colors">
@@ -105,48 +109,49 @@ export default function TrafficPage() {
                                         className="w-full bg-accent/50 hover:bg-accent-hover rounded-t-lg transition-all relative group-hover:shadow-none"
                                         style={{ height: `${(day.tokens / maxDailyTokens) * 100}%` }}
                                     >
-                                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-bg/80 px-2 py-1 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-bg/80 px-2 py-1 rounded text-xs text-text opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 tabular-nums">
                                             {day.tokens} Tokens
                                             <br/>
-                                            {day.calls} Calls
+                                            {day.calls} 次调用
                                         </div>
                                     </div>
                                 </div>
-                                <div className="text-xs text-text-secondary font-mono rotate-0 whitespace-nowrap overflow-hidden text-ellipsis max-w-[50px]">{day.date.slice(5)}</div>
+                                <div className="text-xs text-text-secondary font-mono tabular-nums rotate-0 whitespace-nowrap overflow-hidden text-ellipsis max-w-[50px]">{day.date.slice(5)}</div>
                             </div>
                         ))}
                      </div>
+                     )}
                 </div>
 
                 {/* Provider Breakdown Table */}
                  <div className="bg-surface border border-separator rounded-xl overflow-hidden">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-text/[0.02] text-text-secondary font-medium">
-                            <tr>
-                                <th className="p-4 pl-6">供应商 (Provider)</th>
-                                <th className="p-4 text-right pr-6">总消耗 (Tokens)</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-separator">
+                    <Table>
+                        <TableHead>
+                            <TableRow>
+                                <TableHeaderCell className="pl-6">供应商</TableHeaderCell>
+                                <TableHeaderCell className="text-right pr-6">消耗（Tokens）</TableHeaderCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
                             {Object.entries(data?.by_provider || {}).map(([provider, tokens]: any) => (
-                                <tr key={provider} className="hover:bg-text/[0.02]">
-                                    <td className="p-4 pl-6 text-white font-medium">{provider}</td>
-                                    <td className="p-4 text-right pr-6 font-mono text-text">{tokens}</td>
-                                </tr>
+                                <TableRow key={provider}>
+                                    <TableCell className="pl-6 font-medium">{provider}</TableCell>
+                                    <TableCell className="text-right pr-6 font-mono tabular-nums">{tokens}</TableCell>
+                                </TableRow>
                             ))}
-                            {Object.keys(data?.by_provider || {}).length === 0 && (
-                                <tr>
-                                    <td colSpan={2} className="p-8 text-center text-text-secondary">
-                                        暂无供应商数据
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                        </TableBody>
+                    </Table>
+                    {Object.keys(data?.by_provider || {}).length === 0 && (
+                        <EmptyState
+                            icon={Layers}
+                            size="sm"
+                            title="暂无供应商数据"
+                            description="统计周期内没有按供应商归集的消耗记录。"
+                        />
+                    )}
                  </div>
             </div>
         )}
     </div>
   )
 }
-

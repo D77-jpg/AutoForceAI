@@ -2,10 +2,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import api from '../../lib/api';
-import { Share2, Bot, CheckCircle, Clock, AlertTriangle, RefreshCw, Layers, RotateCcw, XCircle, ExternalLink, Trash2, Edit, ChevronDown, ChevronUp, Maximize2, Minimize2, StopCircle, Monitor } from 'lucide-react';
+import { Share2, Bot, CheckCircle, Clock, AlertTriangle, RefreshCw, Layers, RotateCcw, ExternalLink, Trash2, Edit, ChevronDown, ChevronUp, Maximize2, Minimize2, StopCircle, Monitor } from 'lucide-react';
 import { useGlobalState } from '../../contexts/GlobalStateContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useSearchParams } from 'next/navigation';
+import { PageHeader } from '@/components/PageHeader';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Modal } from '@/components/ui/modal';
+import { Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 
 interface RPAJob {
   id: number;
@@ -313,39 +318,44 @@ export default function Distribution() {
 
   return (
     <div className="h-full flex flex-col p-4 animate-fade-in-up space-y-4">
+      <PageHeader
+        title="营销矩阵"
+        description="全平台内容投放任务队列与实时执行日志。"
+        className="mb-0 shrink-0"
+      />
       {/* 1. Header & Stats Section */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 shrink-0">
          <div className="glass-card p-4 flex items-center justify-between border-l-4 border-l-accent">
             <div>
                <p className="text-xs text-text-secondary uppercase font-bold tracking-wider">投放任务总数</p>
-               <h3 className="text-2xl font-bold text-white mt-1">{stats.total}</h3>
+               <h3 className="text-2xl font-bold text-text mt-1 tabular-nums">{stats.total}</h3>
             </div>
             <div className="p-3 bg-accent/10 rounded-lg text-accent">
                <Layers size={20}/>
             </div>
          </div>
-         <div className="glass-card p-4 flex items-center justify-between border-l-4 border-l-blue-500">
+         <div className="glass-card p-4 flex items-center justify-between border-l-4 border-l-tint-revenue">
             <div>
                <p className="text-xs text-text-secondary uppercase font-bold tracking-wider">正在执行/排队</p>
-               <h3 className="text-2xl font-bold text-white mt-1">{stats.running}</h3>
+               <h3 className="text-2xl font-bold text-text mt-1 tabular-nums">{stats.running}</h3>
             </div>
             <div className="p-3 bg-accent/10 rounded-lg text-accent animate-pulse">
                <RefreshCw size={20} className={stats.running > 0 ? "animate-spin" : ""}/>
             </div>
          </div>
-         <div className="glass-card p-4 flex items-center justify-between border-l-4 border-l-emerald-500">
+         <div className="glass-card p-4 flex items-center justify-between border-l-4 border-l-success">
             <div>
                <p className="text-xs text-text-secondary uppercase font-bold tracking-wider">投放成功率</p>
-               <h3 className="text-2xl font-bold text-white mt-1">{stats.successRate}%</h3>
+               <h3 className="text-2xl font-bold text-text mt-1 tabular-nums">{stats.successRate}%</h3>
             </div>
             <div className="p-3 bg-success/10 rounded-lg text-success">
                <CheckCircle size={20}/>
             </div>
          </div>
-         <div className="glass-card p-4 flex items-center justify-between border-l-4 border-l-orange-500">
+         <div className="glass-card p-4 flex items-center justify-between border-l-4 border-l-warning">
             <div>
                <p className="text-xs text-text-secondary uppercase font-bold tracking-wider">今日新增</p>
-               <h3 className="text-2xl font-bold text-white mt-1">+{stats.today}</h3>
+               <h3 className="text-2xl font-bold text-text mt-1 tabular-nums">+{stats.today}</h3>
             </div>
             <div className="p-3 bg-warning/10 rounded-lg text-warning">
                <Clock size={20}/>
@@ -363,7 +373,7 @@ export default function Distribution() {
                   onClick={() => setFilterPlatform(p.id)}
                   className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
                      filterPlatform === p.id 
-                     ? 'bg-text/10 text-white shadow-sm border border-separator' 
+                     ? 'bg-text/10 text-text shadow-sm border border-separator' 
                      : 'text-text-secondary hover:text-text hover:bg-text/5 border border-transparent'
                   }`}
                >
@@ -378,41 +388,43 @@ export default function Distribution() {
             </Link>
             <button 
                 onClick={() => fetchJobs(page, pageSize)}
-                className="p-1.5 hover:bg-text/5 rounded text-text-secondary hover:text-white transition-colors flex items-center gap-1 text-xs">
+                className="p-1.5 hover:bg-text/5 rounded text-text-secondary hover:text-text transition-colors flex items-center gap-1 text-xs">
                 <RefreshCw size={12} /> 刷新列表
             </button>
         </div>
         
         <div className="flex-1 overflow-y-auto custom-scrollbar">
-          <table className="w-full text-left text-sm text-text-secondary">
-            <thead className="bg-bg/80 backdrop-blur sticky top-0 z-10 text-xs font-bold text-text-secondary uppercase tracking-wider border-b border-separator">
-                            <tr>
-                                <th className="px-6 py-3 w-20">ID</th>
-                                <th className="px-6 py-3 w-32">平台</th>
-                                <th className="px-6 py-3 w-40">状态</th>
-                                <th className="px-6 py-3">执行结果 / 任务标题</th>
-                                <th className="px-6 py-3 text-right w-48">创建时间</th>
-                            </tr>
-            </thead>
-            <tbody className="divide-y divide-separator">
+          <Table className="text-sm text-text-secondary">
+            <TableHead className="bg-bg/80 backdrop-blur sticky top-0 z-10">
+                            <TableRow className="hover:bg-transparent">
+                                <TableHeaderCell className="px-6 py-3 w-20">ID</TableHeaderCell>
+                                <TableHeaderCell className="px-6 py-3 w-32">平台</TableHeaderCell>
+                                <TableHeaderCell className="px-6 py-3 w-40">状态</TableHeaderCell>
+                                <TableHeaderCell className="px-6 py-3">执行结果 / 任务标题</TableHeaderCell>
+                                <TableHeaderCell className="px-6 py-3 text-right w-48">创建时间</TableHeaderCell>
+                            </TableRow>
+            </TableHead>
+            <TableBody>
               {loading && jobs.length === 0 ? (
-                 <tr>
-                    <td colSpan={5} className="px-6 py-20 text-center text-text-secondary">
+                 <TableRow className="hover:bg-transparent">
+                    <TableCell colSpan={5} className="px-6 py-20 text-center text-text-secondary">
                         <div className="flex flex-col items-center gap-3">
                            <RefreshCw className="animate-spin opacity-50" size={24}/>
                            <p>正在同步全网投放数据...</p>
                         </div>
-                    </td>
-                 </tr>
+                    </TableCell>
+                 </TableRow>
               ) : filteredJobs.length === 0 ? (
-                 <tr>
-                    <td colSpan={5} className="px-6 py-20 text-center text-text-secondary">
-                        <div className="flex flex-col items-center gap-3">
-                           <Layers className="opacity-20" size={32}/>
-                           <p>暂无符合条件的任务记录</p>
-                        </div>
-                    </td>
-                 </tr>
+                 <TableRow className="hover:bg-transparent">
+                    <TableCell colSpan={5} className="p-0">
+                        <EmptyState
+                            size="sm"
+                            icon={Layers}
+                            title="暂无符合条件的任务记录"
+                            description="调整平台筛选，或从「内容工场」创建新的投放任务。"
+                        />
+                    </TableCell>
+                 </TableRow>
               ) : (
                 filteredJobs.map((job) => {
                   const statusInfo = statusConfig[job.status as keyof typeof statusConfig] || statusConfig.queued;
@@ -421,12 +433,12 @@ export default function Distribution() {
                   
                   return (
                   <React.Fragment key={job.id}>
-                    <tr 
+                    <TableRow 
                         onClick={() => setExpandedJobId(isExpanded ? null : job.id)}
-                        className={`transition-colors cursor-pointer group ${isExpanded ? 'bg-text/[0.04]' : 'hover:bg-text/[0.02]'}`}
+                        className={`transition-colors cursor-pointer group ${isExpanded ? 'bg-text/[0.04]' : ''}`}
                     >
-                        <td className="px-6 py-4 font-mono text-xs text-text-secondary">#{job.id}</td>
-                        <td className="px-6 py-4">
+                        <TableCell className="px-6 py-4 font-mono text-xs text-text-secondary">#{job.id}</TableCell>
+                        <TableCell className="px-6 py-4">
                             {(job.platform === 'redbook' || job.platform === 'xiaohongshu') ? (
                                 <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-danger"></span> 小红书</div>
                             ) : (job.platform === 'tiktok' || job.platform === 'douyin') ? (
@@ -446,29 +458,29 @@ export default function Distribution() {
                             ) : (
                                 <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-text-tertiary"></span> {job.platform}</div>
                             )}
-                        </td>
-                        <td className="px-6 py-4">
+                        </TableCell>
+                        <TableCell className="px-6 py-4">
                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${statusInfo.color}`}>
                                 <StatusIcon size={12} className={job.status === 'claimed' ? 'animate-spin' : ''} />
                                 {statusInfo.label}
                             </span>
-                        </td>
-                        <td className="px-6 py-4 max-w-md">
+                        </TableCell>
+                        <TableCell className="px-6 py-4 max-w-md">
                             <div className="flex flex-col gap-1">
                                 <span className="text-text font-medium truncate" title={job.payload?.title}>
                                    {job.payload?.title || "无标题任务"}
                                 </span>
                             </div>
-                        </td>
-                        <td className="px-6 py-4 text-right text-xs text-text-secondary font-mono whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="px-6 py-4 text-right text-xs text-text-secondary font-mono whitespace-nowrap">
                           <div className="flex items-center justify-end gap-2">
-                            <span>{new Date(job.created_at).toLocaleString('zh-CN')}</span>
+                            <span className="tabular-nums">{new Date(job.created_at).toLocaleString('zh-CN')}</span>
                             <button onClick={(e) => { e.stopPropagation(); setExpandedJobId(isExpanded ? null : job.id); }} className="p-1 rounded hover:bg-text/5">
                               {isExpanded ? <ChevronUp size={14}/> : <ChevronDown size={14}/>} 
                             </button>
                           </div>
-                        </td>
-                    </tr>
+                        </TableCell>
+                    </TableRow>
                     
                     {/* Expanded Detail Panel */}
                     {isExpanded && (
@@ -497,7 +509,7 @@ export default function Distribution() {
                                           </button>
                                           <button 
                                             onClick={(e) => handleAction(e, job.id, 'retry')}
-                                            className="px-2 py-1 bg-text/5 hover:bg-text/10 text-white border border-separator rounded text-xs flex items-center gap-1 transition-all"
+                                            className="px-2 py-1 bg-text/5 hover:bg-text/10 text-text border border-separator rounded text-xs flex items-center gap-1 transition-all"
                                           >
                                             <RotateCcw size={14}/> 重试
                                           </button>
@@ -512,7 +524,7 @@ export default function Distribution() {
                                               ['xiaohongshu', 'redbook'].includes(job.platform?.toLowerCase()) ? (
                                                 <button
                                                   onClick={(e) => handleTriggerView(e, job.result_log!.match(/\|\|\|LINK:(.+?)\|\|\|/)?.[1] || '', job.platform)}
-                                                  className="px-2 py-1 bg-accent hover:bg-accent text-white rounded text-xs font-bold flex items-center gap-1 transition-colors"
+                                                  className="px-2 py-1 bg-accent hover:bg-accent-hover text-on-accent rounded text-xs font-bold flex items-center gap-1 transition-colors"
                                                   title="在RPA浏览器中查看（用于访问草稿箱）"
                                                 >
                                                   <Monitor size={12}/> RPA预览
@@ -521,7 +533,7 @@ export default function Distribution() {
                                                 <a 
                                                   href={job.result_log.match(/\|\|\|LINK:(.+?)\|\|\|/)?.[1]} 
                                                   target="_blank" 
-                                                  className="px-2 py-1 bg-accent hover:bg-accent text-white rounded text-xs font-bold flex items-center gap-1 transition-colors"
+                                                  className="px-2 py-1 bg-accent hover:bg-accent-hover text-on-accent rounded text-xs font-bold flex items-center gap-1 transition-colors"
                                                 >
                                                   <ExternalLink size={12}/> 预览/编辑
                                                 </a>
@@ -531,7 +543,7 @@ export default function Distribution() {
                                       </div>
                                       
                                       <div className="flex-1 bg-bg/20 rounded-lg p-4 border border-separator flex flex-col min-h-0">
-                                         <h4 className="text-sm font-bold text-white mb-2 shrink-0">{job.payload?.title || "无标题"}</h4>
+                                         <h4 className="text-sm font-bold text-text mb-2 shrink-0">{job.payload?.title || "无标题"}</h4>
                                          <div className="text-text-secondary font-mono text-xs whitespace-pre-wrap break-words leading-relaxed overflow-y-auto custom-scrollbar flex-1 min-h-0">
                                            {job.payload?.content || "无内容"}
                                          </div>
@@ -548,10 +560,10 @@ export default function Distribution() {
                                                 {job.status === 'claimed' && (
                                                     <span className="text-[10px] text-accent animate-pulse flex items-center gap-1 mr-2">
                                                         <div className="w-1.5 h-1.5 bg-accent rounded-full"></div>
-                                                        LIVE
+                                                        实时
                                                     </span>
                                                 )}
-                                                <button onClick={() => setMaximizeLogs(!maximizeLogs)} className="text-text-secondary hover:text-white transition-colors" title={maximizeLogs ? "还原" : "最大化详情页"}>
+                                                <button onClick={() => setMaximizeLogs(!maximizeLogs)} className="text-text-secondary hover:text-text transition-colors" title={maximizeLogs ? "还原" : "最大化详情页"}>
                                                     {maximizeLogs ? <Minimize2 size={14}/> : <Maximize2 size={14}/>}
                                                 </button>
                                             </div>
@@ -578,10 +590,12 @@ export default function Distribution() {
                                                     </div>
                                               ))
                                             ) : (
-                                                <div className="h-full flex flex-col items-center justify-center text-text-tertiary italic">
-                                                  <Layers className="mb-2 opacity-20" size={24}/>
-                                                  <span>暂无日志数据...</span>
-                                                </div>
+                                                <EmptyState
+                                                    size="sm"
+                                                    icon={Layers}
+                                                    title="暂无日志数据"
+                                                    description="任务开始执行后，实时日志会显示在这里。"
+                                                />
                                             )}
                                         </div>
                                     </div>
@@ -593,61 +607,62 @@ export default function Distribution() {
                   );
                 })
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </div>
     
     {/* Edit Modal */}
-    {editingJob && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg/50 backdrop-blur-sm p-4">
-        <div className="bg-surface border border-separator rounded-xl shadow-modal animate-modal-in w-full max-w-2xl flex flex-col max-h-[90vh]">
-          <div className="p-4 border-b border-separator flex justify-between items-center">
-            <h3 className="text-lg font-bold text-white">编辑任务内容 #{editingJob.id}</h3>
-            <button onClick={() => setEditingJob(null)} className="text-text-secondary hover:text-white"><XCircle size={20}/></button>
-          </div>
-          <div className="p-6 overflow-y-auto flex-1 space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-text-secondary uppercase mb-1">标题</label>
-              <input 
-                className="w-full bg-bg/20 border border-separator rounded p-2 text-white focus:border-accent outline-none"
-                value={editForm.title}
-                onChange={e => setEditForm({...editForm, title: e.target.value})}
-              />
-            </div>
-            <div className="flex-1 flex flex-col min-h-0">
-              <label className="block text-xs font-bold text-text-secondary uppercase mb-1">正文内容</label>
-              <textarea 
-                className="w-full h-64 bg-bg/20 border border-separator rounded p-3 text-white font-mono text-sm leading-relaxed focus:border-accent outline-none resize-none"
-                value={editForm.content}
-                onChange={e => setEditForm({...editForm, content: e.target.value})}
-              />
-            </div>
-          </div>
-          <div className="p-4 border-t border-separator flex justify-end gap-3 bg-surface-2/60 rounded-b-xl">
-            <button onClick={() => setEditingJob(null)} className="px-4 py-2 rounded text-text-secondary hover:text-white hover:bg-text/5 transition-colors">取消</button>
-            <button onClick={saveEdit} className="px-4 py-2 rounded bg-accent hover:bg-accent-hover text-white font-medium shadow-card">保存修改</button>
-          </div>
+    <Modal
+      open={!!editingJob}
+      onClose={() => setEditingJob(null)}
+      title={`编辑任务内容 #${editingJob?.id ?? ''}`}
+      className="max-w-2xl"
+      footer={
+        <>
+          <Button variant="ghost" onClick={() => setEditingJob(null)}>取消</Button>
+          <Button onClick={saveEdit}>保存修改</Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <div>
+          <label className="block text-xs font-bold text-text-secondary uppercase mb-1">标题</label>
+          <input 
+            className="w-full h-10 bg-surface-2 border border-separator rounded-md px-3 text-text text-sm focus:border-accent outline-none transition-colors"
+            value={editForm.title}
+            onChange={e => setEditForm({...editForm, title: e.target.value})}
+          />
+        </div>
+        <div className="flex flex-col">
+          <label className="block text-xs font-bold text-text-secondary uppercase mb-1">正文内容</label>
+          <textarea 
+            className="w-full h-64 bg-surface-2 border border-separator rounded-md p-3 text-text font-mono text-sm leading-relaxed focus:border-accent outline-none resize-none transition-colors"
+            value={editForm.content}
+            onChange={e => setEditForm({...editForm, content: e.target.value})}
+          />
         </div>
       </div>
-    )}
+    </Modal>
 
-    {/* Custom Delete Confirm Modal */}
-    {deleteConfirmId !== null && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg/50 backdrop-blur-sm p-4">
-        <div className="bg-surface border border-separator rounded-xl shadow-modal animate-modal-in w-full max-w-sm flex flex-col">
-          <div className="p-6 flex flex-col items-center">
-            <Trash2 size={32} className="text-danger mb-2" />
-            <h3 className="text-lg font-bold text-white mb-2">确认删除</h3>
-            <p className="text-text-secondary mb-4">确定要删除这条任务记录吗？此操作不可恢复。</p>
-            <div className="flex gap-4 mt-2">
-              <button onClick={() => setDeleteConfirmId(null)} className="px-4 py-2 rounded bg-surface-2 text-text hover:bg-text/10">取消</button>
-              <button onClick={confirmDelete} className="px-4 py-2 rounded bg-danger text-white font-bold hover:bg-danger">确认删除</button>
-            </div>
-          </div>
-        </div>
+    {/* 删除确认 */}
+    <Modal
+      open={deleteConfirmId !== null}
+      onClose={() => setDeleteConfirmId(null)}
+      title="确认删除"
+      description="确定要删除这条任务记录吗？此操作不可恢复。"
+      className="max-w-sm"
+      footer={
+        <>
+          <Button variant="secondary" onClick={() => setDeleteConfirmId(null)}>取消</Button>
+          <Button variant="destructive" onClick={confirmDelete}>确认删除</Button>
+        </>
+      }
+    >
+      <div className="flex justify-center py-2">
+        <Trash2 size={32} className="text-danger" />
       </div>
-    )}
+    </Modal>
 
     {/* Pagination Controls */}
     <div className="flex items-center justify-between gap-2 p-3 border-t border-separator">

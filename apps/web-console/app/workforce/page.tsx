@@ -1,11 +1,22 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Plus, User, Zap, Briefcase } from 'lucide-react';
+import { Plus, User, Zap, Bot } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { PageHeader } from '@/components/PageHeader';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const API_URL = "http://localhost:8010";
 
+const ROLE_LABELS: Record<string, string> = {
+  strategist: '策略专家',
+  executor: '执行专员',
+  archivist: '档案管理员',
+};
+
 export default function WorkforcePage() {
+  const router = useRouter();
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,30 +49,37 @@ export default function WorkforcePage() {
 
   return (
     <div className="min-h-screen bg-bg text-text p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
-        
-        {/* Header */}
-        <div className="flex justify-between items-center border-b border-separator pb-6">
-          <div>
-            <h1 className="text-[32px] font-semibold tracking-tight text-white">数字员工大厅</h1>
-            <p className="text-[15px] text-text-secondary mt-2">管理您的 AI 员工团队并分配任务。</p>
-          </div>
-          <Link href="/workforce/create">
-            <button className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-white px-5 py-2.5 rounded-full font-medium transition-colors">
-              <Plus size={18} />
-              <span>新建员工</span>
-            </button>
-          </Link>
-        </div>
+      <div className="max-w-7xl mx-auto">
+
+        <PageHeader
+          title="数字员工大厅"
+          description="管理您的 AI 员工团队并分配任务。"
+          actions={
+            <Link href="/workforce/create">
+              <Button>
+                <Plus size={16} className="mr-1.5" /> 新建数字员工
+              </Button>
+            </Link>
+          }
+        />
 
         {/* Content */}
         {loading ? (
-             <div className="text-center py-20 text-text-secondary">Loading workforce...</div>
+             <div className="text-center py-24 text-text-secondary">正在加载数字员工…</div>
+        ) : employees.length === 0 ? (
+            <EmptyState
+              icon={Bot}
+              size="lg"
+              title="还没有数字员工"
+              description="创建您的第一位数字员工，为其配置角色、能力与任务。"
+              actionLabel="新建数字员工"
+              onAction={() => router.push('/workforce/create')}
+            />
         ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Employee Cards */}
                 {employees.map((emp: any) => (
-                <div key={emp.id} className="bg-surface border border-separator rounded-xl overflow-hidden hover:bg-surface-2 transition-all group">
+                <div key={emp.id} className="bg-surface border border-separator rounded-xl overflow-hidden hover:bg-surface-2 transition-all group shadow-card">
                     <div className="p-6">
                         <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-4">
@@ -73,20 +91,20 @@ export default function WorkforcePage() {
                                     )}
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-lg text-white group-hover:text-accent transition-colors">{emp.name}</h3>
-                                    <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent capitalize">
-                                        {emp.role}
+                                    <h3 className="font-bold text-lg text-text group-hover:text-accent transition-colors">{emp.name}</h3>
+                                    <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent">
+                                        {ROLE_LABELS[emp.role] || emp.role}
                                     </span>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <p className="text-text-secondary text-sm mb-6 h-10 line-clamp-2">
                             {emp.description}
                         </p>
 
                         <div className="space-y-3">
-                            <div className="text-[11px] font-semibold text-text-tertiary uppercase tracking-[0.12em]">Capabilities</div>
+                            <div className="apple-section-label">核心能力</div>
                             <div className="flex flex-wrap gap-2">
                                 {emp.capabilities?.map((cap: string, i: number) => (
                                     <span key={i} className="text-xs bg-surface-2 text-text-secondary px-2.5 py-1 rounded-full">
@@ -96,25 +114,25 @@ export default function WorkforcePage() {
                             </div>
                         </div>
                     </div>
-                    
+
                     <div className="px-6 py-4 border-t border-separator mt-auto">
                         <Link href={`/workforce/mission?employee_id=${emp.id}`}>
-                            <button className="w-full flex items-center justify-center bg-surface-2 hover:bg-surface-2 text-white py-2.5 rounded-full transition-colors text-sm font-medium">
-                                <Zap className="mr-2 h-4 w-4 text-warning" /> Assign Mission
+                            <button className="w-full h-10 flex items-center justify-center bg-surface-2 hover:bg-surface-2/70 text-text rounded-md transition-colors text-sm font-medium">
+                                <Zap className="mr-2 h-4 w-4 text-warning" /> 分配任务
                             </button>
                         </Link>
                     </div>
                 </div>
                 ))}
 
-                {/* Create New Card (if empty or as last item) */}
+                {/* Create New Card (as last item) */}
                 <Link href="/workforce/create" className="group block h-full">
-                    <div className="h-full bg-surface/60 border-2 border-dashed border-separator rounded-xl flex flex-col items-center justify-center p-8 hover:border-separator hover:bg-surface transition-all cursor-pointer min-h-[300px]">
+                    <div className="h-full bg-surface/60 border-2 border-dashed border-separator rounded-xl flex flex-col items-center justify-center p-8 hover:border-accent/40 hover:bg-surface transition-all cursor-pointer min-h-[300px]">
                         <div className="bg-surface-2 p-4 rounded-full mb-4 group-hover:scale-110 transition-transform">
                             <Plus className="h-6 w-6 text-text-secondary" />
                         </div>
-                        <h3 className="font-medium text-text">Recruit New Employee</h3>
-                        <p className="text-text-secondary text-sm mt-2 text-center">Add a new digital worker to your team</p>
+                        <h3 className="font-medium text-text">招募新员工</h3>
+                        <p className="text-text-secondary text-sm mt-2 text-center">为您的团队添加一位数字员工</p>
                     </div>
                 </Link>
             </div>

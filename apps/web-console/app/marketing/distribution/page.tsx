@@ -1,9 +1,13 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { Share2, Globe, Linkedin, Send } from "lucide-react";
+import { Share2, Globe, Linkedin, Send, FileText } from "lucide-react";
 import api from "../../../lib/api";
 import { useToast } from "../../../contexts/ToastContext";
 import { useRouter } from "next/navigation";
+import { PageHeader } from "@/components/PageHeader";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const CHANNELS = [
   { id: "linkedin", label: "LinkedIn", desc: "RPA 填草稿，建议人工点发布", icon: Linkedin },
@@ -66,19 +70,16 @@ export default function DistributionPage() {
 
   return (
     <div className="h-full w-full p-6 text-text flex flex-col gap-4 overflow-hidden">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-white">海外投放</h1>
-          <p className="text-sm text-text-secondary">LinkedIn / WordPress / X。任务进入 RPA 队列，结果在营销矩阵可追踪。</p>
-        </div>
-        <button
-          onClick={publish}
-          disabled={submitting}
-          className="px-4 py-2 bg-accent hover:bg-accent disabled:opacity-50 rounded-lg text-sm flex items-center gap-2"
-        >
-          <Send size={16} /> {submitting ? "提交中..." : "创建发布任务"}
-        </button>
-      </div>
+      <PageHeader
+        title="海外投放"
+        description="LinkedIn / WordPress / X。任务进入 RPA 队列，结果在营销矩阵可追踪。"
+        className="mb-0"
+        actions={
+          <Button onClick={publish} disabled={submitting}>
+            <Send size={16} className="mr-2" /> {submitting ? "提交中..." : "创建发布任务"}
+          </Button>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 flex-1 min-h-0">
         <div className="space-y-3 overflow-y-auto">
@@ -104,6 +105,9 @@ export default function DistributionPage() {
           </div>
           <div>
             <div className="text-xs text-text-secondary mb-1">从内容库填入</div>
+            {library.length === 0 && (
+              <EmptyState size="sm" icon={FileText} title="内容库为空" description="先在「文生文」生成英文内容" />
+            )}
             {library.slice(0, 8).map((item) => (
               <button
                 key={item.id}
@@ -120,8 +124,7 @@ export default function DistributionPage() {
           </div>
         </div>
         <div className="glass-panel p-4 flex flex-col gap-3 min-h-0">
-          <input
-            className="w-full bg-bg/30 border border-separator rounded p-2 text-sm"
+          <Input
             placeholder="标题"
             value={title}
             onChange={(e) => setTitle(e.target.value)}

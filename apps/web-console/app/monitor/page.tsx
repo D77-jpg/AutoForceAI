@@ -5,9 +5,10 @@ import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell
 } from 'recharts';
 import { 
-    Activity, Server, Database, AlertCircle, CheckCircle2, Cpu, FileJson, Clock
+    Server, Database, AlertCircle, CheckCircle2, Cpu, FileJson, Clock
 } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
+import { PageHeader } from '@/components/PageHeader';
 
 function StatCard({ title, value, subValue, icon: Icon, color }: any) {
     return (
@@ -21,7 +22,7 @@ function StatCard({ title, value, subValue, icon: Icon, color }: any) {
                 </div>
                 <span className="text-text-secondary text-sm">{title}</span>
             </div>
-            <div className="text-3xl font-bold font-mono mt-2">{value}</div>
+            <div className="text-3xl font-bold font-mono mt-2 tabular-nums">{value}</div>
             {subValue && <div className="text-xs text-text-secondary mt-1">{subValue}</div>}
         </div>
     );
@@ -58,55 +59,53 @@ export default function MonitorPage() {
         }
     };
 
-    if (loading) return <div className="p-8 text-center text-text-secondary">Initializing Monitor Probes...</div>;
+    if (loading) return <div className="p-8 text-center text-text-secondary">正在初始化监控探针...</div>;
 
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-8 animate-fade-in-up">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-                        <Activity className="text-accent" /> 
-                        System Monitor
-                    </h1>
-                    <p className="text-text-secondary">Real-time observability for AI Agents & RPA Workers</p>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-success bg-success/10 px-3 py-1 rounded-full border border-success/20">
-                    <div className="w-2 h-2 rounded-full bg-success animate-pulse"></div>
-                    System Online
-                </div>
-            </div>
+            <PageHeader
+                title="系统监控"
+                description="AI Agent 与 RPA 执行器的实时运行观测"
+                className="mb-0"
+                actions={
+                    <div className="flex items-center gap-2 text-xs text-success bg-success/10 px-3 py-1 rounded-full border border-success/20">
+                        <div className="w-2 h-2 rounded-full bg-success animate-pulse"></div>
+                        系统在线
+                    </div>
+                }
+            />
 
             {/* Top Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <StatCard 
-                    title="Total AI Tokens (7d)" 
+                    title="AI Token 总量（7 天）" 
                     value={(llmStats?.summary?.total_tokens / 1000).toFixed(1) + "k"}
-                    subValue={`${llmStats?.summary?.total_calls} API Calls`}
+                    subValue={`${llmStats?.summary?.total_calls} 次 API 调用`}
                     icon={Cpu}
                     color="text-accent"
                 />
                  <StatCard 
-                    title="RPA Queue Depth" 
+                    title="RPA 队列深度" 
                     value={rpaStats?.counts?.queued || 0}
-                    subValue="Pending Tasks"
+                    subValue="待处理任务"
                     icon={Database}
                     color="text-warning"
                 />
                 <StatCard 
-                    title="Worker Success Rate" 
+                    title="Worker 成功率" 
                     value={
                         rpaStats?.counts?.completed + rpaStats?.counts?.failed > 0 
                         ? ((rpaStats.counts.completed / (rpaStats.counts.completed + rpaStats.counts.failed)) * 100).toFixed(1) + "%" 
                         : "N/A"
                     }
-                    subValue={`${rpaStats?.counts?.completed} Completed`}
+                    subValue={`已完成 ${rpaStats?.counts?.completed} 项`}
                     icon={CheckCircle2}
                     color="text-success"
                 />
                  <StatCard 
-                    title="Failed Jobs" 
+                    title="失败任务" 
                     value={rpaStats?.counts?.failed || 0}
-                    subValue="Requires Attention"
+                    subValue="需要关注"
                     icon={AlertCircle}
                     color="text-danger"
                 />
@@ -118,7 +117,7 @@ export default function MonitorPage() {
                 <div className="glass-card p-6 border border-separator rounded-xl">
                     <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
                         <Server size={18} className="text-accent"/>
-                        Token Consumption Trend
+                        Token 消耗趋势
                     </h3>
                     <div className="h-64 w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -147,14 +146,14 @@ export default function MonitorPage() {
                 <div className="glass-card p-6 border border-separator rounded-xl">
                     <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
                         <Database size={18} className="text-accent"/>
-                        Model Usage Distribution
+                        模型用量分布
                     </h3>
                     <div className="space-y-4">
                         {Object.entries(llmStats?.by_provider || {}).map(([provider, tokens]: any, i) => (
                             <div key={i} className="group">
                                 <div className="flex justify-between text-sm mb-1">
                                     <span className="capitalize text-text">{provider}</span>
-                                    <span className="font-mono text-text-secondary">{tokens} tokens</span>
+                                    <span className="font-mono tabular-nums text-text-secondary">{tokens} tokens</span>
                                 </div>
                                 <div className="h-2 bg-text/5 rounded-full overflow-hidden">
                                     <div 
@@ -165,7 +164,7 @@ export default function MonitorPage() {
                             </div>
                         ))}
                         {Object.keys(llmStats?.by_provider || {}).length === 0 && (
-                            <div className="text-center text-text-tertiary py-10">No usage data available</div>
+                            <div className="text-center text-text-tertiary py-10">暂无用量数据</div>
                         )}
                     </div>
                 </div>
@@ -176,18 +175,18 @@ export default function MonitorPage() {
                 <div className="p-6 border-b border-separator">
                     <h3 className="text-lg font-bold flex items-center gap-2">
                         <FileJson size={18} className="text-text-secondary"/>
-                        Recent AI Audit Logs
+                        最近 AI 审计日志
                     </h3>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">
                         <thead className="bg-text/5 text-text-secondary font-medium">
                             <tr>
-                                <th className="px-6 py-4">Status</th>
-                                <th className="px-6 py-4">Model</th>
-                                <th className="px-6 py-4">Tokens (In/Out)</th>
-                                <th className="px-6 py-4">Latency</th>
-                                <th className="px-6 py-4">Time</th>
+                                <th className="px-6 py-4">状态</th>
+                                <th className="px-6 py-4">模型</th>
+                                <th className="px-6 py-4">Token（输入/输出）</th>
+                                <th className="px-6 py-4">延迟</th>
+                                <th className="px-6 py-4">时间</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-separator">
@@ -198,7 +197,7 @@ export default function MonitorPage() {
                                             ${log.status === 'success' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}
                                         `}>
                                             <div className={`w-1.5 h-1.5 rounded-full ${log.status === 'success' ? 'bg-success' : 'bg-danger'}`}></div>
-                                            {log.status === 'success' ? 'OK' : 'ERR'}
+                                            {log.status === 'success' ? '成功' : '失败'}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 font-mono text-text">{log.model}</td>
@@ -222,14 +221,14 @@ export default function MonitorPage() {
                  <div className="glass-card border border-danger/20 bg-danger/5 rounded-xl p-6">
                     <h3 className="text-lg font-bold text-danger mb-4 flex items-center gap-2">
                         <AlertCircle size={18}/>
-                        Recent RPA Failures
+                        最近 RPA 失败记录
                     </h3>
                     <div className="space-y-3">
                         {rpaStats.recent_failures.map((fail: any, i:number) => (
                             <div key={i} className="flex items-start gap-3 p-3 bg-bg/20 rounded border border-danger/10">
                                 <AlertCircle size={16} className="text-danger mt-1 shrink-0"/>
                                 <div>
-                                    <div className="text-sm font-bold text-text">{fail.platform} Worker Error #{fail.id}</div>
+                                    <div className="text-sm font-bold text-text">{fail.platform} Worker 错误 #{fail.id}</div>
                                     <div className="text-xs text-danger/80 font-mono mt-1">{fail.msg}</div>
                                     <div className="text-xs text-text-tertiary mt-1">{new Date(fail.time).toLocaleString()}</div>
                                 </div>

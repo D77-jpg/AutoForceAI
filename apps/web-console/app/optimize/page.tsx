@@ -20,6 +20,8 @@ import {
 import api from '../../lib/api';
 import { useGlobalState } from '../../contexts/GlobalStateContext';
 import { useToast } from '../../contexts/ToastContext';
+import { PageHeader } from '@/components/PageHeader';
+import { EmptyState } from '@/components/ui/empty-state';
 
 // --- Types ---
 
@@ -59,29 +61,29 @@ const PhoneMockup = ({
     isEditing: boolean; 
     onUpdate: (newContent: any) => void; 
 }) => (
-    <div className="relative mx-auto border-separator bg-surface-2 border-[8px] rounded-[30px] h-[600px] w-[300px] shadow-2xl overflow-hidden flex flex-col">
+    <div className="relative mx-auto border-separator bg-surface-2 border-[8px] rounded-[30px] h-[600px] w-[300px] shadow-modal overflow-hidden flex flex-col">
         {/* Notch */}
         <div className="h-[24px] bg-surface-2 absolute top-0 left-[50%] translate-x-[-50%] w-[120px] rounded-b-[16px] z-20"></div>
         
         {/* Status Bar */}
-        <div className="h-8 bg-bg w-full flex justify-between items-center px-6 text-[10px] text-white z-10">
-            <span>9:41</span>
-            <div className="flex gap-1">
-                <div className="w-3 h-3 bg-white rounded-full opacity-0" />
+        <div className="h-8 bg-bg w-full flex justify-between items-center px-6 text-[10px] text-text z-10">
+            <span className="tabular-nums">9:41</span>
+            <div className="flex gap-1 items-center">
                 <span className="font-bold">5G</span>
                 <div className="w-4 h-2.5 border border-separator rounded-[2px]" />
             </div>
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 bg-white text-black overflow-y-auto custom-scrollbar relative">
+        <div className="flex-1 bg-bg text-text overflow-y-auto custom-scrollbar relative">
             {!content ? (
-                <div className="h-full flex flex-col items-center justify-center text-text-secondary p-8 text-center space-y-4">
-                    <div className="w-16 h-16 rounded-2xl bg-surface-2 flex items-center justify-center">
-                        <Smartphone size={32} className="text-text" />
-                    </div>
-                    <p className="text-sm">准备生成预览...</p>
-                </div>
+                <EmptyState
+                    size="sm"
+                    icon={Smartphone}
+                    title="准备生成预览"
+                    description="填写左侧战略简报并点击「立即生成」，这里将展示实机预览。"
+                    className="h-full"
+                />
             ) : (
                 <div className="flex flex-col min-h-full">
                     {/* Image Area */}
@@ -89,7 +91,7 @@ const PhoneMockup = ({
                         {content.image_url ? (
                             <img 
                                 src={content.image_url} 
-                                alt="Generated Visual" 
+alt="生成的视觉图"
                                 className="w-full h-full object-cover animate-in fade-in duration-700"
                             />
                         ) : (
@@ -114,7 +116,7 @@ const PhoneMockup = ({
                                     placeholder="输入标题"
                                 />
                                 <textarea 
-                                    className="w-full text-sm text-text-tertiary leading-relaxed border border-separator rounded p-2 focus:border-danger outline-none resize-none h-[200px] bg-surface-2"
+                                    className="w-full text-sm text-text-secondary leading-relaxed border border-separator rounded p-2 focus:border-danger outline-none resize-none h-[200px] bg-surface-2"
                                     value={content.body || ''}
                                     onChange={(e) => onUpdate({ ...content, body: e.target.value })}
                                     placeholder="输入正文内容"
@@ -131,7 +133,7 @@ const PhoneMockup = ({
                         ) : (
                             <>
                                 <h3 className="font-bold text-lg leading-tight mb-2">{content.title}</h3>
-                                <p className="text-sm text-text-tertiary whitespace-pre-line leading-relaxed mb-4 min-h-[100px]">
+                                <p className="text-sm text-text-secondary whitespace-pre-line leading-relaxed mb-4 min-h-[100px]">
                                     {content.body}
                                 </p>
                                 <div className="flex flex-wrap gap-1 mb-4">
@@ -152,7 +154,7 @@ const PhoneMockup = ({
                     
                     {/* Mock Floating Action */}
                     {!isEditing && (
-                        <div className="absolute bottom-4 right-4 w-12 h-12 bg-danger rounded-full shadow-lg flex items-center justify-center text-white">
+                        <div className="absolute bottom-4 right-4 w-12 h-12 bg-danger rounded-full shadow-lg flex items-center justify-center text-on-accent">
                             <span className="text-xl">❤</span>
                         </div>
                     )}
@@ -367,29 +369,36 @@ export default function ContentFactory() {
   };
 
   return (
-    <div className="min-h-screen bg-bg text-text font-sans selection:bg-danger/30 w-full overflow-hidden flex flex-col">
+    <div className="h-screen bg-bg text-text font-sans selection:bg-danger/30 w-full overflow-hidden flex flex-col">
       
+      <div className="px-6 pt-4 shrink-0">
+        <PageHeader
+          title="内容工厂"
+          description="定义内容生成任务，实时跟踪 Leo 的生成进程，并在发布前预览效果。"
+        />
+      </div>
+
       {/* 2. Main Workspace */}
-      <main className="flex-1 flex h-screen">
+      <main className="flex-1 flex min-h-0">
           
           {/* LEFT: Strategic Brief (Input) */}
           <div className="w-[400px] border-r border-separator p-6 flex flex-col gap-6 overflow-y-auto bg-surface/40">
               <div>
-                  <h2 className="text-lg font-bold text-white mb-1">战略简报 (Strategic Brief)</h2>
+                  <h2 className="text-lg font-bold text-text mb-1">战略简报</h2>
                   <p className="text-xs text-text-secondary">为 Leo 定义内容生成任务。</p>
               </div>
 
               <div className="space-y-4">
                   {/* Topic */}
                   <div className="space-y-2">
-                      <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">核心话题 (Core Topic)</label>
+                      <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">核心话题</label>
                       <div className="relative">
                           <input 
                             type="text" 
                             value={topic}
                             onChange={(e) => setTopic(e.target.value)}
                             placeholder="例如: 2026年AI营销趋势..." 
-                            className="w-full bg-surface border border-separator rounded-lg p-3 text-sm text-white focus:border-danger focus:outline-none transition-colors"
+                            className="w-full bg-surface border border-separator rounded-lg p-3 text-sm text-text focus:border-danger focus:outline-none transition-colors"
                           />
                           <Sparkles size={14} className="absolute right-3 top-3.5 text-danger opacity-50" />
                       </div>
@@ -397,7 +406,7 @@ export default function ContentFactory() {
 
                   {/* Platform */}
                   <div className="space-y-2">
-                      <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">发布平台 (Target Platform)</label>
+                      <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">发布平台</label>
                       <div className="grid grid-cols-2 gap-2">
                           {PLATFORMS.map(p => (
                               <button 
@@ -405,7 +414,7 @@ export default function ContentFactory() {
                                 onClick={() => setPlatform(p.id)}
                                 className={`flex items-center gap-2 p-2 rounded-lg border text-xs font-medium transition-all ${
                                     platform === p.id 
-                                    ? `bg-text/10 border-danger text-white shadow-[0_0_10px_rgb(var(--ui-danger)/0.2)]` 
+                                    ? `bg-text/10 border-danger text-text shadow-[0_0_10px_rgb(var(--ui-danger)/0.2)]` 
                                     : 'bg-transparent border-separator text-text-secondary hover:bg-text/5'
                                 }`}
                               >
@@ -418,7 +427,7 @@ export default function ContentFactory() {
 
                    {/* Tone */}
                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">语气风格 (Tone of Voice)</label>
+                      <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">语气风格</label>
                       <div className="grid grid-cols-2 gap-2">
                           {TONES.map(t => (
                               <button 
@@ -426,7 +435,7 @@ export default function ContentFactory() {
                                 onClick={() => setTone(t.id)}
                                 className={`flex items-center gap-2 p-2 rounded-lg border text-xs font-medium transition-all ${
                                     tone === t.id 
-                                    ? `bg-text/10 border-danger text-white` 
+                                    ? `bg-text/10 border-danger text-text` 
                                     : 'bg-transparent border-separator text-text-secondary hover:bg-text/5'
                                 }`}
                               >
@@ -439,7 +448,7 @@ export default function ContentFactory() {
 
                   {/* Key Points */}
                   <div className="space-y-2">
-                      <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">关键卖点 (Key Selling Points)</label>
+                      <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">关键卖点</label>
                       <textarea 
                         value={points}
                         onChange={(e) => setPoints(e.target.value)}
@@ -456,7 +465,7 @@ export default function ContentFactory() {
                     className={`w-full py-3 rounded-lg flex items-center justify-center gap-2 font-bold text-sm transition-all ${
                         isGenerating || !topic 
                         ? 'bg-surface-2 text-text-secondary cursor-not-allowed' 
-                        : 'bg-danger hover:bg-danger text-white shadow-lg shadow-pink-600/20'
+                        : 'bg-danger hover:bg-danger/90 text-on-accent shadow-card'
                     }`}
                   >
                       {isGenerating ? (
@@ -523,7 +532,7 @@ export default function ContentFactory() {
               <div className="absolute top-4 right-4 z-50">
                   <button 
                     onClick={() => setIsEditing(!isEditing)}
-                    className={`p-2 rounded transition-colors ${isEditing ? 'bg-danger text-white' : 'hover:bg-text/5 text-text-secondary hover:text-white'}`}
+                    className={`p-2 rounded transition-colors ${isEditing ? 'bg-danger text-on-accent' : 'hover:bg-text/5 text-text-secondary hover:text-text'}`}
                     title={isEditing ? "退出编辑" : "编辑内容"}
                     disabled={!result}
                   >

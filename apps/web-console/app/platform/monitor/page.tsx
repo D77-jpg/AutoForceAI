@@ -1,7 +1,8 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { Activity, Server, Cpu, Database, Users, Box, Zap, Clock } from 'lucide-react';
+import { Activity, Server, Cpu, Database, Users, Box, Clock } from 'lucide-react';
 import api from '@/lib/api';
+import { PageHeader } from '@/components/PageHeader';
 
 export default function MonitorPage() {
   const [stats, setStats] = useState<any>(null);
@@ -26,23 +27,23 @@ export default function MonitorPage() {
 
   return (
     <div className="h-full w-full p-6 text-text flex flex-col overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-            <div>
-                 <h1 className="text-2xl font-bold text-white">系统监控 (System Monitor)</h1>
-                 <p className="text-sm text-text-secondary">实时服务器状态与资源概览。</p>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-text-secondary">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
-                </span>
-                Live Updates (5s)
-            </div>
-        </div>
+        <PageHeader
+            title="系统监控"
+            description="实时服务器状态与资源概览。"
+            actions={
+                <div className="flex items-center gap-2 text-xs text-text-secondary">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
+                    </span>
+                    实时更新（5 秒）
+                </div>
+            }
+        />
         
         {loading && !stats ? (
              <div className="flex-1 flex items-center justify-center text-text-secondary">
-                <Activity className="animate-pulse mr-2" /> Connecting to telemetry...
+                <Activity className="animate-pulse mr-2" /> 正在连接遥测数据…
              </div>
         ) : (
             <div className="space-y-6">
@@ -56,12 +57,12 @@ export default function MonitorPage() {
                             </div>
                             <div>
                                 <h3 className="text-sm font-medium text-text">CPU 使用率</h3>
-                                <p className="text-xs text-text-secondary">{stats?.system_info?.platform || 'Linux'} Server</p>
+                                <p className="text-xs text-text-secondary">{stats?.system_info?.platform || 'Linux'} 服务器</p>
                             </div>
                         </div>
                         <div className="flex items-end gap-2 mb-2">
-                             <span className="text-2xl font-bold text-white">{stats?.cpu_usage}%</span>
-                             <span className="text-xs text-text-secondary mb-1">Load</span>
+                             <span className="text-2xl font-bold text-text tabular-nums">{stats?.cpu_usage}%</span>
+                             <span className="text-xs text-text-secondary mb-1">负载</span>
                         </div>
                         <div className="w-full bg-text/5 rounded-full h-1.5 overflow-hidden">
                             <div 
@@ -79,19 +80,19 @@ export default function MonitorPage() {
                             </div>
                             <div>
                                 <h3 className="text-sm font-medium text-text">内存状态</h3>
-                                <p className="text-xs text-text-secondary">RAM Allocation</p>
+                                <p className="text-xs text-text-secondary">内存分配</p>
                             </div>
                         </div>
                         <div className="flex items-end gap-2 mb-2">
-                             <span className="text-2xl font-bold text-white">{stats?.memory_usage?.percent}%</span>
-                             <span className="text-xs text-text-secondary mb-1">
+                             <span className="text-2xl font-bold text-text tabular-nums">{stats?.memory_usage?.percent}%</span>
+                             <span className="text-xs text-text-secondary mb-1 tabular-nums">
                                 {(stats?.memory_usage?.used / 1024 / 1024 / 1024 || 0).toFixed(1)}GB / 
                                 {(stats?.memory_usage?.total / 1024 / 1024 / 1024 || 0).toFixed(1)}GB
                              </span>
                         </div>
                         <div className="w-full bg-text/5 rounded-full h-1.5 overflow-hidden">
                             <div 
-                                className={`h-full rounded-full transition-all duration-500 ${stats?.memory_usage?.percent > 80 ? 'bg-danger' : 'bg-danger'}`} 
+                                className={`h-full rounded-full transition-all duration-500 ${stats?.memory_usage?.percent > 80 ? 'bg-danger' : 'bg-accent'}`} 
                                 style={{ width: `${stats?.memory_usage?.percent}%` }}
                             ></div>
                         </div>
@@ -105,22 +106,22 @@ export default function MonitorPage() {
                             </div>
                             <div>
                                 <h3 className="text-sm font-medium text-text">系统环境</h3>
-                                <p className="text-xs text-text-secondary">Environment Info</p>
+                                <p className="text-xs text-text-secondary">环境信息</p>
                             </div>
                         </div>
                         <div className="space-y-2">
                              <div className="flex justify-between text-xs">
-                                 <span className="text-text-secondary">OS Release</span>
+                                 <span className="text-text-secondary">操作系统</span>
                                  <span className="text-text font-mono">{stats?.system_info?.release || '-'}</span>
                              </div>
                              <div className="flex justify-between text-xs">
-                                 <span className="text-text-secondary">Python Runtime</span>
+                                 <span className="text-text-secondary">Python 版本</span>
                                  <span className="text-text font-mono">{stats?.system_info?.python_version || '-'}</span>
                              </div>
                              <div className="flex justify-between text-xs">
-                                 <span className="text-text-secondary">API Status</span>
+                                 <span className="text-text-secondary">API 状态</span>
                                  <span className="text-success flex items-center gap-1">
-                                     <span className="w-1.5 h-1.5 rounded-full bg-success"></span> Online
+                                     <span className="w-1.5 h-1.5 rounded-full bg-success"></span> 在线
                                  </span>
                              </div>
                         </div>
@@ -128,12 +129,12 @@ export default function MonitorPage() {
                 </div>
 
                 {/* DB Stats Grid */}
-                <h3 className="text-text-secondary text-sm font-medium mt-6 mb-4">业务指标 (Business Metrics)</h3>
+                <h3 className="text-text-secondary text-sm font-medium mt-6 mb-4">业务指标</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                      <StatCard label="活跃模型" value={stats?.resources?.active_models} icon={<Box size={16}/>} color="text-accent" />
                      <StatCard label="活跃用户" value={stats?.resources?.active_users} icon={<Users size={16}/>} color="text-accent" />
                      <StatCard label="RPA 任务队列" value={stats?.resources?.queued_jobs} icon={<Clock size={16}/>} color="text-warning" />
-                     <StatCard label="服务状态" value="Normal" icon={<Activity size={16}/>} color="text-success" valueClass="text-success text-lg" />
+                     <StatCard label="服务状态" value="正常" icon={<Activity size={16}/>} color="text-success" valueClass="text-success text-lg" />
                 </div>
             </div>
         )}
@@ -147,7 +148,7 @@ function StatCard({ label, value, icon, color, valueClass }: any) {
             <div className={`flex items-center gap-2 text-xs font-medium ${color}`}>
                 {icon} {label}
             </div>
-            <div className={valueClass || "text-2xl font-bold text-white font-mono"}>
+            <div className={valueClass || "text-2xl font-bold text-text font-mono tabular-nums"}>
                 {value ?? '-'}
             </div>
         </div>
