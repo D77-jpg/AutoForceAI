@@ -238,19 +238,19 @@ export default function LoginPage() {
          <div className="w-full max-w-[400px]">
             <div className="bg-surface/90 backdrop-blur-2xl rounded-2xl p-9 shadow-popover border border-separator relative overflow-hidden">
 
-                <h2 className="text-[22px] font-semibold text-white mb-1.5 text-center tracking-tight">欢迎回来</h2>
+                <h2 className="text-[22px] font-semibold text-text mb-1.5 text-center tracking-tight">欢迎回来</h2>
                 <p className="text-text-secondary text-[13px] mb-7 text-center">全球 B2B 智能增长操作系统</p>
 
                 <div className="flex rounded-full bg-surface-2 p-1 mb-7">
                     <button
                         onClick={() => setAuthTab('email')}
-                        className={`flex-1 py-2 text-[13px] font-medium rounded-full transition-colors ${authTab === 'email' ? 'bg-surface-2 text-white' : 'text-text-secondary hover:text-white'}`}
+                        className={`flex-1 py-2 text-[13px] font-medium rounded-full transition-colors ${authTab === 'email' ? 'bg-surface-2 text-text' : 'text-text-secondary hover:text-text'}`}
                     >
                         账号登录
                     </button>
                     <button
                         onClick={() => setAuthTab('wechat')}
-                        className={`flex-1 py-2 text-[13px] font-medium rounded-full transition-colors ${authTab === 'wechat' ? 'bg-surface-2 text-white' : 'text-text-secondary hover:text-white'}`}
+                        className={`flex-1 py-2 text-[13px] font-medium rounded-full transition-colors ${authTab === 'wechat' ? 'bg-surface-2 text-text' : 'text-text-secondary hover:text-text'}`}
                     >
                         微信扫码
                     </button>
@@ -266,7 +266,7 @@ export default function LoginPage() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="邮箱地址"
-                                className="w-full bg-surface-2 border border-separator rounded-lg py-3 pl-10 pr-3 text-white text-sm focus:border-accent/50 focus:ring-1 focus:ring-accent/30 outline-none transition-all placeholder:text-text-tertiary"
+                                className="w-full bg-surface-2 border border-separator rounded-lg py-3 pl-10 pr-3 text-text text-sm focus:border-accent/50 focus:ring-1 focus:ring-accent/30 outline-none transition-all placeholder:text-text-tertiary"
                             />
                         </div>
                         {isRegister && (
@@ -277,7 +277,7 @@ export default function LoginPage() {
                                     value={nickname}
                                     onChange={(e) => setNickname(e.target.value)}
                                     placeholder="显示名称（选填）"
-                                    className="w-full bg-surface-2 border border-separator rounded-lg py-3 pl-10 pr-3 text-white text-sm focus:border-accent/50 focus:ring-1 focus:ring-accent/30 outline-none transition-all placeholder:text-text-tertiary"
+                                    className="w-full bg-surface-2 border border-separator rounded-lg py-3 pl-10 pr-3 text-text text-sm focus:border-accent/50 focus:ring-1 focus:ring-accent/30 outline-none transition-all placeholder:text-text-tertiary"
                                 />
                             </div>
                         )}
@@ -288,14 +288,14 @@ export default function LoginPage() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder={isRegister ? "设置密码（至少 6 位）" : "密码"}
-                                className="w-full bg-surface-2 border border-separator rounded-lg py-3 pl-10 pr-3 text-white text-sm focus:border-accent/50 focus:ring-1 focus:ring-accent/30 outline-none transition-all placeholder:text-text-tertiary"
+                                className="w-full bg-surface-2 border border-separator rounded-lg py-3 pl-10 pr-3 text-text text-sm focus:border-accent/50 focus:ring-1 focus:ring-accent/30 outline-none transition-all placeholder:text-text-tertiary"
                             />
                         </div>
 
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-3 bg-accent hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                            className="w-full py-3 bg-accent hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed text-on-accent rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-2"
                         >
                             {loading && <div className="w-4 h-4 border-2 border-separator border-t-transparent rounded-full animate-spin"></div>}
                             {isRegister ? '注册并登录' : '登 录'}
@@ -303,9 +303,9 @@ export default function LoginPage() {
 
                         <p className="text-center text-xs text-text-secondary">
                             {isRegister ? (
-                                <>已有账号？<span onClick={() => setIsRegister(false)} className="text-accent hover:text-white cursor-pointer">直接登录</span></>
+                                <>已有账号？<span onClick={() => setIsRegister(false)} className="text-accent hover:text-accent-hover cursor-pointer">直接登录</span></>
                             ) : (
-                                <>还没有账号？<span onClick={() => setIsRegister(true)} className="text-accent hover:text-white cursor-pointer">立即注册</span>（首个注册用户将成为系统管理员）</>
+                                <>还没有账号？<span onClick={() => setIsRegister(true)} className="text-accent hover:text-accent-hover cursor-pointer">立即注册</span>（首个注册用户将成为系统管理员）</>
                             )}
                         </p>
                     </form>
@@ -314,7 +314,7 @@ export default function LoginPage() {
                     <div className="text-center">
                         <div className="flex flex-col items-center justify-center mb-6 min-h-[200px]">
                             {!isMockMode && wechatUrl ? (
-                                 <div className="w-[300px] h-[350px] overflow-hidden rounded-lg bg-white shadow-lg">
+                                 <div className="w-[300px] h-[350px] overflow-hidden rounded-lg bg-on-accent shadow-lg">
                                     <iframe
                                         src={wechatUrl}
                                         frameBorder="0"
@@ -327,7 +327,7 @@ export default function LoginPage() {
                             ) : (
                             <div className="relative group/qr cursor-pointer transition-transform duration-300 hover:scale-[1.02]" onClick={handleMockLogin}>
                                 {/* 模拟二维码样式 */}
-                                <div className="w-48 h-48 bg-white rounded-lg flex items-center justify-center shadow-lg border-4 border-separator">
+                                <div className="w-48 h-48 bg-on-accent rounded-lg flex items-center justify-center shadow-lg border-4 border-separator">
                                     <div className="w-full h-full border-2 border-dashed border-separator p-2 flex flex-col items-center justify-center">
                                          <ScanLine size={40} className="text-text-tertiary opacity-80 mb-2" />
                                          <div className="grid grid-cols-5 gap-1 w-24 h-24 opacity-80">
@@ -341,8 +341,8 @@ export default function LoginPage() {
                                 {/* 悬停遮罩 */}
                                 <div className="absolute inset-0 bg-bg/80 opacity-0 group-hover/qr:opacity-100 transition-opacity duration-300 flex items-center justify-center rounded-lg backdrop-blur-[2px]">
                                     <div className="text-center">
-                                         <ScanLine className="w-10 h-10 text-white mx-auto mb-2 animate-pulse" />
-                                         <p className="text-white font-medium text-sm">点击模拟扫码成功</p>
+                                         <ScanLine className="w-10 h-10 text-text mx-auto mb-2 animate-pulse" />
+                                         <p className="text-text font-medium text-sm">点击模拟扫码成功</p>
                                     </div>
                                 </div>
 
@@ -387,7 +387,7 @@ function FeatureCard({icon: Icon, title, desc}: any) {
             <div className="mb-3 p-2 bg-text/5 rounded-xl text-accent">
                 <Icon size={20} />
             </div>
-            <h3 className="font-semibold text-sm text-white mb-2 tracking-tight">{title}</h3>
+            <h3 className="font-semibold text-sm text-text mb-2 tracking-tight">{title}</h3>
             <p className="text-[12px] text-text-secondary leading-relaxed">{desc}</p>
         </div>
     )
