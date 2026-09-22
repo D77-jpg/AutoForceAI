@@ -16,7 +16,7 @@ export default function KnowledgeStats() {
   return (
     <div className="min-h-screen bg-bg text-text p-8">
       <PageHeader title="知识库统计" description="各知识库的文档与分块规模概览。" />
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {[["知识库", kbs.length],["文档", docs],["分块数", chunks]].map(([k,v])=>(
           <div key={k} className="p-5 rounded-xl border border-separator bg-text/[0.02]">
             <div className="text-xs text-text-secondary">{k}</div>

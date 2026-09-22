@@ -241,7 +241,7 @@ const HudPanel = ({ title, icon: Icon, tint, children, href }: any) => {
     const Content = (
       <div className={`relative group bg-surface border border-separator rounded-[22px] p-5 hover:bg-surface-2 transition-all duration-300 shadow-card ${href ? 'cursor-pointer' : ''}`}>
           <div className="flex items-center gap-2 mb-4">
-              <div className={`w-7 h-7 rounded-[22%] flex items-center justify-center ${TINT_BG[tint] || 'bg-accent'} text-white shrink-0`}>
+              <div className={`w-7 h-7 rounded-[22%] flex items-center justify-center ${TINT_BG[tint] || 'bg-accent'} text-on-accent shrink-0`}>
                   <Icon size={15} />
               </div>
               <h3 className="text-sm font-semibold text-text tracking-tight">{title}</h3>
@@ -259,7 +259,7 @@ const HudPanel = ({ title, icon: Icon, tint, children, href }: any) => {
 const IconButton = ({ icon: Icon, onClick, badge }: any) => (
   <button 
     onClick={onClick}
-    className="relative w-9 h-9 rounded-full bg-text/5 hover:bg-text/10 flex items-center justify-center text-text-secondary hover:text-white transition-colors"
+    className="relative w-9 h-9 rounded-full bg-text/5 hover:bg-text/10 flex items-center justify-center text-text-secondary hover:text-text transition-colors"
   >
     <Icon size={16} />
     {badge && <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-danger rounded-full" />}
@@ -271,7 +271,7 @@ const DepartmentSection = ({ dept }: { dept: any }) => {
         <section className="mb-10 last:mb-0">
             {/* 分区标题直接放在页面背景上，无外层卡片 */}
             <div className="flex items-center gap-3 mb-4 px-1">
-                <div className={`w-7 h-7 rounded-[22%] flex items-center justify-center ${TINT_BG[dept.tint]} text-white shrink-0`}>
+                <div className={`w-7 h-7 rounded-[22%] flex items-center justify-center ${TINT_BG[dept.tint]} text-on-accent shrink-0`}>
                      <dept.icon size={15} />
                 </div>
                 <h3 className="text-[17px] font-semibold text-text tracking-tight">{dept.title}</h3>
@@ -281,7 +281,7 @@ const DepartmentSection = ({ dept }: { dept: any }) => {
             </div>
 
             {/* 通栏响应式网格：大屏 4 列 / 中屏 3 列 / 小屏 2 列 */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                 {dept.apps.map((app:any, idx:number) => (
                     <Link 
                         key={idx} 
@@ -289,7 +289,7 @@ const DepartmentSection = ({ dept }: { dept: any }) => {
                         className="flex flex-col gap-2.5 p-4 rounded-[16px] bg-surface border border-separator hover:bg-surface-2 transition-all duration-300 group/item shadow-card"
                     >
                         <div className="flex items-center gap-2.5">
-                             <div className={`w-9 h-9 rounded-[22%] flex items-center justify-center ${TINT_BG[dept.tint]} text-white group-hover/item:scale-105 transition-transform shrink-0`}>
+                             <div className={`w-9 h-9 rounded-[22%] flex items-center justify-center ${TINT_BG[dept.tint]} text-on-accent group-hover/item:scale-105 transition-transform shrink-0`}>
                                  <app.icon size={18} />
                              </div>
                              <div className="text-sm font-semibold text-text truncate">
@@ -353,7 +353,7 @@ export default function HomePage() {
       {/* 产品矩阵菜单遮罩：点击关闭，位于 header 之下、主内容之上 */}
       {showProductMenu && (
           <div
-              className="fixed inset-0 top-16 z-40 bg-black/30"
+              className="fixed inset-0 top-16 z-40 bg-overlay/30"
               onClick={() => setShowProductMenu(false)}
               aria-hidden="true"
           />
@@ -369,7 +369,7 @@ export default function HomePage() {
                    <Image src="/logo.png" alt="Logo" fill className="object-contain" />
               </Link>
               <div className="mr-6">
-                  <h1 className="text-[17px] font-semibold tracking-tight text-white leading-none mb-0.5">
+                  <h1 className="text-[17px] font-semibold tracking-tight text-text leading-none mb-0.5">
                       GlobalPilot AI
                   </h1>
                   <p className="text-[11px] text-text-secondary tracking-[0.04em]">
@@ -381,7 +381,7 @@ export default function HomePage() {
               <div className="relative h-16 flex items-center">
                   <button
                       onClick={() => setShowProductMenu(v => !v)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-text-secondary hover:text-white hover:bg-text/5 rounded-full transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-text-secondary hover:text-text hover:bg-text/5 rounded-full transition-colors"
                   >
                       <LayoutGrid size={16} className="text-accent"/>
                       <span>产品矩阵</span>
@@ -400,12 +400,12 @@ export default function HomePage() {
                                     onClick={() => setShowProductMenu(false)}
                                     className="flex items-start gap-4 p-4 rounded-2xl hover:bg-text/5 border border-transparent transition-all group/card"
                                 >
-                                    <div className={`w-11 h-11 rounded-[22%] flex items-center justify-center ${TINT_BG[prod.tint]} text-white group-hover/card:scale-105 transition-transform duration-300 shrink-0`}>
+                                    <div className={`w-11 h-11 rounded-[22%] flex items-center justify-center ${TINT_BG[prod.tint]} text-on-accent group-hover/card:scale-105 transition-transform duration-300 shrink-0`}>
                                         <prod.icon size={22} />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex justify-between items-start mb-1 gap-2">
-                                            <h4 className="font-bold text-text group-hover/card:text-white transition-colors">{prod.name}</h4>
+                                            <h4 className="font-bold text-text group-hover/card:text-text transition-colors">{prod.name}</h4>
                                             <span className="text-[10px] font-medium bg-surface-2 px-1.5 py-0.5 rounded-full text-text-secondary shrink-0 tabular-nums">{prod.keyData}</span>
                                         </div>
                                         <p className="text-[11px] font-medium text-text-secondary mb-1">{prod.slogan}</p>
@@ -446,7 +446,7 @@ export default function HomePage() {
                   onClick={() => setShowUserMenu(!showUserMenu)}
                >
                    <div className="text-right hidden sm:block">
-                       <div className="text-xs font-bold text-text group-hover:text-white transition-colors">{user?.nickname || user?.username || 'GUEST'}</div>
+                       <div className="text-xs font-bold text-text group-hover:text-text transition-colors">{user?.nickname || user?.username || 'GUEST'}</div>
                        <div className="text-[10px] text-text-secondary uppercase">
                           {user?.role === 'admin' ? '系统管理员' : (user?.role === 'enterprise_admin' ? '企业管理员' : '普通成员')}
                        </div>
@@ -464,7 +464,7 @@ export default function HomePage() {
                         <div className="absolute top-full right-0 mt-2 w-56 bg-surface border border-separator rounded-2xl shadow-popover overflow-hidden animate-fade-in-up z-50">
                             <div className="p-3 border-b border-separator">
                                 <p className="text-xs text-text-secondary">当前账号</p>
-                                <div className="text-sm font-bold text-white truncate flex items-center gap-1">
+                                <div className="text-sm font-bold text-text truncate flex items-center gap-1">
                                     {user?.nickname || user?.username || 'Guest'}
                                     {user?.org_name && (
                                         <>
@@ -477,10 +477,10 @@ export default function HomePage() {
                                 </div>
                             </div>
                             <div className="p-1">
-                                <Link href="/settings/profile" className="flex items-center gap-2 px-3 py-2 text-xs text-text hover:text-white hover:bg-text/5 rounded-lg transition-colors">
+                                <Link href="/settings/profile" className="flex items-center gap-2 px-3 py-2 text-xs text-text hover:text-text hover:bg-text/5 rounded-lg transition-colors">
                                     <UserIcon size={14} /> 用户中心
                                 </Link>
-                                <Link href="/ops" className="flex items-center gap-2 px-3 py-2 text-xs text-text hover:text-white hover:bg-text/5 rounded-lg transition-colors">
+                                <Link href="/ops" className="flex items-center gap-2 px-3 py-2 text-xs text-text hover:text-text hover:bg-text/5 rounded-lg transition-colors">
                                     <Settings size={14} /> 系统配置
                                 </Link>
                                 <div className="h-px bg-text/5 my-1" />
@@ -503,17 +503,17 @@ export default function HomePage() {
           {/* Dashboard Header - Context */}
           <div className="flex justify-between items-end mb-8">
                <div>
-                   <h2 className="text-2xl font-bold text-white mb-2">数字人调度中心</h2>
+                   <h2 className="text-2xl font-bold text-text mb-2">数字人调度中心</h2>
                    <p className="text-sm text-text-secondary max-w-2xl">
                        全天候运行中。当前系统健康度 <span className="text-success">98.2%</span>，在线数字员工 <span className="text-accent">14</span> 名。
                    </p>
                </div>
                <div className="hidden md:flex gap-3">
-                   <Link href="/knowledge/brain" className="px-4 py-2 bg-surface-2 hover:bg-surface-2 text-white text-xs font-medium rounded-full transition-colors flex items-center gap-2">
+                   <Link href="/knowledge/brain" className="px-4 py-2 bg-surface-2 hover:bg-surface-2 text-text text-xs font-medium rounded-full transition-colors flex items-center gap-2">
                        <Brain size={14} />
                        企业知识大脑
                    </Link>
-                   <Link href="/workforce/create" className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-white text-xs font-medium rounded-full transition-colors flex items-center gap-2">
+                   <Link href="/workforce/create" className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-on-accent text-xs font-medium rounded-full transition-colors flex items-center gap-2">
                        <Bot size={14} />
                        新建数字员工
                    </Link>

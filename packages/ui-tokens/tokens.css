@@ -17,6 +17,7 @@
   --ui-on-accent: 255 255 255;
   --ui-separator: 0 0 0;           /* alpha 0.08 */
   --ui-separator-alpha: 0.08;
+  --ui-overlay: 0 0 0;             /* 菜单/弹窗遮罩基色 */
   --ui-success: 52 199 89;         /* #34C759 */
   --ui-warning: 255 159 10;        /* #FF9F0A */
   --ui-danger: 255 59 48;          /* #FF3B30 */

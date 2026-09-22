@@ -63,7 +63,7 @@ export default function RPAPage() {
         }
       />
 
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Kpi icon={Cpu} label="执行中 / 排队" value={running} />
         <Kpi icon={Clock} label="队列" value={counts.queued || 0} />
         <Kpi icon={CheckCircle} label="成功" value={counts.success || 0} />

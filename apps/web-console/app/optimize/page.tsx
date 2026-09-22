@@ -379,10 +379,10 @@ export default function ContentFactory() {
       </div>
 
       {/* 2. Main Workspace */}
-      <main className="flex-1 flex min-h-0">
+      <main className="flex-1 flex flex-col lg:flex-row min-h-0">
           
           {/* LEFT: Strategic Brief (Input) */}
-          <div className="w-[400px] border-r border-separator p-6 flex flex-col gap-6 overflow-y-auto bg-surface/40">
+          <div className="w-full lg:w-[400px] shrink-0 border-b lg:border-b-0 lg:border-r border-separator p-6 flex flex-col gap-6 overflow-y-auto bg-surface/40">
               <div>
                   <h2 className="text-lg font-bold text-text mb-1">战略简报</h2>
                   <p className="text-xs text-text-secondary">为 Leo 定义内容生成任务。</p>
@@ -528,7 +528,7 @@ export default function ContentFactory() {
           </div>
 
           {/* RIGHT: Output Preview */}
-          <div className="w-[380px] border-l border-separator bg-surface/50 backdrop-blur p-8 flex flex-col justify-center relative">
+          <div className="w-full lg:w-[380px] shrink-0 border-t lg:border-t-0 lg:border-l border-separator bg-surface/50 backdrop-blur p-8 flex flex-col justify-center relative">
               <div className="absolute top-4 right-4 z-50">
                   <button 
                     onClick={() => setIsEditing(!isEditing)}

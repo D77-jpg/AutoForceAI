@@ -26,6 +26,7 @@ module.exports = {
         },
         'on-accent': ch('on-accent'),
         separator: `rgb(var(--ui-separator) / var(--ui-separator-alpha))`,
+        overlay: ch('overlay'),
         success: ch('success'),
         warning: ch('warning'),
         danger: ch('danger'),
