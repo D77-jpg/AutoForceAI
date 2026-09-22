@@ -41,6 +41,11 @@ h1, h2, h3, h4 {
   transform: translateY(-1px);
 }
 
+/* ── 数字统计：等宽数字 ─────────────────────────────── */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── 强毛玻璃菜单：深色 rgba(28,28,30,.85) / 浅色 rgba(255,255,255,.85) ── */
 .menu-glass {
   background: rgb(var(--ui-surface) / 0.85);

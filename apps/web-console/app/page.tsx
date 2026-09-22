@@ -336,6 +336,12 @@ export default function HomePage() {
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showProductMenu, setShowProductMenu] = useState(false);
+  const [isMac, setIsMac] = useState(true);
+
+  useEffect(() => {
+    // 快捷键提示按平台显示：macOS ⌘K，其他 Ctrl K
+    setIsMac(/Mac|iPhone|iPad/i.test(window.navigator.userAgent));
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -436,7 +442,7 @@ export default function HomePage() {
                    <Search size={14} className="text-text-secondary mr-2" />
                    <input type="text" placeholder="呼叫数字员工 / 搜索业务数据..." className="bg-transparent border-none outline-none text-xs text-text placeholder:text-text-tertiary flex-1" />
                    <div className="flex items-center gap-1 text-[10px] text-text-tertiary font-mono">
-                    <span className="bg-text/10 px-1.5 py-0.5 rounded border border-separator">⌘ K</span>
+                    <span className="bg-text/10 px-1.5 py-0.5 rounded border border-separator">{isMac ? '⌘ K' : 'Ctrl K'}</span>
                    </div>
                </div>
 

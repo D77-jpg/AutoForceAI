@@ -40,8 +40,8 @@
   --ui-shadow-popover: 0 4px 12px rgba(0, 0, 0, 0.08), 0 16px 40px rgba(0, 0, 0, 0.06);
   --ui-shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.16);
 
-  /* ── 字体栈（仅系统字体） ─────────────────────────── */
-  --ui-font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Inter", "Helvetica Neue", sans-serif;
+  /* ── 字体栈：系统字体优先，Inter 经 next/font 注入用于 Windows 英文/数字 ── */
+  --ui-font-sans: -apple-system, BlinkMacSystemFont, var(--font-inter, "Inter"), "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
 
   /* ── 动效 ─────────────────────────────────────────── */
   --ui-duration-fast: 200ms;
