@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Send, Clock, ArrowLeft, Loader2, Play } from 'lucide-react';
+import { Send, Clock, ArrowLeft, Loader2, Hourglass } from 'lucide-react';
 import Link from 'next/link';
 import { PageHeader } from '@/components/PageHeader';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -84,7 +84,7 @@ export default function MissionPage() {
        {/* Header */}
        <div className="border-b border-separator pb-6 mb-6">
            <Link href="/workforce" className="inline-flex items-center gap-1 text-sm text-text-secondary hover:text-text mb-4 transition-colors">
-               <ArrowLeft size={14} /> 返回团队
+               <ArrowLeft size={14} strokeWidth={1.75} /> 返回团队
            </Link>
            <PageHeader
              title="任务控制台"
@@ -131,7 +131,7 @@ export default function MissionPage() {
                                 disabled={planning || !objective.trim()}
                                 className="absolute bottom-3 right-3 bg-accent hover:bg-accent-hover text-on-accent p-2 rounded-md disabled:opacity-50 transition-colors"
                             >
-                                {planning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                                {planning ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} /> : <Send className="h-4 w-4" strokeWidth={1.75} />}
                             </button>
                         </div>
                    ) : (
@@ -144,9 +144,9 @@ export default function MissionPage() {
 
            {/* Right: Plan Display */}
            <div className="flex-1 bg-surface rounded-xl border border-separator flex flex-col overflow-hidden shadow-card">
-               <div className="p-4 border-b border-separator bg-surface/70 flex justify-between items-center">
+               <div className="p-4 border-b border-separator flex justify-between items-center">
                    <h2 className="font-semibold text-text flex items-center">
-                       <Clock className="mr-2 h-4 w-4 text-accent" /> 执行计划
+                       <Clock className="mr-2 h-4 w-4 text-accent" strokeWidth={1.75} /> 执行计划
                    </h2>
                    {mission && (
                        <span className="text-xs px-2 py-1 rounded bg-accent/15 text-accent border border-accent/25 font-bold">
@@ -158,19 +158,20 @@ export default function MissionPage() {
                <div className="flex-1 overflow-y-auto p-6 space-y-6">
                    {!mission && !planning && (
                        <EmptyState
-                         icon={Play}
+                         icon={Hourglass}
                          size="sm"
-                         title="暂无进行中的任务"
+                         title="等待任务指令"
                          description="在左侧输入目标并发送，数字员工会自动拆解执行计划。"
                        />
                    )}
 
                    {planning && (
-                       <div className="space-y-4 animate-pulse">
-                           <div className="h-4 bg-surface-2 rounded w-3/4"></div>
-                           <div className="h-4 bg-surface-2 rounded w-1/2"></div>
-                           <div className="h-32 bg-surface-2 rounded w-full"></div>
-                       </div>
+                       <EmptyState
+                         icon={Loader2}
+                         size="sm"
+                         title="正在生成执行计划"
+                         description="数字员工正在拆解目标，请稍候…"
+                       />
                    )}
                    
                    {mission?.tasks?.map((task: any, index: number) => (

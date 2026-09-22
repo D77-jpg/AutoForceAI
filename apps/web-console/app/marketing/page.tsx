@@ -23,14 +23,14 @@ export default function MarketingDashboard() {
     <div className="h-full w-full p-6 text-text flex flex-col gap-6">
       {/* Header */}
       <PageHeader
-        title="AI 营销云看板"
+        title="投放参谋"
         description="外贸获客引擎 · 英文内容 · 海外分发 · GEO 监测"
-        className="mb-0"
+        className="mb-0 shrink-0"
       />
 
       {/* Quick Access Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <KpiCard icon={PenTool} title="内容产出 (30d)" value={String(kpis?.content ?? "—")} sub="英文文案" />
+          <KpiCard icon={PenTool} title="内容产出" value={String(kpis?.content ?? "—")} sub="近 30 天" />
           <KpiCard icon={Eye} title="GEO 曝光" value={String(kpis?.mentions ?? "—")} trend={kpis ? `${kpis.mention_rate}%` : undefined} trendUp />
           <KpiCard icon={Share2} title="内容分发" value={String(kpis?.jobs ?? "—")} sub="RPA 任务" />
           <KpiCard icon={Cpu} title="RPA 成功率" value={kpis ? `${kpis.success_rate}%` : "—"} trend="成功率" trendUp={true} />
@@ -42,23 +42,23 @@ export default function MarketingDashboard() {
           {/* Content Creation Hub */}
           <div className="glass-panel p-6 flex flex-col">
               <h3 className="font-semibold flex items-center gap-2 mb-6">
-                  <PenTool size={18} className="text-warning" />
-                  内容生产中心 (AIGC Hub)
+                  <PenTool size={18} strokeWidth={1.75} className="text-tint-growth" />
+                  内容生产中心
               </h3>
               <div className="grid grid-cols-2 gap-4">
                   <ActionCard 
                     href="/marketing/text-gen"
-                    title="文生文 (Text Gen)"
+                    title="文生文"
                     desc="生成 SEO 文章、社媒文案、营销邮件。"
                     icon={PenTool}
-                    color="bg-warning"
+                    color="bg-tint-growth"
                   />
                   <ActionCard 
                     href="/marketing/image-gen"
-                    title="文生图 (Image Gen)"
+                    title="文生图"
                     desc="生成海报、配图、产品展示图。"
                     icon={ImageIcon}
-                    color="bg-danger"
+                    color="bg-tint-decision"
                   />
               </div>
           </div>
@@ -66,23 +66,23 @@ export default function MarketingDashboard() {
           {/* Operations Hub */}
           <div className="glass-panel p-6 flex flex-col">
               <h3 className="font-semibold flex items-center gap-2 mb-6">
-                  <Send size={18} className="text-accent" />
-                  自动化运营 (Ops Automation)
+                  <Send size={18} strokeWidth={1.75} className="text-tint-ops" />
+                  自动化运营
               </h3>
               <div className="grid grid-cols-2 gap-4">
                   <ActionCard 
                     href="/marketing/distribution"
-                    title="海外投放 (Distribute)"
+                    title="海外投放"
                     desc="LinkedIn / WordPress / X 一键入队。"
                     icon={Share2}
-                    color="bg-accent"
+                    color="bg-tint-ops"
                   />
                   <ActionCard 
                     href="/marketing/analytics"
-                    title="获客漏斗 (Analytics)"
+                    title="获客漏斗"
                     desc="内容 → 发布 → 曝光 → 本地询盘。"
                     icon={MousePointerClick}
-                    color="bg-accent"
+                    color="bg-tint-revenue"
                   />
               </div>
           </div>
@@ -97,14 +97,14 @@ function KpiCard({ icon: Icon, title, value, trend, trendUp, sub, color }: any) 
             <div className={`absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity ${color || 'text-text'}`}>
                 <Icon size={60} />
             </div>
-            <div className="flex items-center gap-3 mb-2 text-text-secondary text-xs font-semibold uppercase tracking-wider">
-                <Icon size={16} />
+            <div className="flex items-center gap-3 mb-2 text-text-secondary text-xs font-semibold">
+                <Icon size={16} strokeWidth={1.75} />
                 {title}
             </div>
             <div className="flex items-end gap-3 z-10">
                 <span className={`text-3xl font-bold text-text tracking-tight tabular-nums`}>{value}</span>
                 {trend && (
-                    <span className={`text-xs font-bold mb-1.5 px-1.5 py-0.5 rounded ${trendUp ? 'bg-success/20 text-success' : 'bg-danger/20 text-danger'}`}>
+                    <span className={`text-xs font-bold mb-1.5 px-1.5 py-0.5 rounded-sm ${trendUp ? 'bg-success/20 text-success' : 'bg-surface-2 text-text-secondary'}`}>
                         {trend}
                     </span>
                 )}
@@ -117,8 +117,8 @@ function KpiCard({ icon: Icon, title, value, trend, trendUp, sub, color }: any) 
 function ActionCard({ href, title, desc, icon: Icon, color }: any) {
     return (
         <Link href={href} className="flex flex-col p-4 rounded-xl bg-text/5 border border-separator hover:bg-text/10 transition-all hover:-translate-y-1 group">
-            <div className={`w-10 h-10 rounded-lg ${color} flex items-center justify-center text-on-accent mb-3 shadow-lg`}>
-                <Icon size={20} />
+            <div className={`w-10 h-10 rounded-lg ${color} flex items-center justify-center text-on-accent mb-3 shadow-card`}>
+                <Icon size={20} strokeWidth={1.75} />
             </div>
             <h4 className="font-bold text-text mb-1 text-sm">{title}</h4>
             <p className="text-xs text-text-secondary leading-relaxed">{desc}</p>

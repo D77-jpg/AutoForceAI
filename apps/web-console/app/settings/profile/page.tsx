@@ -4,6 +4,7 @@ import { User, Phone, Mail, FileText, CheckCircle, XCircle, Save, Loader2, PenLi
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/contexts/ToastContext";
 import { PageHeader } from "@/components/PageHeader";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default function UserProfilePage() {
     const router = useRouter();
@@ -206,9 +207,12 @@ export default function UserProfilePage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center p-12">
-                <Loader2 className="animate-spin text-accent" size={32} />
-            </div>
+            <EmptyState
+                icon={Loader2}
+                size="sm"
+                title="正在加载个人资料…"
+                className="p-12"
+            />
         );
     }
 
@@ -334,7 +338,7 @@ export default function UserProfilePage() {
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="md:col-span-2">
-                                <label className="block text-xs font-bold text-text-secondary mb-2 uppercase tracking-wider">显示昵称</label>
+                                <label className="block text-xs font-medium text-text-secondary mb-2">显示昵称</label>
                                 <div className="relative group">
                                     <User className="absolute left-3 top-3 text-text-secondary group-focus-within:text-accent transition-colors" size={18} />
                                     <input 
@@ -348,7 +352,7 @@ export default function UserProfilePage() {
                             </div>
                             
                             <div>
-                                <label className="block text-xs font-bold text-text-secondary mb-2 uppercase tracking-wider">系统用户 ID (不可修改)</label>
+                                <label className="block text-xs font-medium text-text-secondary mb-2">系统用户 ID (不可修改)</label>
                                 <div className="relative">
                                     <span className="absolute left-3 top-3 text-text-tertiary font-mono text-xs">#</span>
                                     <input 
@@ -361,7 +365,7 @@ export default function UserProfilePage() {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-text-secondary mb-2 uppercase tracking-wider">手机号码</label>
+                                <label className="block text-xs font-medium text-text-secondary mb-2">手机号码</label>
                                 <div className="relative group">
                                     <Phone className="absolute left-3 top-3 text-text-secondary group-focus-within:text-accent transition-colors" size={18} />
                                     <input 
@@ -375,7 +379,7 @@ export default function UserProfilePage() {
                             </div>
                             
                             <div className="md:col-span-2">
-                                <label className="block text-xs font-bold text-text-secondary mb-2 uppercase tracking-wider">联系邮箱</label>
+                                <label className="block text-xs font-medium text-text-secondary mb-2">联系邮箱</label>
                                 <div className="relative group">
                                     <Mail className="absolute left-3 top-3 text-text-secondary group-focus-within:text-accent transition-colors" size={18} />
                                     <input 

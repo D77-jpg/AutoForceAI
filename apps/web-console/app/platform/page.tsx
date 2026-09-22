@@ -102,7 +102,7 @@ function KpiCard({ icon: Icon, title, value, trend, trendUp, sub, color }: any) 
             <div className={`absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity ${color || 'text-text'}`}>
                 <Icon size={60} />
             </div>
-            <div className="flex items-center gap-3 mb-2 text-text-secondary text-xs font-semibold tracking-wider">
+            <div className="flex items-center gap-3 mb-2 text-text-secondary text-xs font-semibold">
                 <Icon size={16} />
                 {title}
             </div>

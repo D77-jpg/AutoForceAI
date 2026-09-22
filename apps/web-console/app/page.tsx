@@ -270,19 +270,16 @@ const IconButton = ({ icon: Icon, onClick, badge }: any) => (
 const DepartmentSection = ({ dept }: { dept: any }) => {
     return (
         <section className="mb-10 last:mb-0">
-            {/* 分区标题直接放在页面背景上，无外层卡片 */}
-            <div className="flex items-center gap-3 mb-4 px-1">
-                <div className={`w-7 h-7 rounded-[22%] flex items-center justify-center ${TINT_BG[dept.tint]} text-on-accent shrink-0`}>
-                     <dept.icon size={15} />
-                </div>
+            {/* 分区标题直接放在页面背景上：纯文字 + 淡色英文副标题，无前置图标 */}
+            <div className="flex items-baseline gap-3 mb-4 px-1">
                 <h3 className="text-[17px] font-semibold text-text tracking-tight">{dept.title}</h3>
                 <span className="text-[11px] text-text-tertiary/60 tracking-[0.08em] uppercase">
                     {dept.enTitle}
                 </span>
             </div>
 
-            {/* 通栏响应式网格：大屏 4 列 / 中屏 3 列 / 小屏 2 列 */}
-            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {/* 通栏响应式网格：最多 3 列（大屏 3 / 小屏 2） */}
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                 {dept.apps.map((app:any, idx:number) => (
                     <Link 
                         key={idx} 
@@ -303,11 +300,10 @@ const DepartmentSection = ({ dept }: { dept: any }) => {
                              )}
                         </div>
                         
-                        <div>
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-2 text-[11px] text-text-secondary max-w-full">
-                                <Bot size={11} className="text-text-tertiary shrink-0" />
-                                <span className="truncate">{app.agent}</span>
-                            </span>
+                        {/* 员工信息：纯文字行（无胶囊底），与右上角分类标签区分层级 */}
+                        <div className="flex items-center gap-1.5 text-[11px] text-text-secondary">
+                            <Bot size={12} className="text-text-tertiary shrink-0" />
+                            <span className="truncate">{app.agent}</span>
                         </div>
 
                         <div className="text-[11px] text-text-secondary leading-normal line-clamp-2">
@@ -389,8 +385,9 @@ export default function HomePage() {
                       <ChevronRight size={12} className={`${showProductMenu ? 'rotate-90' : ''} transition-transform duration-300`} />
                   </button>
                   
-                  {/* Mega Menu Dropdown：强毛玻璃，下层内容不可辨认 */}
-                  <div className={`absolute top-full left-0 w-[800px] max-w-[calc(100vw-2rem)] menu-glass border border-separator rounded-2xl shadow-popover p-6 transition-all duration-300 z-50 ${showProductMenu ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
+                  {/* Mega Menu Dropdown：近不透明底，下层内容不可辨认（条件渲染，避免 transform/opacity 动画层导致 backdrop-filter 失效） */}
+                  {showProductMenu && (
+                  <div className="absolute top-full left-0 w-[800px] max-w-[calc(100vw-2rem)] menu-glass rounded-2xl p-6 z-50">
                         
                         <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {SYSTEM_PRODUCTS.map((prod) => (
@@ -422,6 +419,7 @@ export default function HomePage() {
                              </Link>
                         </div>
                   </div>
+                  )}
               </div>
           </div>
 
@@ -593,7 +591,7 @@ export default function HomePage() {
              {/* Section Header */}
              <div className="flex items-center gap-4 mb-6">
                  <div className="h-px flex-1 bg-text/10" />
-                 <span className="text-[11px] text-text-tertiary uppercase tracking-[0.16em] flex items-center gap-2">
+                 <span className="text-[11px] text-text-tertiary flex items-center gap-2">
                      <Grid size={12} />
                      产品矩阵
                  </span>

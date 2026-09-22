@@ -92,7 +92,7 @@ export default function KnowledgePage() {
         <PageHeader
           title="知识文档"
           description="上传产品资料 / FAQ / 证书，供 AI 客服检索。无嵌入密钥时自动走词法检索。"
-          actions={<Button onClick={() => setCreateOpen(true)}><Plus size={16} className="mr-1.5" />新建知识库</Button>}
+          actions={<Button onClick={() => setCreateOpen(true)}><Plus size={16} strokeWidth={1.75} className="mr-1.5" />新建知识库</Button>}
         />
         {msg && <div className="text-xs text-warning mb-4">{msg}</div>}
         {!kbs.length ? (
@@ -106,20 +106,22 @@ export default function KnowledgePage() {
           />
         ) : (
         <div className="grid grid-cols-12 gap-6">
-          <div className="col-span-3 space-y-2">
-            {kbs.map(kb => (
-              <button key={kb.id} onClick={()=>setActive(kb.id)} className={"w-full text-left p-3.5 rounded-xl border transition-colors " + (active===kb.id ? "border-accent/40 bg-accent/10" : "border-separator bg-surface hover:bg-surface-2")}>
-                <div className="font-medium text-text">{kb.name}</div>
-                <div className="text-xs text-text-tertiary mt-1 tabular-nums">{kb.doc_count} 文档 · {kb.chunk_count} 分块 {kb.is_public ? "· 公开" : ""}</div>
-              </button>
-            ))}
+          <div className="col-span-3">
+            <div className="bg-surface border border-separator rounded-xl p-2 space-y-1">
+              {kbs.map(kb => (
+                <button key={kb.id} onClick={()=>setActive(kb.id)} className={"w-full text-left p-3.5 rounded-lg border transition-colors " + (active===kb.id ? "border-accent/40 bg-accent/10" : "border-transparent hover:bg-surface-2")}>
+                  <div className="font-medium text-text">{kb.name}</div>
+                  <div className="text-xs text-text-tertiary mt-1 tabular-nums">{kb.doc_count} 文档 · {kb.chunk_count} 分块 {kb.is_public ? "· 公开" : ""}</div>
+                </button>
+              ))}
+            </div>
           </div>
           <div className="col-span-9 space-y-6">
             <div className="bg-surface border border-separator rounded-xl p-5">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="font-semibold tracking-tight">文档列表</h2>
                 <input ref={fileRef} type="file" className="hidden" accept=".pdf,.docx,.txt,.md" onChange={upload}/>
-                <Button variant="secondary" onClick={() => fileRef.current?.click()}><Upload size={14} className="mr-1.5"/> 上传 PDF / Word / MD</Button>
+                <Button variant="secondary" onClick={() => fileRef.current?.click()}><Upload size={14} strokeWidth={1.75} className="mr-1.5"/> 上传 PDF / Word / MD</Button>
               </div>
               {docs.length ? (
               <Table>
@@ -134,12 +136,12 @@ export default function KnowledgePage() {
                 <TableBody>
                   {docs.map(d => (
                     <TableRow key={d.id}>
-                      <TableCell><span className="flex items-center gap-2"><FileText size={14} className="text-text-secondary"/> {d.filename}</span></TableCell>
+                      <TableCell><span className="flex items-center gap-2"><FileText size={14} strokeWidth={1.75} className="text-text-secondary"/> {d.filename}</span></TableCell>
                       <TableCell className="text-center">{statusLabel(d.status)}{d.error_msg ? <span className="block text-xs text-warning">{d.error_msg}</span> : null}</TableCell>
                       <TableCell className="text-center tabular-nums">{d.chunk_count}</TableCell>
                       <TableCell className="text-right">
-                        <button onClick={()=>reindex(d.id)} className="p-1 text-text-secondary hover:text-text"><RefreshCw size={14}/></button>
-                        <button onClick={()=>remove(d.id)} className="p-1 text-danger"><Trash2 size={14}/></button>
+                        <button onClick={()=>reindex(d.id)} className="p-1 text-text-secondary hover:text-text"><RefreshCw size={14} strokeWidth={1.75}/></button>
+                        <button onClick={()=>remove(d.id)} className="p-1 text-danger"><Trash2 size={14} strokeWidth={1.75}/></button>
                       </TableCell>
                     </TableRow>
                   ))}

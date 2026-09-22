@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import api from '../../lib/api';
-import { Share2, Bot, CheckCircle, Clock, AlertTriangle, RefreshCw, Layers, RotateCcw, ExternalLink, Trash2, Edit, ChevronDown, ChevronUp, Maximize2, Minimize2, StopCircle, Monitor } from 'lucide-react';
+import { Share2, CheckCircle, Clock, AlertTriangle, RefreshCw, Layers, RotateCcw, ExternalLink, Trash2, Edit, ChevronDown, ChevronUp, Maximize2, Minimize2, StopCircle, Monitor, Loader2 } from 'lucide-react';
 import { useGlobalState } from '../../contexts/GlobalStateContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useSearchParams } from 'next/navigation';
@@ -327,7 +327,7 @@ export default function Distribution() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 shrink-0">
          <div className="glass-card p-4 flex items-center justify-between border-l-4 border-l-accent">
             <div>
-               <p className="text-xs text-text-secondary uppercase font-bold tracking-wider">投放任务总数</p>
+               <p className="text-xs text-text-secondary font-bold">投放任务总数</p>
                <h3 className="text-2xl font-bold text-text mt-1 tabular-nums">{stats.total}</h3>
             </div>
             <div className="p-3 bg-accent/10 rounded-lg text-accent">
@@ -336,7 +336,7 @@ export default function Distribution() {
          </div>
          <div className="glass-card p-4 flex items-center justify-between border-l-4 border-l-tint-revenue">
             <div>
-               <p className="text-xs text-text-secondary uppercase font-bold tracking-wider">正在执行/排队</p>
+               <p className="text-xs text-text-secondary font-bold">正在执行/排队</p>
                <h3 className="text-2xl font-bold text-text mt-1 tabular-nums">{stats.running}</h3>
             </div>
             <div className="p-3 bg-accent/10 rounded-lg text-accent animate-pulse">
@@ -345,7 +345,7 @@ export default function Distribution() {
          </div>
          <div className="glass-card p-4 flex items-center justify-between border-l-4 border-l-success">
             <div>
-               <p className="text-xs text-text-secondary uppercase font-bold tracking-wider">投放成功率</p>
+               <p className="text-xs text-text-secondary font-bold">投放成功率</p>
                <h3 className="text-2xl font-bold text-text mt-1 tabular-nums">{stats.successRate}%</h3>
             </div>
             <div className="p-3 bg-success/10 rounded-lg text-success">
@@ -354,7 +354,7 @@ export default function Distribution() {
          </div>
          <div className="glass-card p-4 flex items-center justify-between border-l-4 border-l-warning">
             <div>
-               <p className="text-xs text-text-secondary uppercase font-bold tracking-wider">今日新增</p>
+               <p className="text-xs text-text-secondary font-bold">今日新增</p>
                <h3 className="text-2xl font-bold text-text mt-1 tabular-nums">+{stats.today}</h3>
             </div>
             <div className="p-3 bg-warning/10 rounded-lg text-warning">
@@ -372,8 +372,8 @@ export default function Distribution() {
                   key={p.id}
                   onClick={() => setFilterPlatform(p.id)}
                   className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                     filterPlatform === p.id 
-                     ? 'bg-text/10 text-text shadow-sm border border-separator' 
+                     filterPlatform === p.id
+                     ? 'bg-accent/10 text-accent border border-accent/40'
                      : 'text-text-secondary hover:text-text hover:bg-text/5 border border-transparent'
                   }`}
                >
@@ -409,8 +409,12 @@ export default function Distribution() {
                  <TableRow className="hover:bg-transparent">
                     <TableCell colSpan={5} className="px-6 py-20 text-center text-text-secondary">
                         <div className="flex flex-col items-center gap-3">
-                           <RefreshCw className="animate-spin opacity-50" size={24}/>
-                           <p>正在同步全网投放数据...</p>
+                            <EmptyState
+                                size="sm"
+                                icon={Loader2}
+                                title="正在同步全网投放数据"
+                                description="请稍候，正在加载任务列表。"
+                            />
                         </div>
                     </TableCell>
                  </TableRow>
@@ -440,23 +444,23 @@ export default function Distribution() {
                         <TableCell className="px-6 py-4 font-mono text-xs text-text-secondary">#{job.id}</TableCell>
                         <TableCell className="px-6 py-4">
                             {(job.platform === 'redbook' || job.platform === 'xiaohongshu') ? (
-                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-danger"></span> 小红书</div>
+                                <span>小红书</span>
                             ) : (job.platform === 'tiktok' || job.platform === 'douyin') ? (
-                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-bg border border-separator"></span> 抖音</div>
+                                <span>抖音</span>
                             ) : (job.platform === 'zhihu' || job.platform === 'social_qa') ? (
-                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-accent"></span> 知乎</div>
+                                <span>知乎</span>
                             ) : (job.platform === 'baidu_baike' || job.platform === 'baike' || job.platform === 'wiki') ? (
-                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-accent"></span> 百度词条</div>
+                                <span>百度词条</span>
                             ) : (job.platform === 'media' || job.platform === 'wechat') ? (
-                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-success"></span> 媒体通稿</div>
+                                <span>媒体通稿</span>
                             ) : (job.platform === 'website' || job.platform === 'wordpress' || job.platform === 'wp') ? (
-                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-accent"></span> WordPress</div>
+                                <span>WordPress</span>
                             ) : job.platform === 'linkedin' ? (
-                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-accent"></span> LinkedIn</div>
+                                <span>LinkedIn</span>
                             ) : (job.platform === 'x' || job.platform === 'twitter') ? (
-                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-surface-2"></span> X</div>
+                                <span>X</span>
                             ) : (
-                                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-text-tertiary"></span> {job.platform}</div>
+                                <span>{job.platform}</span>
                             )}
                         </TableCell>
                         <TableCell className="px-6 py-4">
@@ -486,12 +490,12 @@ export default function Distribution() {
                     {isExpanded && (
                         <tr className="bg-surface/50 border-b border-separator shadow-inner">
                             <td colSpan={6} className="p-0">
-                                <div className={maximizeLogs ? "fixed inset-4 z-50 bg-surface border border-separator rounded-xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-6 p-6 animate-fade-in hidden-scrollbar" : "animate-fade-in p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 h-[500px]"}>
+                                <div className={maximizeLogs ? "fixed inset-4 z-50 bg-surface border border-separator rounded-xl shadow-modal overflow-hidden grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-6 p-6 animate-fade-in hidden-scrollbar" : "animate-fade-in p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 h-[500px]"}>
                                     
                                     {/* Left Column: Content & Controls - Always Visible now */}
                                     <div className="flex flex-col h-full overflow-hidden">
                                       <div className="flex items-center justify-between mb-3 shrink-0">
-                                        <div className="text-xs text-text-secondary font-bold uppercase tracking-wider">任务详情与控制</div>
+                                        <div className="text-xs text-text-secondary font-bold">任务详情与控制</div>
                                         <div className="flex items-center gap-2">
                                           {(job.status === 'claimed' || job.status === 'queued') && (
                                             <button 
@@ -542,7 +546,7 @@ export default function Distribution() {
                                         </div>
                                       </div>
                                       
-                                      <div className="flex-1 bg-bg/20 rounded-lg p-4 border border-separator flex flex-col min-h-0">
+                                      <div className="flex-1 bg-bg rounded-lg p-4 border border-separator flex flex-col min-h-0">
                                          <h4 className="text-sm font-bold text-text mb-2 shrink-0">{job.payload?.title || "无标题"}</h4>
                                          <div className="text-text-secondary font-mono text-xs whitespace-pre-wrap break-words leading-relaxed overflow-y-auto custom-scrollbar flex-1 min-h-0">
                                            {job.payload?.content || "无内容"}
@@ -553,7 +557,7 @@ export default function Distribution() {
                                     {/* Right Column: Logs */}
                                     <div className="flex flex-col h-full overflow-hidden">
                                         <div className="flex justify-between items-center mb-3 shrink-0">
-                                            <h4 className="text-xs font-bold text-text-secondary uppercase tracking-wider flex items-center gap-2">
+                                            <h4 className="text-xs font-bold text-text-secondary flex items-center gap-2">
                                                 <Share2 size={12}/> 实时执行日志
                                             </h4>
                                             <div className="flex items-center gap-2">
@@ -627,7 +631,7 @@ export default function Distribution() {
     >
       <div className="space-y-4">
         <div>
-          <label className="block text-xs font-bold text-text-secondary uppercase mb-1">标题</label>
+          <label className="block text-xs font-bold text-text-secondary mb-1">标题</label>
           <input 
             className="w-full h-10 bg-surface-2 border border-separator rounded-md px-3 text-text text-sm focus:border-accent outline-none transition-colors"
             value={editForm.title}
@@ -635,7 +639,7 @@ export default function Distribution() {
           />
         </div>
         <div className="flex flex-col">
-          <label className="block text-xs font-bold text-text-secondary uppercase mb-1">正文内容</label>
+          <label className="block text-xs font-bold text-text-secondary mb-1">正文内容</label>
           <textarea 
             className="w-full h-64 bg-surface-2 border border-separator rounded-md p-3 text-text font-mono text-sm leading-relaxed focus:border-accent outline-none resize-none transition-colors"
             value={editForm.content}

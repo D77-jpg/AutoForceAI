@@ -73,10 +73,10 @@ export default function DistributionPage() {
       <PageHeader
         title="海外投放"
         description="LinkedIn / WordPress / X。任务进入 RPA 队列，结果在营销矩阵可追踪。"
-        className="mb-0"
+        className="mb-0 shrink-0"
         actions={
           <Button onClick={publish} disabled={submitting}>
-            <Send size={16} className="mr-2" /> {submitting ? "提交中..." : "创建发布任务"}
+            <Send size={16} strokeWidth={1.75} className="mr-2" /> {submitting ? "提交中..." : "创建发布任务"}
           </Button>
         }
       />
@@ -89,12 +89,18 @@ export default function DistributionPage() {
               <button
                 key={c.id}
                 onClick={() => setPlatform(c.id)}
-                className={`w-full text-left p-4 rounded-xl border ${
-                  platform === c.id ? "border-accent bg-accent/10" : "border-separator bg-text/5"
+                className={`w-full text-left p-4 rounded-xl border transition-colors ${
+                  platform === c.id
+                    ? "border-accent/40 bg-accent/10"
+                    : "border-separator bg-text/5 hover:bg-text/10"
                 }`}
               >
-                <div className="flex items-center gap-2 font-bold text-sm">
-                  <Icon size={16} /> {c.label}
+                <div
+                  className={`flex items-center gap-2 font-bold text-sm ${
+                    platform === c.id ? "text-accent" : "text-text"
+                  }`}
+                >
+                  <Icon size={16} strokeWidth={1.75} className="text-text-secondary" /> {c.label}
                 </div>
                 <p className="text-[11px] text-text-secondary mt-1">{c.desc}</p>
               </button>
@@ -116,7 +122,7 @@ export default function DistributionPage() {
                   setContent(item.body || "");
                   setContentId(item.id);
                 }}
-                className="block w-full text-left text-xs p-2 rounded hover:bg-text/10 truncate text-text"
+                className="block w-full text-left text-xs p-2 rounded-md hover:bg-text/10 truncate text-text"
               >
                 {item.title}
               </button>
@@ -130,7 +136,7 @@ export default function DistributionPage() {
             onChange={(e) => setTitle(e.target.value)}
           />
           <textarea
-            className="flex-1 min-h-0 bg-bg/30 border border-separator rounded p-3 text-sm font-mono resize-none"
+            className="flex-1 min-h-0 bg-bg/30 border border-separator rounded-md p-3 text-sm font-mono resize-none"
             placeholder="英文正文"
             value={content}
             onChange={(e) => setContent(e.target.value)}

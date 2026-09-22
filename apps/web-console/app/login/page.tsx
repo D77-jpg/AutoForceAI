@@ -244,13 +244,13 @@ export default function LoginPage() {
                 <div className="flex rounded-full bg-surface-2 p-1 mb-7">
                     <button
                         onClick={() => setAuthTab('email')}
-                        className={`flex-1 py-2 text-[13px] font-medium rounded-full transition-colors ${authTab === 'email' ? 'bg-surface-2 text-text' : 'text-text-secondary hover:text-text'}`}
+                        className={`flex-1 py-2 text-[13px] font-medium rounded-full transition-colors ${authTab === 'email' ? 'bg-surface text-text shadow-card' : 'text-text-secondary hover:text-text'}`}
                     >
                         账号登录
                     </button>
                     <button
                         onClick={() => setAuthTab('wechat')}
-                        className={`flex-1 py-2 text-[13px] font-medium rounded-full transition-colors ${authTab === 'wechat' ? 'bg-surface-2 text-text' : 'text-text-secondary hover:text-text'}`}
+                        className={`flex-1 py-2 text-[13px] font-medium rounded-full transition-colors ${authTab === 'wechat' ? 'bg-surface text-text shadow-card' : 'text-text-secondary hover:text-text'}`}
                     >
                         微信扫码
                     </button>

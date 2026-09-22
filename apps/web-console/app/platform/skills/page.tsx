@@ -74,11 +74,11 @@ export default function SkillSettingsPage() {
 
       <Tabs defaultValue="library" className="w-full">
         <TabsList className="mb-6 bg-surface border border-separator">
-           <TabsTrigger value="library" className="px-6 data-[state=active]:bg-accent">
+           <TabsTrigger value="library" className="px-6 data-[state=active]:bg-accent data-[state=active]:text-on-accent">
              <Terminal className="w-4 h-4 mr-2" />
              业务技能
            </TabsTrigger>
-           <TabsTrigger value="config" className="px-6 data-[state=active]:bg-accent">
+           <TabsTrigger value="config" className="px-6 data-[state=active]:bg-accent data-[state=active]:text-on-accent">
              <Server className="w-4 h-4 mr-2" />
              基础技能
            </TabsTrigger>
@@ -87,16 +87,22 @@ export default function SkillSettingsPage() {
         {/* Tab 1: 业务技能 (原 Registry) */}
         <TabsContent value="library" className="animate-in fade-in slide-in-from-left-4">
              {skillsLoading ? (
-                 <div className="flex items-center justify-center h-60 text-text-secondary gap-2">
-                     <Loader2 className="animate-spin" size={20} /> 正在从后端加载技能清单...
-                 </div>
+                 <EmptyState
+                     icon={Loader2}
+                     size="sm"
+                     title="正在加载技能清单…"
+                     className="h-60"
+                 />
              ) : skillsError ? (
-                 <div className="flex flex-col items-center justify-center h-60 text-text-secondary gap-3">
-                     <p>加载失败：{skillsError}</p>
-                     <Button variant="outline" onClick={fetchSkills} className="gap-2 border-separator text-text hover:bg-text/5">
-                         <RefreshCw size={14} /> 重试
-                     </Button>
-                 </div>
+                 <EmptyState
+                     icon={RefreshCw}
+                     size="sm"
+                     title="技能清单加载失败"
+                     description={skillsError}
+                     actionLabel="重试"
+                     onAction={fetchSkills}
+                     className="h-60"
+                 />
              ) : skills.length === 0 ? (
              <EmptyState
                  icon={Terminal}

@@ -59,10 +59,10 @@ export default function ImageGenPage() {
       <PageHeader
         title="文生图 · 获客视觉"
         description="产品场景图 / Banner / 社媒配图。接入 DashScope Wanx，无 Key 时保存提示词。"
-        className="mb-0"
+        className="mb-0 shrink-0"
         actions={
-          <Button variant="destructive" onClick={generate} disabled={loading}>
-            {loading ? <RefreshCw size={16} className="animate-spin mr-2" /> : <Wand2 size={16} className="mr-2" />}
+          <Button onClick={generate} disabled={loading}>
+            {loading ? <RefreshCw size={16} strokeWidth={1.75} className="animate-spin mr-2" /> : <Wand2 size={16} strokeWidth={1.75} className="mr-2" />}
             生成图片
           </Button>
         }
@@ -75,8 +75,10 @@ export default function ImageGenPage() {
               <button
                 key={p.id}
                 onClick={() => setPreset(p.id)}
-                className={`flex-1 text-xs py-2 rounded border ${
-                  preset === p.id ? "border-danger bg-danger/15 text-text" : "border-separator text-text-secondary"
+                className={`flex-1 text-xs py-2 rounded-md border transition-colors ${
+                  preset === p.id
+                    ? "border-accent/40 bg-accent/10 text-accent"
+                    : "border-separator text-text-secondary hover:bg-text/5"
                 }`}
               >
                 {p.label}
@@ -89,7 +91,7 @@ export default function ImageGenPage() {
             placeholder="产品名"
           />
           <textarea
-            className="w-full flex-1 min-h-[120px] bg-bg/30 border border-separator rounded p-2 text-sm resize-none"
+            className="w-full flex-1 min-h-[120px] bg-bg/30 border border-separator rounded-md p-2 text-sm resize-none"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="可选：自定义英文提示词。留空则按预设自动生成。"
@@ -99,9 +101,9 @@ export default function ImageGenPage() {
           )}
         </div>
 
-        <div className="overflow-y-auto">
+        <div className="glass-panel p-4 overflow-y-auto">
           {items.length === 0 && !latest ? (
-            <div className="h-full flex items-center justify-center border border-dashed border-separator rounded-xl">
+            <div className="h-full flex items-center justify-center">
               <EmptyState
                 size="lg"
                 icon={ImageIcon}
@@ -114,7 +116,7 @@ export default function ImageGenPage() {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {(latest ? [latest, ...items.filter((i) => i.id !== latest.id)] : items).map((img, idx) => (
-                <div key={img.id || idx} className="glass-panel overflow-hidden">
+                <div key={img.id || idx} className="rounded-lg border border-separator bg-surface-2 overflow-hidden">
                   {img.url || img.image_url ? (
                     <img src={img.url || img.image_url} alt={img.title} className="w-full h-40 object-cover" />
                   ) : (

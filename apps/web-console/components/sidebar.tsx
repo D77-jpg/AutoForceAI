@@ -87,7 +87,7 @@ export default function Sidebar() {
                 {
                     title: '会话管理',
                     items: [
-                        { href: '/service/sessions', icon: Activity, label: '实时会话监控' },
+                        { href: '/service/sessions', icon: Activity, label: '智能接待' },
                         { href: '/service/history', icon: Book, label: '历史会话查询' },
                         { href: '/leads', icon: Users, label: '本地线索池' }
                     ]
@@ -101,8 +101,8 @@ export default function Sidebar() {
                 {
                     title: '客服流程质检',
                     items: [
-                        { href: '/service/rules', icon: ShieldCheck, label: '质检规则配置' },
-                        { href: '/service/stats', icon: BarChart4, label: '服务质量报表' }
+                        { href: '/service/rules', icon: ShieldCheck, label: '质检规则' },
+                        { href: '/service/stats', icon: BarChart4, label: '服务质检' }
                     ]
                 }
             ]
@@ -173,8 +173,8 @@ export default function Sidebar() {
       };
     } else if (pathname?.startsWith('/workforce')) {
       return {
-        appName: 'GlobalPilot AI',
-        appEnName: '全球 B2B 智能增长操作系统',
+        appName: '数字员工',
+        appEnName: '企业级 AI 劳动力编排',
         homeLink: '/workforce',
         groups: [
           {
@@ -210,14 +210,14 @@ export default function Sidebar() {
         };
     } else if (pathname?.startsWith('/organization')) {
         return {
-          appName: '虚拟组织',
-          appEnName: 'AI 团队与组织架构管理',
+          appName: '组织编排',
+          appEnName: '数字员工权限与团队管理',
           homeLink: '/organization',
           groups: [
             {
               title: '组织架构',
               items: [
-                { href: '/organization', icon: Network, label: '团队概览' },
+                { href: '/organization', icon: Network, label: '组织编排' },
                 { href: '/organization/agents', icon: Users, label: '员工管理', badge: '开发中' }
               ]
             }
@@ -225,14 +225,14 @@ export default function Sidebar() {
         };
     } else if (pathname?.startsWith('/ops')) {
         return {
-          appName: '智能运维',
+          appName: '系统运维',
           appEnName: '系统运维与健康度监测',
           homeLink: '/ops',
           groups: [
             {
               title: '基础设施',
               items: [
-                { href: '/ops', icon: Terminal, label: '控制台', exact: true }
+                { href: '/ops', icon: Terminal, label: '系统运维', exact: true }
               ]            },
             {
                 title: '系统管理',
@@ -244,14 +244,14 @@ export default function Sidebar() {
         };
     } else if (pathname?.startsWith('/digital-human')) {
         return {
-          appName: '数字人梦工厂',
-          appEnName: '超写实数字人视频生成',
+          appName: '数字人',
+          appEnName: '高保真数字人视频生成与直播推流',
           homeLink: '/digital-human',
           groups: [
             {
               title: '内容制作',
               items: [
-                { href: '/digital-human', icon: Video, label: '视频生成' },
+                { href: '/digital-human', icon: Video, label: '数字人直播' },
                 { href: '/digital-human/assets', icon: Users, label: '形象资产', badge: '开发中' }
               ]
             }
@@ -266,7 +266,7 @@ export default function Sidebar() {
              {
                title: '模型服务',
                items: [
-                 { href: '/platform', icon: LayoutDashboard, label: '总览 Dashboard' },
+                 { href: '/platform', icon: LayoutDashboard, label: '总览' },
                  { href: '/platform/models', icon: BrainCircuit, label: '模型纳管' },
                ]
              },
@@ -286,16 +286,16 @@ export default function Sidebar() {
            ]
          };    } else if (pathname?.startsWith('/marketing')) {
         return {
-          appName: 'AI 营销云',
+          appName: 'AI 营销',
           appEnName: 'AIGC 内容生产与全域投放',
           homeLink: '/marketing',
           groups: [
             {
-              title: '内容创作 (AIGC)',
+              title: '内容创作',
               items: [
-                { href: '/marketing', icon: LayoutDashboard, label: '营销看板' },
-                { href: '/marketing/text-gen', icon: FileText, label: '文生文 (Copy)' },
-                { href: '/marketing/image-gen', icon: BrainCircuit, label: '文生图 (Image)' },
+                { href: '/marketing', icon: LayoutDashboard, label: '投放参谋' },
+                { href: '/marketing/text-gen', icon: FileText, label: '文生文' },
+                { href: '/marketing/image-gen', icon: BrainCircuit, label: '文生图' },
               ]
             },
             {
@@ -322,7 +322,7 @@ export default function Sidebar() {
             {
               title: '客户管理',
               items: [
-                { href: '/crm', icon: LayoutDashboard, label: '概览 Dashboard' },
+                { href: '/crm', icon: LayoutDashboard, label: '概览' },
                 { href: '/leads', icon: Users, label: '本地线索池' },
                 { href: '/crm/customers', icon: Building2, label: '客户列表', badge: '开发中' }
               ]            
@@ -339,21 +339,21 @@ export default function Sidebar() {
     } else {
       // Default: GEO workspace
       return {
-        appName: 'GlobalPilot AI | GEO',
-        appEnName: 'AI Operating System for Global B2B Growth',
+        appName: 'GEO 全域洞察',
+        appEnName: '品牌舆情与心智份额追踪',
         homeLink: '/geo',
         groups: [
           {
             title: '核心平台',
             items: [
-              { href: '/geo', icon: LayoutDashboard, label: '品牌资产' },
-              { href: '/diagnosis', icon: BrainCircuit, label: '品牌洞察' },
+              { href: '/geo', icon: LayoutDashboard, label: '全域洞察' },
+              { href: '/diagnosis', icon: BrainCircuit, label: '竞争诊断' },
             ]
           },
           {
             title: '执行中心',
             items: [
-              { href: '/optimize', icon: FlaskConical, label: '内容构建' },
+              { href: '/optimize', icon: FlaskConical, label: '内容工场' },
               { href: '/distribution', icon: RadioTower, label: '营销矩阵' },
             ]
           }
@@ -377,8 +377,8 @@ export default function Sidebar() {
                  />
               </div>
               <div className="min-w-0">
-                <h1 className="font-semibold text-[15px] tracking-tight truncate">{appConfig.appName}</h1>
-                <p className="text-[11px] text-text-secondary mt-0.5 truncate">
+                <h1 className="font-semibold text-[15px] tracking-tight leading-snug break-words">{appConfig.appName}</h1>
+                <p className="text-[11px] text-text-secondary mt-0.5 leading-snug break-words">
                     {appConfig.appEnName}
                 </p>
               </div>
@@ -396,7 +396,7 @@ export default function Sidebar() {
          <div className="flex-1 overflow-y-auto py-5 px-2.5 space-y-1">
             {appConfig.groups.map((group, idx) => (
                 <div key={idx} className="mb-5 last:mb-0">
-                    <div className="text-[11px] font-semibold text-text-tertiary px-3 mb-1.5 uppercase tracking-[0.12em]">
+                    <div className="text-[11px] font-semibold text-text-tertiary px-3 mb-1.5">
                         {group.title}
                     </div>
                     {group.items.map((item, itemIdx) => (

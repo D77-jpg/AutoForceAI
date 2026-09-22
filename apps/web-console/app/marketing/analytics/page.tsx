@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { BarChart4, RefreshCw, Share2, Users } from "lucide-react";
+import { BarChart4, RefreshCw, Share2, Users, Loader2 } from "lucide-react";
 import api from "../../../lib/api";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { PageHeader } from "@/components/PageHeader";
@@ -39,8 +39,13 @@ export default function AnalyticsPage() {
       );
     }
     return (
-      <div className="h-full flex items-center justify-center text-text-secondary">
-        <p>加载漏斗数据...</p>
+      <div className="h-full flex items-center justify-center">
+        <EmptyState
+          size="sm"
+          icon={Loader2}
+          title="加载漏斗数据"
+          description="正在同步近 30 天漏斗指标..."
+        />
       </div>
     );
   }
@@ -50,10 +55,10 @@ export default function AnalyticsPage() {
       <PageHeader
         title="获客漏斗"
         description="内容 → 发布 → GEO 曝光 → 本地询盘。CRM 归因待阶段 2。"
-        className="mb-0"
+        className="mb-0 shrink-0"
         actions={
           <Button variant="outline" size="sm" onClick={load}>
-            <RefreshCw size={12} className="mr-1" /> 刷新
+            <RefreshCw size={12} strokeWidth={1.75} className="mr-1" /> 刷新
           </Button>
         }
       />
@@ -61,7 +66,7 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {data.steps.map((s: any) => (
           <div key={s.key} className="glass-panel p-4">
-            <div className="text-[10px] uppercase text-text-secondary">{s.label}</div>
+            <div className="text-[10px] text-text-secondary">{s.label}</div>
             <div className="text-3xl font-bold mt-1 tabular-nums">{s.value === null ? "—" : s.value}</div>
             <div className="text-[11px] text-text-secondary mt-1">{s.hint}</div>
           </div>

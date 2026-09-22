@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Plus, User, Zap, Bot } from 'lucide-react';
+import { Plus, User, Zap, Bot, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
@@ -57,7 +57,7 @@ export default function WorkforcePage() {
           actions={
             <Link href="/workforce/create">
               <Button>
-                <Plus size={16} className="mr-1.5" /> 新建数字员工
+                <Plus size={16} strokeWidth={1.75} className="mr-1.5" /> 新建数字员工
               </Button>
             </Link>
           }
@@ -65,7 +65,12 @@ export default function WorkforcePage() {
 
         {/* Content */}
         {loading ? (
-             <div className="text-center py-24 text-text-secondary">正在加载数字员工…</div>
+             <EmptyState
+               icon={Loader2}
+               size="sm"
+               title="正在加载数字员工"
+               description="正在获取您的团队信息，请稍候…"
+             />
         ) : employees.length === 0 ? (
             <EmptyState
               icon={Bot}
@@ -87,7 +92,7 @@ export default function WorkforcePage() {
                                     {emp.avatar_url ? (
                                         <img src={emp.avatar_url} alt={emp.name} className="h-full w-full object-cover rounded-full" />
                                     ) : (
-                                        <User size={24} />
+                                        <User size={24} strokeWidth={1.75} />
                                     )}
                                 </div>
                                 <div>
@@ -118,7 +123,7 @@ export default function WorkforcePage() {
                     <div className="px-6 py-4 border-t border-separator mt-auto">
                         <Link href={`/workforce/mission?employee_id=${emp.id}`}>
                             <button className="w-full h-10 flex items-center justify-center bg-surface-2 hover:bg-surface-2/70 text-text rounded-md transition-colors text-sm font-medium">
-                                <Zap className="mr-2 h-4 w-4 text-warning" /> 分配任务
+                                <Zap className="mr-2 h-4 w-4 text-warning" strokeWidth={1.75} /> 分配任务
                             </button>
                         </Link>
                     </div>
@@ -129,7 +134,7 @@ export default function WorkforcePage() {
                 <Link href="/workforce/create" className="group block h-full">
                     <div className="h-full bg-surface/60 border-2 border-dashed border-separator rounded-xl flex flex-col items-center justify-center p-8 hover:border-accent/40 hover:bg-surface transition-all cursor-pointer min-h-[300px]">
                         <div className="bg-surface-2 p-4 rounded-full mb-4 group-hover:scale-110 transition-transform">
-                            <Plus className="h-6 w-6 text-text-secondary" />
+                            <Plus className="h-6 w-6 text-text-secondary" strokeWidth={1.75} />
                         </div>
                         <h3 className="font-medium text-text">招募新员工</h3>
                         <p className="text-text-secondary text-sm mt-2 text-center">为您的团队添加一位数字员工</p>

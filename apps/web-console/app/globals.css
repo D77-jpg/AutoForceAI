@@ -52,11 +52,26 @@ h1, h2, h3, h4 {
   font-variant-numeric: tabular-nums;
 }
 
-/* ── 强毛玻璃菜单：深色 rgba(28,28,30,.85) / 浅色 rgba(255,255,255,.85) ── */
+/* ── 产品矩阵菜单：近不透明底 + 毛玻璃增强 ──────────────────
+   根因记录：菜单自身的 translate/opacity transition（合成层提升）叠加父级
+   header 的 backdrop-blur（嵌套 backdrop-filter 时子级无法建立 backdrop root），
+   Chromium 会静默丢弃子级 backdrop-filter，故背景提升为近不透明，blur 仅作增强。 */
 .menu-glass {
-  background: rgb(var(--ui-surface) / 0.85);
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: var(--ui-shadow-popover);
   backdrop-filter: blur(40px) saturate(180%);
   -webkit-backdrop-filter: blur(40px) saturate(180%);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .menu-glass {
+    background: rgba(28, 28, 30, 0.95);
+    border-color: rgb(var(--ui-separator) / var(--ui-separator-alpha));
+  }
+}
+[data-theme="dark"] .menu-glass {
+  background: rgba(28, 28, 30, 0.95);
+  border-color: rgb(var(--ui-separator) / var(--ui-separator-alpha));
 }
 
 /* ── 侧边栏导航项：选中为 accent 浅色圆角高亮块 ─────── */

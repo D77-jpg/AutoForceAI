@@ -9,7 +9,7 @@ export default function DigitalHumanPage() {
   return (
     <div className="min-h-screen bg-bg text-text p-8">
       <PageHeader
-        title="数字人梦工厂"
+        title="数字人直播"
         description="数字人模块规划中（远期）。"
       />
       <div className="flex flex-col items-center justify-center text-center py-20">

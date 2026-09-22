@@ -240,7 +240,7 @@ export default function GEODashboard() {
       
       {/* 1. Page Header & Score */}
       <PageHeader
-        title="GEO 优化引擎"
+        title="全域洞察"
         description="输入品牌与英文查询词（如 best hydraulic pump supplier China），定时查询 Perplexity 等生成式引擎，记录品牌是否被提及。"
         actions={
           <Button className="gap-2" onClick={() => setCreateOpen(true)}>
@@ -254,7 +254,7 @@ export default function GEODashboard() {
         <div className="glass-card p-6 flex flex-col justify-center items-center text-center relative overflow-hidden bg-surface/80">
             {metrics ? (
                 <>
-                    <h3 className="text-sm font-medium text-text-secondary uppercase tracking-widest mb-1">GEO 健康度评分</h3>
+                    <h3 className="text-sm font-medium text-text-secondary mb-1">GEO 健康度评分</h3>
                     <div className="text-5xl font-black text-success tabular-nums mb-2">
                         {metrics.visibilityScore}
                     </div>
@@ -466,7 +466,7 @@ export default function GEODashboard() {
             <Input
               value={brand}
               onChange={(e) => setBrand(e.target.value)}
-              placeholder="品牌名称 (Brand)"
+              placeholder="品牌名称"
             />
           </div>
           <div>

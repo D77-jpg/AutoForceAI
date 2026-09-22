@@ -6,7 +6,8 @@ import {
   Settings, 
   Trash2, 
   CheckCircle2,
-  Box
+  Box,
+  Loader2
 } from 'lucide-react';
 import api from '../../../lib/api';
 import { useToast } from '../../../contexts/ToastContext';
@@ -158,7 +159,12 @@ export default function ModelsPage() {
     
             {/* Content Area */}
             {loading ? (
-                 <div className="glass-panel min-h-0 flex-1 border border-separator bg-surface rounded-xl p-12 text-center text-text-secondary">正在加载模型配置...</div>
+                 <EmptyState
+                     icon={Loader2}
+                     size="sm"
+                     title="正在加载模型配置…"
+                     className="flex-1"
+                 />
             ) : models.length === 0 ? (
                 <EmptyState
                     icon={Box}
@@ -479,7 +485,7 @@ function ModelModal({ model, providers, onClose, onSuccess }: { model: Model | n
                                         type="checkbox" 
                                         checked={formData.is_active}
                                         onChange={e => setFormData({...formData, is_active: e.target.checked})}
-                                        className="w-4 h-4 mt-0.5 rounded border-separator bg-surface-2 text-success focus:ring-offset-0 focus:ring-0"
+                                        className="w-4 h-4 mt-0.5 rounded border-separator bg-surface-2 text-accent focus:ring-offset-0 focus:ring-0"
                                     />
                                     <div className="flex flex-col">
                                         <span className="text-sm text-text">启用模型</span>
@@ -557,7 +563,7 @@ function StatusBadge({ active }: { active: boolean }) {
 
 function FilterButton({ label, active }: any) {
     return (
-        <button className={`px-3 h-10 rounded-md text-xs font-medium border transition-colors ${active ? 'bg-accent/15 text-accent border-accent/25' : 'bg-text/5 text-text-secondary border-separator hover:bg-text/10'}`}>
+        <button className={`px-3 h-10 rounded-md text-xs font-medium border transition-colors ${active ? 'bg-accent/10 text-accent border-accent/40' : 'bg-text/5 text-text-secondary border-separator hover:bg-text/10'}`}>
             {label}
         </button>
     )

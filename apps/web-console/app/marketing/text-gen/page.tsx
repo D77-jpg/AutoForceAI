@@ -94,8 +94,8 @@ export default function TextGenPage() {
         description="英文产品软文 / LinkedIn / SEO 博客 / 开发信，接入企业大脑默认模型。"
         className="mb-0 shrink-0"
         actions={
-          <Button onClick={generate} disabled={loading} className="bg-warning text-on-accent hover:bg-warning/90">
-            {loading ? <RefreshCw size={16} className="animate-spin mr-2" /> : <Wand2 size={16} className="mr-2" />}
+          <Button onClick={generate} disabled={loading}>
+            {loading ? <RefreshCw size={16} strokeWidth={1.75} className="animate-spin mr-2" /> : <Wand2 size={16} strokeWidth={1.75} className="mr-2" />}
             {loading ? "生成中..." : "开始创作"}
           </Button>
         }
@@ -108,9 +108,9 @@ export default function TextGenPage() {
               <button
                 key={t.id}
                 onClick={() => setContentType(t.id)}
-                className={`text-left p-3 rounded-lg border text-xs ${
+                className={`text-left p-3 rounded-lg border text-xs transition-colors ${
                   contentType === t.id
-                    ? "border-warning bg-warning/10 text-text"
+                    ? "border-accent/40 bg-accent/10 text-accent"
                     : "border-separator text-text-secondary hover:bg-text/5"
                 }`}
               >
@@ -150,7 +150,7 @@ export default function TextGenPage() {
                 <button
                   key={h.id}
                   onClick={() => setResult(h)}
-                  className="w-full text-left text-xs p-2 rounded bg-text/5 hover:bg-text/10 truncate"
+                  className="w-full text-left text-xs p-2 rounded-md bg-text/5 hover:bg-text/10 truncate"
                 >
                   <span className="text-text-secondary mr-2">{typeLabel(h.content_type)}</span>
                   {h.title}
@@ -176,7 +176,7 @@ export default function TextGenPage() {
             <>
               <div className="flex items-start justify-between gap-3 mb-3 shrink-0">
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-warning mb-1">
+                  <div className="text-[10px] text-text-secondary mb-1">
                     {typeLabel(result.content_type)} · <span className="tabular-nums">{result.word_count || 0}</span> 词
                     {result.mock ? " · 模板回退" : ""}
                   </div>
@@ -187,10 +187,10 @@ export default function TextGenPage() {
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={copyBody}>
-                    {copied ? <Check size={12} className="mr-1" /> : <Copy size={12} className="mr-1" />} 复制
+                    {copied ? <Check size={12} strokeWidth={1.75} className="mr-1" /> : <Copy size={12} strokeWidth={1.75} className="mr-1" />} 复制
                   </Button>
                   <Button size="sm" onClick={() => sendTo("linkedin")}>
-                    <Share2 size={12} className="mr-1" /> LinkedIn
+                    <Share2 size={12} strokeWidth={1.75} className="mr-1" /> LinkedIn
                   </Button>
                   <Button size="sm" onClick={() => sendTo("wordpress")}>
                     WordPress
@@ -206,7 +206,7 @@ export default function TextGenPage() {
               {result.tags?.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-3 shrink-0">
                   {result.tags.map((t: string, i: number) => (
-                    <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-warning/15 text-warning">
+                    <span key={i} className="text-[10px] px-2 py-0.5 rounded-pill bg-surface-2 text-text-secondary">
                       #{t}
                     </span>
                   ))}

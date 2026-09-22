@@ -293,7 +293,7 @@ export default function EnterprisesPage() {
                     actions={
                         <>
                             <div className="relative w-64">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary pointer-events-none" />
+                                <Search strokeWidth={1.75} className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary pointer-events-none" />
                                 <Input
                                     placeholder="搜索企业名称..."
                                     className="pl-9"
@@ -307,10 +307,10 @@ export default function EnterprisesPage() {
                                 onClick={handleRefresh}
                                 title="刷新"
                             >
-                                <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
+                                <RefreshCw size={16} strokeWidth={1.75} className={isRefreshing ? "animate-spin" : ""} />
                             </Button>
                             <Button onClick={() => setIsCreating(true)}>
-                                <Plus size={16} className="mr-2" /> 新建企业
+                                <Plus size={16} strokeWidth={1.75} className="mr-2" /> 新建企业
                             </Button>
                         </>
                     }
@@ -321,7 +321,7 @@ export default function EnterprisesPage() {
             <div className="flex-1 overflow-auto p-6">
                 {loading ? (
                      <div className="flex flex-col items-center justify-center text-text-secondary min-h-[400px]">
-                        <Loader2 className="animate-spin text-accent" size={32} />
+                        <Loader2 className="animate-spin text-accent" size={32} strokeWidth={1.75} />
                         <p className="mt-4 text-sm">正在加载企业数据...</p>
                     </div>
                 ) : filteredOrgs.length === 0 ? (
@@ -336,10 +336,10 @@ export default function EnterprisesPage() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredOrgs.map(org => (
-                            <div key={org.id} className="bg-surface border border-separator rounded-xl overflow-hidden hover:border-accent/30 transition-all group relative flex flex-col">
+                            <div key={org.id} className="bg-surface rounded-lg shadow-card hover:shadow-popover overflow-hidden transition-all group relative flex flex-col">
                                 <div className="p-6 flex-1 overflow-hidden">
                                     <div className="flex justify-between items-start mb-4">
-                                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-accent/10 to-accent-hover/10 border border-separator flex items-center justify-center">
+                                        <div className="w-12 h-12 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center">
                                             <span className="text-xl font-bold text-accent">{org.name[0]}</span>
                                         </div>
                                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -351,14 +351,14 @@ export default function EnterprisesPage() {
                                                     handleManageMembers(org);
                                                 }}
                                             >
-                                                <Users size={16}/>
+                                                <Users size={16} strokeWidth={1.75}/>
                                             </button>
                                              <button 
                                                 className="p-1.5 hover:bg-text/5 rounded text-text-secondary hover:text-text transition-colors" 
                                                 title="设置"
                                                 onClick={() => openEditModal(org)}
                                             >
-                                                <Settings size={16}/>
+                                                <Settings size={16} strokeWidth={1.75}/>
                                             </button>
                                         </div>
                                     </div>
@@ -397,7 +397,7 @@ export default function EnterprisesPage() {
                                                                 title="刷新邀请码"
                                                                 onClick={(e) => handleRefreshInviteCode(org, e)}
                                                             >
-                                                                <RefreshCw size={10} />
+                                                                <RefreshCw size={10} strokeWidth={1.75} />
                                                             </button>
                                                         </div>
                                                     ) : (
@@ -494,14 +494,14 @@ export default function EnterprisesPage() {
                             <div className="p-3 bg-surface-2 rounded-lg border border-separator relative group cursor-pointer" onClick={() => setIsUserSelectorOpen(true)}>
                                 <span className="block text-xs text-text-secondary mb-1">管理员</span>
                                 <div className="flex items-center justify-between">
-                                    <span className={`text-sm font-medium truncate max-w-[120px] ${pendingAdmin ? 'text-success' : 'text-accent'}`}>
+                                    <span className="text-sm font-medium truncate max-w-[120px] text-accent">
                                         {pendingAdmin ? (pendingAdmin.nickname || pendingAdmin.username) : (selectedOrg.admin_username || "未设置")}
                                     </span>
                                     <div className="p-1 rounded bg-text/10 text-text opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Settings size={12}/>
+                                        <Settings size={12} strokeWidth={1.75}/>
                                     </div>
                                 </div>
-                                {pendingAdmin && <span className="text-[10px] text-success absolute top-1 right-2">待保存</span>}
+                                {pendingAdmin && <span className="text-[10px] text-accent absolute top-1 right-2">待保存</span>}
                             </div>
                             <div className="p-3 bg-surface-2 rounded-lg border border-separator">
                                 <span className="block text-xs text-text-secondary mb-1">成员数</span>
@@ -528,7 +528,7 @@ export default function EnterprisesPage() {
             >
                 <div className="space-y-4">
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary pointer-events-none" />
+                        <Search strokeWidth={1.75} className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary pointer-events-none" />
                         <Input
                             placeholder="搜索用户..."
                             className="pl-9"
@@ -551,12 +551,12 @@ export default function EnterprisesPage() {
                                 }}
                                 className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
                                     (pendingAdmin?.id === user.id || (!pendingAdmin && selectedOrg?.admin_username === user.username))
-                                        ? 'bg-accent/15 border border-accent/25' 
+                                        ? 'bg-accent/10 border border-accent/40' 
                                         : 'hover:bg-text/5 border border-transparent'
                                 }`}
                             >
-                                <div className="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center overflow-hidden shrink-0">
-                                    <Users size={14} className="text-text-secondary" />
+                                <div className="w-8 h-8 rounded-pill bg-surface-2 flex items-center justify-center overflow-hidden shrink-0">
+                                    <Users size={14} strokeWidth={1.75} className="text-text-secondary" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium text-text truncate">{user.nickname || user.username || '未命名'}</p>
@@ -570,7 +570,7 @@ export default function EnterprisesPage() {
                                     </div>
                                 </div>
                                 {(pendingAdmin?.id === user.id || (!pendingAdmin && selectedOrg?.admin_username === user.username)) && (
-                                    <Check size={14} className="text-accent"/>
+                                    <Check size={14} strokeWidth={1.75} className="text-accent"/>
                                 )}
                             </div>
                         ))}
@@ -607,7 +607,7 @@ export default function EnterprisesPage() {
                                     className="flex items-center justify-between p-3 rounded-lg bg-surface-2 border border-separator hover:bg-surface-2/70 transition-colors group"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-surface flex items-center justify-center text-text-secondary font-bold border border-separator">
+                                        <div className="w-10 h-10 rounded-pill bg-surface flex items-center justify-center text-text-secondary font-bold border border-separator">
                                             {user.nickname?.[0] || user.username?.[0] || '?'}
                                         </div>
                                         <div>
@@ -616,7 +616,7 @@ export default function EnterprisesPage() {
                                                     {user.nickname || user.username}
                                                 </span>
                                                 {user.role === 'enterprise_admin' && (
-                                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/15 text-accent border border-accent/25">
+                                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/10 text-accent border border-accent/20">
                                                         管理员
                                                     </span>
                                                 )}
@@ -634,7 +634,7 @@ export default function EnterprisesPage() {
                                         className="opacity-0 group-hover:opacity-100 p-2 text-danger hover:text-danger hover:bg-danger/10 rounded-lg transition-all"
                                         title="移出企业"
                                     >
-                                        <Trash2 size={16} />
+                                        <Trash2 size={16} strokeWidth={1.75} />
                                     </button>
                                 </div>
                             ))

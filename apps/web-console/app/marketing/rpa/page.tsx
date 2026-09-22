@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { Cpu, RefreshCw, CheckCircle, AlertTriangle, Clock } from "lucide-react";
+import { Cpu, RefreshCw, CheckCircle, AlertTriangle, Clock, Loader2 } from "lucide-react";
 import api from "../../../lib/api";
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
@@ -19,6 +19,13 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const statusLabel = (s: string) => STATUS_LABELS[s] || s;
+
+const statusBadge = (s: string) => {
+  if (s === "success") return "bg-success/10 text-success";
+  if (s === "failed") return "bg-danger/10 text-danger";
+  if (s === "claimed" || s === "running") return "bg-accent/10 text-accent";
+  return "bg-surface-2 text-text-secondary";
+};
 
 export default function RPAPage() {
   const [jobs, setJobs] = useState<any[]>([]);
@@ -55,10 +62,10 @@ export default function RPAPage() {
       <PageHeader
         title="RPA 执行"
         description="Worker 认领队列与海外渠道任务状态。详情请到营销矩阵。"
-        className="mb-0"
+        className="mb-0 shrink-0"
         actions={
           <Button variant="outline" size="sm" onClick={load}>
-            <RefreshCw size={12} className="mr-1" /> 刷新
+            <RefreshCw size={12} strokeWidth={1.75} className="mr-1" /> 刷新
           </Button>
         }
       />
@@ -72,7 +79,12 @@ export default function RPAPage() {
 
       <div className="glass-panel flex-1 overflow-y-auto">
         {loading ? (
-          <div className="p-10 text-center text-text-secondary">同步 Worker 状态...</div>
+          <EmptyState
+            size="sm"
+            icon={Loader2}
+            title="同步 Worker 状态"
+            description="正在从队列拉取最新任务..."
+          />
         ) : jobs.length === 0 ? (
           <EmptyState
             size="sm"
@@ -96,7 +108,11 @@ export default function RPAPage() {
                 <TableRow key={j.id}>
                   <TableCell className="font-mono text-xs tabular-nums">#{j.id}</TableCell>
                   <TableCell>{j.platform}</TableCell>
-                  <TableCell>{statusLabel(j.status)}</TableCell>
+                  <TableCell>
+                    <span className={`inline-block px-2 py-0.5 rounded-pill text-xs ${statusBadge(j.status)}`}>
+                      {statusLabel(j.status)}
+                    </span>
+                  </TableCell>
                   <TableCell className="truncate max-w-xs">{j.payload?.title || "—"}</TableCell>
                   <TableCell className="text-right text-xs text-text-secondary tabular-nums">
                     {j.created_at ? new Date(j.created_at).toLocaleString() : ""}
@@ -117,8 +133,8 @@ export default function RPAPage() {
 function Kpi({ icon: Icon, label, value }: any) {
   return (
     <div className="glass-panel p-4">
-      <div className="text-[10px] uppercase text-text-secondary flex items-center gap-1">
-        <Icon size={12} /> {label}
+      <div className="text-[10px] text-text-secondary flex items-center gap-1">
+        <Icon size={12} strokeWidth={1.75} /> {label}
       </div>
       <div className="text-2xl font-bold mt-1 tabular-nums">{value}</div>
     </div>

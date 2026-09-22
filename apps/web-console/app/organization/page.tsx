@@ -6,7 +6,7 @@ import Link from 'next/link';
 export default function OrganizationPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] text-center p-8">
-      <div className="bg-success/10 p-6 rounded-full border border-success/20 mb-6 shadow-[0_0_30px_rgb(var(--ui-success)/0.2)]">
+      <div className="bg-success/10 p-6 rounded-full border border-success/20 mb-6 shadow-card">
         <Construction size={48} className="text-success" />
       </div>
       <h1 className="text-3xl font-bold text-text mb-2">虚拟组织中心</h1>

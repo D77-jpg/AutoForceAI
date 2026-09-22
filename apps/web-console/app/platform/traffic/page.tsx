@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { BarChart4, Coins, Layers, Zap, Calendar, TrendingUp } from 'lucide-react';
+import { BarChart4, Coins, Layers, Zap, Calendar, TrendingUp, Loader2 } from 'lucide-react';
 import api from '@/lib/api';
 import { PageHeader } from '@/components/PageHeader';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -40,9 +40,12 @@ export default function TrafficPage() {
         />
         
         {loading ? (
-             <div className="flex-1 flex items-center justify-center text-text-secondary">
-                <BarChart4 className="animate-pulse mr-2" /> 正在加载分析数据…
-             </div>
+             <EmptyState
+                 icon={Loader2}
+                 size="sm"
+                 title="正在加载分析数据…"
+                 className="flex-1"
+             />
         ) : (
             <div className="space-y-6">
                 {/* Summary Cards */}

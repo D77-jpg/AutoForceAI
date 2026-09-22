@@ -1,8 +1,9 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { Activity, Server, Cpu, Database, Users, Box, Clock } from 'lucide-react';
+import { Activity, Server, Cpu, Database, Users, Box, Clock, Loader2 } from 'lucide-react';
 import api from '@/lib/api';
 import { PageHeader } from '@/components/PageHeader';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export default function MonitorPage() {
   const [stats, setStats] = useState<any>(null);
@@ -42,9 +43,12 @@ export default function MonitorPage() {
         />
         
         {loading && !stats ? (
-             <div className="flex-1 flex items-center justify-center text-text-secondary">
-                <Activity className="animate-pulse mr-2" /> 正在连接遥测数据…
-             </div>
+             <EmptyState
+                 icon={Loader2}
+                 size="sm"
+                 title="正在连接遥测数据…"
+                 className="flex-1"
+             />
         ) : (
             <div className="space-y-6">
                 {/* Hardware Grid */}

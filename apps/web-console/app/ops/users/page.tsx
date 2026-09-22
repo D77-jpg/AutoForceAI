@@ -127,11 +127,11 @@ export default function UsersPage() {
     const getRoleBadge = (role: string) => {
         switch(role) {
             case 'admin':
-                return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-danger/10 text-danger border border-danger/20"><ShieldAlert size={12}/> 系统管理员</span>;
+                return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill text-xs font-medium bg-accent/10 text-accent border border-accent/20"><ShieldAlert size={12} strokeWidth={1.75}/> 系统管理员</span>;
             case 'enterprise_admin':
-                 return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20"><Crown size={12}/> 企业管理员</span>;
+                 return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill text-xs font-medium bg-surface-2 text-text border border-separator"><Crown size={12} strokeWidth={1.75} className="text-accent"/> 企业管理员</span>;
             default:
-                 return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-surface-2 text-text-secondary border border-separator"><UserIcon size={12}/> 普通账号</span>;
+                 return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill text-xs font-medium bg-surface-2 text-text-secondary border border-separator"><UserIcon size={12} strokeWidth={1.75}/> 普通账号</span>;
         }
     };
 
@@ -146,7 +146,7 @@ export default function UsersPage() {
                     actions={
                         <>
                             <div className="relative w-64">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary pointer-events-none" />
+                                <Search strokeWidth={1.75} className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary pointer-events-none" />
                                 <Input
                                     placeholder="搜索用户名、邮箱或企业..."
                                     className="pl-9"
@@ -160,7 +160,7 @@ export default function UsersPage() {
                                 onClick={handleRefresh}
                                 title="刷新"
                             >
-                                <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
+                                <RefreshCw size={16} strokeWidth={1.75} className={isRefreshing ? "animate-spin" : ""} />
                             </Button>
                         </>
                     }
@@ -169,10 +169,10 @@ export default function UsersPage() {
 
             {/* Content */}
             <div className="flex-1 overflow-auto p-6">
-                <div className="bg-surface border border-separator rounded-xl overflow-hidden min-h-[500px] flex flex-col">
+                <div className="bg-surface rounded-lg shadow-card overflow-hidden min-h-[500px] flex flex-col">
                     {loading ? (
                          <div className="flex-1 flex flex-col items-center justify-center text-text-secondary gap-3">
-                            <Loader2 className="animate-spin text-accent" size={32} />
+                            <Loader2 className="animate-spin text-accent" size={32} strokeWidth={1.75} />
                             <p className="text-sm">正在加载用户列表...</p>
                         </div>
                     ) : filteredUsers.length === 0 ? (
@@ -201,11 +201,11 @@ export default function UsersPage() {
                                     <TableRow key={user.id}>
                                         <TableCell>
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center overflow-hidden border border-separator shrink-0">
+                                                <div className="w-8 h-8 rounded-pill bg-surface-2 flex items-center justify-center overflow-hidden border border-separator shrink-0">
                                                     {user.avatar ? (
                                                         <img src={user.avatar} alt={user.username || 'User'} className="w-full h-full object-cover" />
                                                     ) : (
-                                                        <UserIcon size={14} className="text-text-secondary" />
+                                                        <UserIcon size={14} strokeWidth={1.75} className="text-text-secondary" />
                                                     )}
                                                 </div>
                                                 <div className="flex flex-col">
@@ -220,7 +220,7 @@ export default function UsersPage() {
                                         <TableCell>
                                             {user.organization_name ? (
                                                  <div className="flex items-center gap-2 text-text">
-                                                     <Building2 size={14} className="text-accent" />
+                                                     <Building2 size={14} strokeWidth={1.75} className="text-accent" />
                                                      {user.organization_name}
                                                  </div>
                                             ) : (
@@ -229,8 +229,8 @@ export default function UsersPage() {
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-2">
-                                                <span className={`w-2 h-2 rounded-full ${user.is_active ? 'bg-success' : 'bg-danger'} animate-pulse`}></span>
-                                                <span className={user.is_active ? 'text-success' : 'text-danger'}>
+                                                <span className={`w-2 h-2 rounded-pill ${user.is_active ? 'bg-success' : 'bg-text-tertiary'}`}></span>
+                                                <span className={user.is_active ? 'text-success' : 'text-text-tertiary'}>
                                                     {user.is_active ? '正常' : '禁用'}
                                                 </span>
                                             </div>
@@ -269,7 +269,7 @@ export default function UsersPage() {
                                 取消
                             </Button>
                             <Button onClick={handleSave} disabled={saving}>
-                                {saving ? <Loader2 size={14} className="animate-spin mr-2" /> : null}
+                                {saving ? <Loader2 size={14} strokeWidth={1.75} className="animate-spin mr-2" /> : null}
                                 {saving ? '保存中...' : '保存修改'}
                             </Button>
                         </>
@@ -277,11 +277,11 @@ export default function UsersPage() {
                 >
                     <div className="space-y-4">
                         <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 rounded-full bg-surface-2 flex items-center justify-center overflow-hidden border border-separator shrink-0">
+                            <div className="w-14 h-14 rounded-pill bg-surface-2 flex items-center justify-center overflow-hidden border border-separator shrink-0">
                                 {selectedUser.avatar ? (
                                     <img src={selectedUser.avatar} alt={selectedUser.username || ''} className="w-full h-full object-cover" />
                                 ) : (
-                                    <UserIcon size={28} className="text-text-secondary" />
+                                    <UserIcon size={28} strokeWidth={1.75} className="text-text-secondary" />
                                 )}
                             </div>
                             <div>
@@ -322,13 +322,14 @@ export default function UsersPage() {
                                 <label className="apple-section-label block mb-1.5">账号状态</label>
                                 <button
                                     onClick={() => setEditActive(!editActive)}
-                                    className={`w-full h-10 rounded-md text-sm font-medium border transition-colors ${
+                                    className={`w-full h-10 rounded-md text-sm font-medium border transition-colors inline-flex items-center justify-center gap-1.5 ${
                                         editActive
-                                            ? 'bg-success/10 text-success border-success/30'
-                                            : 'bg-danger/10 text-danger border-danger/30'
+                                            ? 'bg-accent/10 text-accent border-accent/30'
+                                            : 'bg-surface-2 text-text-secondary border-separator'
                                     }`}
                                 >
-                                    {editActive ? '● 正常（点击禁用）' : '● 已禁用（点击启用）'}
+                                    <span className={`w-1.5 h-1.5 rounded-pill ${editActive ? 'bg-accent' : 'bg-text-tertiary'}`}></span>
+                                    {editActive ? '正常（点击禁用）' : '已禁用（点击启用）'}
                                 </button>
                             </div>
                         </div>

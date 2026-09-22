@@ -96,8 +96,7 @@ export default function ClientDownloadPage() {
                         <p className="text-sm text-text-tertiary mb-4">
                             包含了所有必要的运行环境。无需安装 Python，解压即用。
                         </p>
-                        <Alert className="  border-accent mb-4">
-                            {/* <AlertTitle className="text-xs font-bold text-white-800">环境要求</AlertTitle> */}
+                        <Alert className="border-accent mb-4">
                             <AlertDescription className="text-xs text-text-secondary">
                                 环境要求：Windows 10/11, 建议 8G 内存以上
                             </AlertDescription>
