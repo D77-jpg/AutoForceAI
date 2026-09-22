@@ -1,0 +1,11 @@
+{
+  "name": "@autoforce/ui-tokens",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shared Apple-style design tokens (CSS variables + Tailwind preset) for AutoForceAI front-ends",
+  "main": "tailwind.preset.js",
+  "files": [
+    "tokens.css",
+    "tailwind.preset.js"
+  ]
+}

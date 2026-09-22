@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import '@autoforce/ui-tokens/tokens.css'
 import './globals.css'
 import AuthWrapper from '../components/AuthWrapper'
 import { Toaster } from 'sonner'
@@ -14,15 +15,15 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="zh" className="dark">
-      <body className="bg-black text-[#f5f5f7] antialiased">
+    <html lang="zh" data-theme="dark">
+      <body className="bg-bg text-text antialiased">
         <AuthWrapper>
             {children}
             <Toaster
               position="top-right"
               theme="dark"
               toastOptions={{
-                className: '!bg-[#1c1c1e] !text-[#f5f5f7] !border-white/10 !rounded-2xl !shadow-apple',
+                className: '!bg-surface !text-text !border !border-separator !rounded-xl !shadow-popover',
               }}
             />
         </AuthWrapper>
