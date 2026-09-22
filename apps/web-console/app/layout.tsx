@@ -19,8 +19,15 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="zh" data-theme="dark" className={inter.variable}>
+    <html lang="zh" suppressHydrationWarning className={inter.variable}>
       <body className="bg-bg text-text antialiased">
+        {/* 首屏渲染前确定主题：localStorage 优先，否则跟随系统偏好 */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var t=window.localStorage.getItem('theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();",
+          }}
+        />
         <AuthWrapper>
             {children}
             <Toaster

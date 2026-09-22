@@ -39,6 +39,7 @@ import {
   ShoppingBag
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import ThemeToggle from '../components/ThemeToggle';
 
 // --- Types & Data ---
 
@@ -437,6 +438,7 @@ export default function HomePage() {
                <div className="h-4 w-px bg-text/10" />
                
                <div className="flex gap-2">
+                   <ThemeToggle />
                    <IconButton icon={Bell} badge />
                    <IconButton icon={Settings} />
                </div>

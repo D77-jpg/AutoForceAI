@@ -41,6 +41,12 @@ h1, h2, h3, h4 {
   transform: translateY(-1px);
 }
 
+/* ── 主题切换图标显隐（配合 ThemeToggle / data-theme） ── */
+.theme-icon-sun { display: none; }
+.theme-icon-moon { display: inline-flex; }
+[data-theme="dark"] .theme-icon-sun { display: inline-flex; }
+[data-theme="dark"] .theme-icon-moon { display: none; }
+
 /* ── 数字统计：等宽数字 ─────────────────────────────── */
 .tabular-nums {
   font-variant-numeric: tabular-nums;

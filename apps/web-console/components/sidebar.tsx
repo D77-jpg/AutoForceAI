@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
+import ThemeToggle from './ThemeToggle';
 
 const MenuLink = ({ href, icon: Icon, label, exact, badge }: any) => {
   const pathname = usePathname();
@@ -442,7 +443,8 @@ export default function Sidebar() {
                       </span>
                   </p>
                </div>
-               <Settings size={16} className={`text-text-tertiary group-hover:text-white transition-transform ${showMenu ? 'rotate-90' : ''}`}/>
+               <ThemeToggle className="w-7 h-7" />
+               <Settings size={16} className={`text-text-tertiary group-hover:text-text transition-transform ${showMenu ? 'rotate-90' : ''}`}/>
             </div>
 
             {showMenu && (
