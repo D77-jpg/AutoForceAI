@@ -151,11 +151,21 @@ def test_mapping_missing_name_left_to_server_fallback():
 # ---------------------------------------------------------------- client
 
 def _fake_response(status: int, payload: dict, headers: dict | None = None):
+    import json as _json
     resp = MagicMock()
     resp.status_code = status
     resp.headers = headers or {}
     resp.json.return_value = payload
+    # P0-3 后客户端改为限量流式读取
+    resp.iter_content.return_value = [_json.dumps(payload).encode()]
     return resp
+
+
+@pytest.fixture(autouse=True)
+def _allowlist(monkeypatch):
+    """P0-3：测试主机显式列入 allowlist（开发环境）。"""
+    monkeypatch.setenv("CRM_ALLOWED_HOSTS", "crm.local")
+    monkeypatch.setenv("APP_ENV", "development")
 
 
 def _client_with(handler) -> GenesisCRMClient:

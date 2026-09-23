@@ -121,8 +121,12 @@ class ResetBindingIn(BaseModel):
 
 
 def _validate_config_input(body: ConfigIn) -> None:
-    if not body.base_url.startswith(("http://", "https://")):
-        raise HTTPException(400, "base_url 必须是 http(s) 地址")
+    # SSRF 防护（P0-3）：协议/白名单/端口/解析 IP 全量校验
+    from core.crm.url_guard import UrlGuardError, validate_crm_url
+    try:
+        body.base_url = validate_crm_url(body.base_url)
+    except UrlGuardError as exc:
+        raise HTTPException(400, f"base_url 未通过安全校验（{exc.code}）：{exc}")
     if not body.project_id.strip():
         raise HTTPException(400, "project_id 必填（禁止默认项目回退）")
 

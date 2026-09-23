@@ -22,8 +22,12 @@ from core.crm.contract import (
     OutcomeFeedResponse,
     StatsOverviewResponse,
 )
+from core.crm.url_guard import UrlGuardError, validate_crm_url, validate_redirect_location
 
 DEFAULT_TIMEOUT = (5, 15)  # (connect, read) 秒
+MAX_REDIRECTS = 5
+MAX_RESPONSE_BYTES = 2 * 1024 * 1024  # 2MB 响应体上限（防内存耗尽）
+_REDIRECT_STATUSES = {301, 302, 303, 307, 308}
 
 
 class CrmApiError(Exception):
@@ -58,7 +62,8 @@ class GenesisCRMClient:
         timeout: tuple[int, int] = DEFAULT_TIMEOUT,
         session: Optional[requests.Session] = None,
     ):
-        self.base_url = base_url.rstrip("/") + "/integrations/v1"
+        # SSRF 防护（P0-3）：base_url 必须先过 allowlist/HTTPS/私网校验
+        self.base_url = validate_crm_url(base_url) + "/integrations/v1"
         self.project_id = project_id
         self.timeout = timeout
         self._session = session or requests.Session()
@@ -72,20 +77,57 @@ class GenesisCRMClient:
 
     # ---------- 内部 ----------
 
+    def _send_once(self, method: str, url: str, *, params, json_body, headers) -> requests.Response:
+        return self._session.request(
+            method, url, params=params, json=json_body,
+            headers=headers, timeout=self.timeout, allow_redirects=False, stream=True,
+        )
+
+    def _read_limited(self, resp: requests.Response) -> bytes:
+        """限制响应体大小，防止异常对端耗尽内存。"""
+        chunks, size = [], 0
+        for chunk in resp.iter_content(chunk_size=65536):
+            size += len(chunk)
+            if size > MAX_RESPONSE_BYTES:
+                resp.close()
+                raise CrmApiError(
+                    "CRM 响应体超过大小上限",
+                    http_status=resp.status_code, retryable=False,
+                )
+            chunks.append(chunk)
+        return b"".join(chunks)
+
     def _request(self, method: str, path: str, *, params: dict | None = None,
                  json_body: dict | None = None, headers: dict | None = None) -> dict:
         url = f"{self.base_url}{path}"
-        try:
-            resp = self._session.request(
-                method, url, params=params, json=json_body,
-                headers=headers, timeout=self.timeout,
-            )
-        except (requests.ConnectionError, requests.Timeout) as exc:
-            raise CrmApiError(f"CRM 不可达: {exc.__class__.__name__}", retryable=True) from exc
+        # 手动跟随重定向：每一跳都过 SSRF 校验（防 302 跳转到内网/元数据地址）
+        for _ in range(MAX_REDIRECTS + 1):
+            try:
+                resp = self._send_once(method, url, params=params, json_body=json_body, headers=headers)
+            except (requests.ConnectionError, requests.Timeout) as exc:
+                raise CrmApiError(f"CRM 不可达: {exc.__class__.__name__}", retryable=True) from exc
+            if resp.status_code not in _REDIRECT_STATUSES:
+                break
+            try:
+                location = resp.headers.get("Location")
+                url = validate_redirect_location(url, location or "")
+            except UrlGuardError as exc:
+                resp.close()
+                raise CrmApiError(str(exc), code=exc.code, retryable=False) from exc
+            finally:
+                resp.close()
+            # 301/302/303 语义上转 GET（去掉 body）；307/308 保持原方法与载荷
+            if resp.status_code in (301, 302, 303) and method != "GET":
+                method, json_body = "GET", None
+        else:
+            raise CrmApiError("CRM 重定向次数过多", code="TOO_MANY_REDIRECTS", retryable=False)
 
         request_id = resp.headers.get("X-Request-Id")
         try:
-            payload = resp.json()
+            import json as _json
+            payload = _json.loads(self._read_limited(resp))
+        except CrmApiError:
+            raise
         except ValueError as exc:
             raise CrmApiError(
                 f"CRM 返回非 JSON（HTTP {resp.status_code}）",
@@ -93,6 +135,8 @@ class GenesisCRMClient:
                 retryable=resp.status_code >= 500,
                 request_id=request_id,
             ) from exc
+        finally:
+            resp.close()
 
         if resp.status_code >= 400:
             code, message = None, f"HTTP {resp.status_code}"
@@ -177,4 +221,8 @@ def client_from_config(cfg, *, session: Optional[requests.Session] = None,
     token = cfg.get_service_token()
     if not token:
         raise CredentialError(ERR_TOKEN_NOT_SET, "尚未配置服务凭证")
-    return GenesisCRMClient(cfg.base_url, token, cfg.project_id, session=session)
+    try:
+        return GenesisCRMClient(cfg.base_url, token, cfg.project_id, session=session)
+    except UrlGuardError as exc:
+        # URL 未通过安全校验：按配置不可用处理（暂停投递/回流，等管理员修正）
+        raise CredentialError(exc.code, f"CRM 地址未通过安全校验：{exc}") from exc
