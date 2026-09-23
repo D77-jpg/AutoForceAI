@@ -100,9 +100,16 @@ def env(db):
 
 def _save(db, admin, project_id, base_url=BASE_URL):
     return save_config(
-        ConfigIn(base_url=base_url, project_id=project_id, enabled=True),
+        ConfigIn(base_url=base_url, project_id=project_id),
         _payload(admin.id), db,
     )
+
+
+def _enable(db, org_id):
+    """P0-5 后保存不再控制启用；测试直接置位（启用门槛由 test_crm_enable_gate 覆盖）。"""
+    cfg = db.query(CrmIntegrationConfig).filter_by(organization_id=org_id).one()
+    cfg.enabled = True
+    db.commit()
 
 
 def test_project_change_allowed_without_history(db, env):
@@ -178,8 +185,9 @@ def test_after_reset_old_jobs_never_deliver_to_new_project(db, env, monkeypatch)
     reset_binding(ResetBindingIn(expected_project_id=PROJECT_A, confirmation="RESET"),
                   _payload(env["admin"].id), db)
 
-    # 绑定新项目（无历史 → 允许）并手动造一个旧项目遗留的 pending job 模拟边界
+    # 绑定新项目（无历史 → 允许；P0-5 语义下保存自动停用，测试重新启用）
     _save(db, env["admin"], PROJECT_B)
+    _enable(db, env["org"].id)
     cfg = db.query(CrmIntegrationConfig).filter_by(organization_id=env["org"].id).one()
     stale = CrmSyncJob(
         organization_id=env["org"].id, lead_id=lead.id, project_id=PROJECT_A,
@@ -215,6 +223,7 @@ def test_old_project_dead_job_cannot_be_retried(db, env, monkeypatch):
     reset_binding(ResetBindingIn(expected_project_id=PROJECT_A, confirmation="RESET"),
                   _payload(env["admin"].id), db)
     _save(db, env["admin"], PROJECT_B)
+    _enable(db, env["org"].id)
 
     with pytest.raises(HTTPException) as exc:
         retry_job(job.id, _payload(env["admin"].id), db)

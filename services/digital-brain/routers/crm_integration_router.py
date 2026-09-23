@@ -7,6 +7,7 @@
 """
 from __future__ import annotations
 
+import hashlib
 from datetime import datetime
 from typing import List, Optional
 
@@ -33,6 +34,29 @@ from database.shared_models import (
 router = APIRouter(prefix="/api/v1/crm/integration", tags=["CRM Integration"])
 
 ALLOWED_ROLES = {UserRole.ADMIN.value, UserRole.ENTERPRISE_ADMIN.value}
+
+# P0-5：连接测试结果的有效期（启用门槛）
+HEALTH_VALID_SECONDS = 600
+
+
+def _health_fingerprint(cfg: CrmIntegrationConfig) -> str:
+    """配置指纹：base_url | project_id | token 密文 | 契约版本。任一变化即失效。"""
+    raw = "|".join([
+        cfg.base_url or "",
+        cfg.project_id or "",
+        cfg.service_token or "",  # 密文（Fernet 每次加密随机 IV），任何重存都会变化
+        cfg.contract_version or "",
+    ])
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _test_valid(cfg: CrmIntegrationConfig) -> bool:
+    """当前配置是否持有「10 分钟内对同一配置测试成功」的有效结论。"""
+    if not cfg or cfg.last_health_status != "ok" or not cfg.last_health_checked_at:
+        return False
+    if not cfg.health_fingerprint or cfg.health_fingerprint != _health_fingerprint(cfg):
+        return False
+    return (datetime.now() - cfg.last_health_checked_at).total_seconds() <= HEALTH_VALID_SECONDS
 
 
 def _admin_user(payload: dict, db: Session) -> User:
@@ -94,6 +118,7 @@ def _to_public(cfg: CrmIntegrationConfig) -> dict:
         "last_health_status": cfg.last_health_status,
         "last_health_detail": cfg.last_health_detail,
         "last_health_checked_at": cfg.last_health_checked_at.isoformat() if cfg.last_health_checked_at else None,
+        "test_valid": _test_valid(cfg),          # P0-5：是否满足启用门槛（10 分钟内对当前配置测试成功）
         "outcome_polled_at": cfg.outcome_polled_at.isoformat() if cfg.outcome_polled_at else None,
         "updated_at": cfg.updated_at.isoformat() if cfg.updated_at else None,
     }
@@ -104,7 +129,7 @@ class ConfigIn(BaseModel):
     project_id: str = Field(..., min_length=1, max_length=64)
     service_token: Optional[str] = Field(default=None, max_length=200)  # 不传则保留原值
     web_base_url: Optional[str] = Field(default=None, max_length=300)   # Genesis 前端地址（深链）
-    enabled: bool = False
+    # P0-5：保存不再控制启用状态；启用/停用由 /enable、/disable 独立承担
 
 
 class TestResult(BaseModel):
@@ -147,6 +172,9 @@ def save_config(body: ConfigIn, payload: dict = Depends(get_current_user), db: S
     if cfg is None:
         cfg = CrmIntegrationConfig(organization_id=user.organization_id, provider="genesis_crm")
         db.add(cfg)
+
+    old_signature = (cfg.base_url, cfg.project_id, cfg.service_token)  # 变更检测（P0-5 自动停用）
+    old_project_id = cfg.project_id
 
     # P0-2：绑定保护——有历史同步数据时禁止普通保存切换 project（须走 reset-binding）
     new_project_id = body.project_id.strip()
@@ -192,10 +220,20 @@ def save_config(body: ConfigIn, payload: dict = Depends(get_current_user), db: S
             cfg.migrate_token_if_legacy()
         except CredentialError as exc:
             raise HTTPException(400, f"旧明文凭证迁移失败（{exc.code}）：请配置 CRM_CREDENTIAL_ENCRYPTION_KEY")
-    cfg.enabled = body.enabled
-    cfg.updated_at = datetime.now()
-    # 配置变化后旧的健康结论失效
+
+    # P0-5：保存 ≠ 启用。敏感字段（base_url/project/token）变化 → 自动停用并清空测试结论
+    if (cfg.base_url, cfg.project_id, cfg.service_token) != old_signature:
+        cfg.enabled = False
+        if cfg.project_id != old_project_id:
+            # 换项目后旧游标无效（无历史时允许直接改，但游标必须清空）
+            cfg.outcome_cursor = None
+            cfg.outcome_polled_at = None
+    # 任何保存都使旧测试结论失效，必须重新「测试连接」
     cfg.last_health_status = "unchecked"
+    cfg.last_health_detail = None
+    cfg.last_health_checked_at = None
+    cfg.health_fingerprint = None
+    cfg.updated_at = datetime.now()
     db.commit()
     db.refresh(cfg)
     return {"config": _to_public(cfg)}
@@ -242,10 +280,52 @@ def test_connection(payload: dict = Depends(get_current_user), db: Session = Dep
     cfg.last_health_status = "ok" if result.ok else "error"
     cfg.last_health_detail = result.detail
     cfg.last_health_checked_at = datetime.now()
-    if result.ok and result.project_name:
-        cfg.project_name = result.project_name
+    if result.ok:
+        # P0-5：记录测试时配置指纹，启用门槛只认「对当前配置测试成功」
+        cfg.health_fingerprint = _health_fingerprint(cfg)
+        if result.project_name:
+            cfg.project_name = result.project_name
+    else:
+        cfg.health_fingerprint = None
+        if cfg.enabled:
+            cfg.enabled = False  # 测试失败的配置不得保持启用
     db.commit()
     return result
+
+
+# ---------- 启用/停用（P0-5：与保存、测试拆分） ----------
+
+@router.post("/enable")
+def enable_sync(payload: dict = Depends(get_current_user), db: Session = Depends(get_shared_db)):
+    """启用同步：只有当前配置在 10 分钟内测试成功才允许启用。"""
+    user = _admin_user(payload, db)
+    cfg = _get_config(db, user.organization_id)
+    if not cfg:
+        raise HTTPException(404, "尚未保存 CRM 集成配置")
+    if not cfg.project_id or not cfg.service_token:
+        raise HTTPException(400, "尚未绑定项目或服务凭证，无法启用")
+    if not _test_valid(cfg):
+        raise HTTPException(
+            409,
+            "当前配置未通过连接测试（或测试已过期/配置已变更）：请先测试连接成功后再启用",
+        )
+    cfg.enabled = True
+    cfg.updated_at = datetime.now()
+    db.commit()
+    return {"config": _to_public(cfg)}
+
+
+@router.post("/disable")
+def disable_sync(payload: dict = Depends(get_current_user), db: Session = Depends(get_shared_db)):
+    """停用同步：立即停止新 job 入队与投递（在途 job 等待恢复或取消）。"""
+    user = _admin_user(payload, db)
+    cfg = _get_config(db, user.organization_id)
+    if not cfg:
+        raise HTTPException(404, "尚未保存 CRM 集成配置")
+    cfg.enabled = False
+    cfg.updated_at = datetime.now()
+    db.commit()
+    return {"config": _to_public(cfg)}
 
 
 @router.post("/reset-binding")
@@ -305,6 +385,7 @@ def reset_binding(body: ResetBindingIn, payload: dict = Depends(get_current_user
     cfg.outcome_cursor = None
     cfg.outcome_polled_at = None
     cfg.last_health_status = "unchecked"
+    cfg.health_fingerprint = None
     cfg.last_health_detail = f"绑定已重置（原项目 {old_project}）：映射 {archived} 条已归档，未完成任务 {cancelled} 个已取消"
     cfg.last_health_checked_at = now
     cfg.last_reset_at = now

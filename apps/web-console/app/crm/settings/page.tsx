@@ -20,6 +20,7 @@ interface CrmConfig {
   has_token: boolean;
   contract_version: string;
   enabled: boolean;
+  test_valid?: boolean;
   last_health_status?: string | null;
   last_health_detail?: string | null;
   last_health_checked_at?: string | null;
@@ -59,9 +60,9 @@ export default function CrmIntegrationSettingsPage() {
   const [baseUrl, setBaseUrl] = useState("");
   const [projectId, setProjectId] = useState("");
   const [token, setToken] = useState("");
-  const [enabled, setEnabled] = useState(false);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [toggling, setToggling] = useState(false);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [forbidden, setForbidden] = useState(false);
@@ -90,7 +91,6 @@ export default function CrmIntegrationSettingsPage() {
     if (cfg) {
       setBaseUrl(cfg.base_url || "");
       setProjectId(cfg.project_id || "");
-      setEnabled(!!cfg.enabled);
     }
   };
   useEffect(() => { load(); loadJobs(); }, []);
@@ -98,7 +98,7 @@ export default function CrmIntegrationSettingsPage() {
   const save = async () => {
     setSaving(true); setError(null);
     try {
-      const body: Record<string, unknown> = { base_url: baseUrl, project_id: projectId, enabled };
+      const body: Record<string, unknown> = { base_url: baseUrl, project_id: projectId };
       if (token.trim()) body.service_token = token.trim(); // 留空 = 保留原 token
       const res = await fetch(API + "/api/v1/crm/integration/config", {
         method: "PUT",
@@ -124,6 +124,22 @@ export default function CrmIntegrationSettingsPage() {
       await load();
     } finally {
       setTesting(false);
+    }
+  };
+
+  const toggleSync = async (enable: boolean) => {
+    setToggling(true); setError(null);
+    try {
+      const res = await fetch(API + `/api/v1/crm/integration/${enable ? "enable" : "disable"}`, {
+        method: "POST", headers: auth(),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "操作失败");
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "操作失败");
+    } finally {
+      setToggling(false);
     }
   };
 
@@ -197,16 +213,31 @@ export default function CrmIntegrationSettingsPage() {
               placeholder={config?.has_token ? "留空保持不变" : "gci_…（由 Genesis 管理员签发）"}
             />
           </div>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
-            允许新线索投递到 Genesis_CRM
-          </label>
           <div className="flex gap-2 pt-2">
             <Button onClick={save} disabled={saving}>{saving ? "保存中…" : "保存配置"}</Button>
             <Button variant="outline" onClick={test} disabled={testing || !config}>
               <PlugZap size={16} className="mr-2" />{testing ? "测试中…" : "测试连接"}
             </Button>
+            {config && !config.enabled && (
+              <Button
+                variant="secondary"
+                onClick={() => toggleSync(true)}
+                disabled={toggling || !config.test_valid}
+                title={config.test_valid ? "" : "需先对当前配置测试连接成功（10 分钟内）"}
+              >
+                启用同步
+              </Button>
+            )}
+            {config?.enabled && (
+              <Button variant="destructive" onClick={() => toggleSync(false)} disabled={toggling}>
+                停用同步
+              </Button>
+            )}
           </div>
+          <p className="text-xs text-text-secondary">
+            保存、测试、启用是三个独立动作：地址/项目/凭证任何变更都会自动停用并使测试结论失效，
+            必须在 10 分钟内对当前配置测试成功才能启用同步。
+          </p>
           {error && <p className="text-sm text-red-500">{error}</p>}
         </div>
 

@@ -402,9 +402,11 @@ class CrmIntegrationConfig(SharedBase):
     contract_version = Column(String, default="1.0")
 
     enabled = Column(Boolean, default=False)                   # 是否允许新任务投递
-    last_health_status = Column(String, nullable=True)         # ok / error / auth_invalid / unchecked
+    last_health_status = Column(String, nullable=True)         # ok / error / auth_invalid / credential_error / unchecked
     last_health_detail = Column(Text, nullable=True)           # 脱敏的连接测试摘要
     last_health_checked_at = Column(DateTime, nullable=True)
+    # 启用门槛（P0-5）：最近一次成功测试时的配置指纹（base_url|project_id|token密文|契约版本）
+    health_fingerprint = Column(String, nullable=True)
 
     # outcome 轮询游标（org+project 粒度，opaque；与批处理同事务提交）
     outcome_cursor = Column(String, nullable=True)

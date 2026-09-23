@@ -83,7 +83,7 @@ def test_upgrade_head_from_empty(db_url):
     engine = create_engine(db_url)
     insp = inspect(engine)
     cfg_cols = {c["name"] for c in insp.get_columns("crm_integration_configs")}
-    assert {"token_last4", "outcome_cursor", "last_reset_at", "web_base_url"} <= cfg_cols
+    assert {"token_last4", "outcome_cursor", "last_reset_at", "web_base_url", "health_fingerprint"} <= cfg_cols
     job_cols = {c["name"] for c in insp.get_columns("crm_sync_jobs")}
     assert {"project_id", "lease_owner", "idempotency_key"} <= job_cols
     link_indexes = {i["name"]: i for i in insp.get_indexes("crm_entity_links")}

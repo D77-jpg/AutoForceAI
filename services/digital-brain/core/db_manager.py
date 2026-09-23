@@ -42,6 +42,8 @@ def _sqlite_add_columns():
         "ALTER TABLE crm_integration_configs ADD COLUMN last_reset_by INTEGER",
         "DROP INDEX IF EXISTS uq_crm_link_org_lead",
         "CREATE UNIQUE INDEX IF NOT EXISTS uq_crm_link_org_lead_project ON crm_entity_links (provider, organization_id, lead_id, project_id)",
+        # 阶段 2.9 P0-5：启用门槛指纹
+        "ALTER TABLE crm_integration_configs ADD COLUMN health_fingerprint VARCHAR",
     ]
     with SHARED_ENGINE.begin() as conn:
         for sql in statements:
