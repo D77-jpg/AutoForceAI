@@ -1,10 +1,14 @@
 # 阶段 2：Genesis_CRM 集成开发总纲
 
-> 状态：规划完成，尚未进入实现  
-> 日期：2026-09-22  
-> AutoForceAI 基线：`main@49875f1`  
-> Genesis_CRM 本地运行基线：`codex/agent-v1-4-hardening@356a21d`  
-> Genesis_CRM 默认分支基线：`main@72183fb`
+> 状态：**核心完成，发布收口中**（2.9 五项 P0 已完成；历史净化/凭证轮换/worker 并发保护/CI 门禁进行中）
+> 初始规划日期：2026-09-22；状态更新：2026-09-23
+> AutoForceAI 发布基线：`codex/phase2-release-ready`（净化后；原收口分支 `codex/phase2-closeout` 为本地恢复点，禁止推送）
+> Genesis_CRM Integration API 基线：`codex/genesis-integration-release`（自 `e2e3486`）
+> 兼容性记录：[docs/integration/COMPATIBILITY.md](./docs/integration/COMPATIBILITY.md)
+> 运维手册：[docs/PHASE2_OPS_RUNBOOK.md](./docs/PHASE2_OPS_RUNBOOK.md)
+> 下一步执行文档：[PHASE2_CLOSEOUT_AND_PHASE4_EXECUTION_PLAN.md](./PHASE2_CLOSEOUT_AND_PHASE4_EXECUTION_PLAN.md)
+
+> 说明：本文第 2 节记录的是实施前基线，用于保留决策背景；当前完成状态和后续任务以“阶段 2.9 收口与阶段 4 启动执行计划”为准。
 
 ## 1. 结论
 
