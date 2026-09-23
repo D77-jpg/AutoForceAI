@@ -115,6 +115,11 @@ class TestResult(BaseModel):
     contract_version: Optional[str] = None
 
 
+class ResetBindingIn(BaseModel):
+    expected_project_id: str = Field(..., min_length=1)
+    confirmation: str = Field(..., min_length=1)  # 必须为 "RESET"
+
+
 def _validate_config_input(body: ConfigIn) -> None:
     if not body.base_url.startswith(("http://", "https://")):
         raise HTTPException(400, "base_url 必须是 http(s) 地址")
@@ -139,8 +144,37 @@ def save_config(body: ConfigIn, payload: dict = Depends(get_current_user), db: S
         cfg = CrmIntegrationConfig(organization_id=user.organization_id, provider="genesis_crm")
         db.add(cfg)
 
+    # P0-2：绑定保护——有历史同步数据时禁止普通保存切换 project（须走 reset-binding）
+    new_project_id = body.project_id.strip()
+    if cfg.project_id and cfg.project_id != new_project_id:
+        active_links = (
+            db.query(func.count(CrmEntityLink.id))
+            .filter(
+                CrmEntityLink.provider == "genesis_crm",
+                CrmEntityLink.organization_id == user.organization_id,
+                CrmEntityLink.project_id == cfg.project_id,
+                CrmEntityLink.archived_at.is_(None),
+            )
+            .scalar()
+        )
+        historical_jobs = (
+            db.query(func.count(CrmSyncJob.id))
+            .filter(
+                CrmSyncJob.organization_id == user.organization_id,
+                CrmSyncJob.project_id == cfg.project_id,
+                CrmSyncJob.status.in_(("succeeded", "pending", "leased", "retrying")),
+            )
+            .scalar()
+        )
+        if active_links or historical_jobs:
+            raise HTTPException(
+                409,
+                f"项目 {cfg.project_id} 已存在同步历史（映射 {active_links} 条 / 任务 {historical_jobs} 个），"
+                "不能直接切换项目；如确需切换，请先调用 POST /api/v1/crm/integration/reset-binding 显式重置绑定",
+            )
+
     cfg.base_url = body.base_url.rstrip("/")
-    cfg.project_id = body.project_id.strip()
+    cfg.project_id = new_project_id
     if body.web_base_url is not None:
         cfg.web_base_url = body.web_base_url.strip().rstrip("/") or None
     if body.service_token:  # 不传 = 保留原 token
@@ -210,6 +244,84 @@ def test_connection(payload: dict = Depends(get_current_user), db: Session = Dep
     return result
 
 
+@router.post("/reset-binding")
+def reset_binding(body: ResetBindingIn, payload: dict = Depends(get_current_user), db: Session = Depends(get_shared_db)):
+    """
+    显式重置 CRM 项目绑定（P0-2）。只解除绑定状态，不删除本地 Lead 与审计记录：
+    - 停用投递并解绑项目（project_id 置空，需重新保存 + 测试 + 启用）；
+    - 清空 outcome 游标（旧游标不得带入新项目）；
+    - 旧项目实体映射标记 archived（保留审计，不参与新项目统计）；
+    - 旧项目未完成任务取消（绝不把旧 payload 投到新项目）。
+    """
+    user = _admin_user(payload, db)
+    cfg = _get_config(db, user.organization_id)
+    if not cfg or not cfg.project_id:
+        raise HTTPException(404, "当前没有已绑定的项目")
+    if body.confirmation != "RESET":
+        raise HTTPException(400, '确认字段必须为 "RESET"')
+    if body.expected_project_id != cfg.project_id:
+        raise HTTPException(409, f"expected_project_id 与当前绑定（{cfg.project_id}）不一致")
+
+    old_project = cfg.project_id
+    now = datetime.now()
+
+    archived = (
+        db.query(CrmEntityLink)
+        .filter(
+            CrmEntityLink.provider == "genesis_crm",
+            CrmEntityLink.organization_id == user.organization_id,
+            CrmEntityLink.project_id == old_project,
+            CrmEntityLink.archived_at.is_(None),
+        )
+        .update({CrmEntityLink.archived_at: now, CrmEntityLink.updated_at: now}, synchronize_session=False)
+    )
+    cancelled = (
+        db.query(CrmSyncJob)
+        .filter(
+            CrmSyncJob.organization_id == user.organization_id,
+            CrmSyncJob.project_id == old_project,
+            CrmSyncJob.status.in_(("pending", "leased", "retrying")),
+        )
+        .update(
+            {
+                CrmSyncJob.status: "cancelled",
+                CrmSyncJob.last_error_code: "RESET_BINDING",
+                CrmSyncJob.last_error_summary: "项目绑定已重置，任务取消（不投递到新项目）",
+                CrmSyncJob.lease_owner: None,
+                CrmSyncJob.lease_expires_at: None,
+                CrmSyncJob.updated_at: now,
+            },
+            synchronize_session=False,
+        )
+    )
+
+    cfg.enabled = False
+    cfg.project_id = None
+    cfg.project_name = None
+    cfg.outcome_cursor = None
+    cfg.outcome_polled_at = None
+    cfg.last_health_status = "unchecked"
+    cfg.last_health_detail = f"绑定已重置（原项目 {old_project}）：映射 {archived} 条已归档，未完成任务 {cancelled} 个已取消"
+    cfg.last_health_checked_at = now
+    cfg.last_reset_at = now
+    cfg.last_reset_by = user.id
+    cfg.updated_at = now
+    db.commit()
+
+    import logging
+    logging.getLogger("crm.integration").warning(
+        "CRM 绑定已重置: org=%s old_project=%s by_user=%s archived_links=%s cancelled_jobs=%s",
+        user.organization_id, old_project, user.id, archived, cancelled,
+    )
+    return {
+        "reset": True,
+        "previous_project_id": old_project,
+        "archived_links": archived,
+        "cancelled_jobs": cancelled,
+        "config": _to_public(cfg),
+    }
+
+
 # ---------- /crm 门户概览（Wave D：真实摘要，非伪功能） ----------
 
 @router.get("/overview")
@@ -222,21 +334,30 @@ def portal_overview(payload: dict = Depends(get_current_user), db: Session = Dep
     org_id = user.organization_id
     cfg = _get_config(db, org_id)
 
-    # 投递队列计数
-    counts_rows = (
-        db.query(CrmSyncJob.status, func.count())
-        .filter(CrmSyncJob.organization_id == org_id)
-        .group_by(CrmSyncJob.status)
-        .all()
-    )
-    counts = {s: 0 for s in ("pending", "leased", "retrying", "succeeded", "dead")}
-    counts.update({s: c for s, c in counts_rows})
+    # 投递队列计数（只统计当前项目绑定；reset 后旧项目数据不进入门户）
+    counts = {s: 0 for s in ("pending", "leased", "retrying", "succeeded", "dead", "cancelled")}
+    if cfg and cfg.project_id:
+        counts_rows = (
+            db.query(CrmSyncJob.status, func.count())
+            .filter(
+                CrmSyncJob.organization_id == org_id,
+                CrmSyncJob.project_id == cfg.project_id,
+            )
+            .group_by(CrmSyncJob.status)
+            .all()
+        )
+        counts.update({s: c for s, c in counts_rows})
 
-    # 本地同步摘要（实体映射视角）
+    # 本地同步摘要（实体映射视角；只含当前项目、未归档映射）
     link_query = db.query(CrmEntityLink).filter(
         CrmEntityLink.provider == "genesis_crm",
         CrmEntityLink.organization_id == org_id,
+        CrmEntityLink.archived_at.is_(None),
     )
+    if cfg and cfg.project_id:
+        link_query = link_query.filter(CrmEntityLink.project_id == cfg.project_id)
+    else:
+        link_query = link_query.filter(CrmEntityLink.id == -1)  # 未绑定 → 空摘要
     links = link_query.all()
     won = sum(1 for l in links if l.remote_status == "won")
     lost = sum(1 for l in links if l.remote_status == "lost")
@@ -313,9 +434,16 @@ def list_jobs(
     payload: dict = Depends(get_current_user),
     db: Session = Depends(get_shared_db),
 ):
-    """同步 job 列表（默认用于死信页：?status=dead）。"""
+    """同步 job 列表（默认用于死信页：?status=dead）；只含当前项目绑定。"""
     user = _admin_user(payload, db)
-    query = db.query(CrmSyncJob).filter(CrmSyncJob.organization_id == user.organization_id)
+    cfg = _get_config(db, user.organization_id)
+    base_filter = [CrmSyncJob.organization_id == user.organization_id]
+    if cfg and cfg.project_id:
+        base_filter.append(CrmSyncJob.project_id == cfg.project_id)
+    else:
+        return {"items": [], "counts": {s: 0 for s in ("pending", "leased", "retrying", "succeeded", "dead", "cancelled")}}
+
+    query = db.query(CrmSyncJob).filter(*base_filter)
     if status:
         query = query.filter(CrmSyncJob.status == status)
     rows = query.order_by(CrmSyncJob.id.desc()).limit(min(limit, 200)).all()
@@ -324,13 +452,13 @@ def list_jobs(
     # 汇总计数（门户/配置页展示）
     counts = dict(
         db.query(CrmSyncJob.status, func.count())
-        .filter(CrmSyncJob.organization_id == user.organization_id)
+        .filter(*base_filter)
         .group_by(CrmSyncJob.status)
         .all()
     )
     return {
         "items": [_job_to_dict(r, leads.get(r.lead_id)) for r in rows],
-        "counts": {s: counts.get(s, 0) for s in ("pending", "leased", "retrying", "succeeded", "dead")},
+        "counts": {s: counts.get(s, 0) for s in ("pending", "leased", "retrying", "succeeded", "dead", "cancelled")},
     }
 
 
@@ -345,6 +473,10 @@ def retry_job(job_id: int, payload: dict = Depends(get_current_user), db: Sessio
     )
     if not job:
         raise HTTPException(404, "同步任务不存在")
+    # 旧项目绑定的 job 不能重投到新项目（reset 后 cfg.project_id 变化或为空）
+    cfg = _get_config(db, user.organization_id)
+    if not cfg or not cfg.project_id or job.project_id != cfg.project_id:
+        raise HTTPException(400, "该任务属于旧项目绑定，不能重投；如需同步请在线索页对线索重投")
     if job.status not in ("dead", "retrying", "pending"):
         raise HTTPException(400, f"当前状态 {job.status} 不可重投")
     job.status = "pending"
@@ -369,6 +501,9 @@ def resync_lead(lead_id: int, payload: dict = Depends(get_current_user), db: Ses
     )
     if not lead:
         raise HTTPException(404, "线索不存在")
+    cfg = _get_config(db, user.organization_id)
+    if not cfg or not cfg.project_id:
+        raise HTTPException(400, "尚未绑定 CRM 项目，无法重投")
     job = enqueue_lead_sync(db, lead)
     if job is None:
         # dropped 状态默认不入队；显式重投时强制映射为 pending 推送
@@ -393,6 +528,7 @@ def resync_lead(lead_id: int, payload: dict = Depends(get_current_user), db: Ses
         job = CrmSyncJob(
             organization_id=lead.organization_id,
             lead_id=lead.id,
+            project_id=cfg.project_id,
             event_type="lead.upsert",
             idempotency_key=lead_idempotency_key(lead.id, digest),
             payload_version=body.schemaVersion,

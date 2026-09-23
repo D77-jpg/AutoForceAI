@@ -51,6 +51,7 @@ const JOB_STATUS_LABELS: Record<string, string> = {
   retrying: "重试中",
   succeeded: "已同步",
   dead: "死信",
+  cancelled: "已取消",
 };
 
 export default function CrmIntegrationSettingsPage() {
@@ -123,6 +124,31 @@ export default function CrmIntegrationSettingsPage() {
       await load();
     } finally {
       setTesting(false);
+    }
+  };
+
+  const [resetConfirm, setResetConfirm] = useState("");
+  const [resetting, setResetting] = useState(false);
+
+  const resetBinding = async () => {
+    if (!config?.project_id) return;
+    setResetting(true); setError(null);
+    try {
+      const res = await fetch(API + "/api/v1/crm/integration/reset-binding", {
+        method: "POST",
+        headers: { ...auth(), "Content-Type": "application/json" },
+        body: JSON.stringify({ expected_project_id: config.project_id, confirmation: resetConfirm }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "重置失败");
+      setResetConfirm("");
+      setTestResult(null);
+      await load();
+      await loadJobs();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "重置失败");
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -204,6 +230,32 @@ export default function CrmIntegrationSettingsPage() {
             最近连接测试：{config.last_health_checked_at ? new Date(config.last_health_checked_at).toLocaleString() : "从未"}
             {config.last_health_status && ` · ${config.last_health_status}`}
             {config.last_health_detail ? ` · ${config.last_health_detail}` : ""}
+          </div>
+        )}
+
+        {/* 重置项目绑定（P0-2：有历史同步数据时禁止直接换项目，须显式重置） */}
+        {config?.project_id && (
+          <div className="bg-surface border border-red-500/30 rounded-lg p-6 space-y-3 shadow-card">
+            <h2 className="font-medium text-red-500">重置项目绑定（危险操作）</h2>
+            <p className="text-xs text-text-secondary">
+              仅当确需切换到另一个 Genesis 项目时使用。将停用投递、清空回流游标、归档当前项目（{config.project_id}）的
+              实体映射并取消未完成任务；本地线索与历史记录保留作审计，不会被删除。
+            </p>
+            <div className="flex items-center gap-2">
+              <Input
+                value={resetConfirm}
+                onChange={(e) => setResetConfirm(e.target.value)}
+                placeholder='输入 RESET 确认'
+                className="max-w-[200px]"
+              />
+              <Button
+                variant="outline"
+                onClick={resetBinding}
+                disabled={resetting || resetConfirm !== "RESET"}
+              >
+                {resetting ? "重置中…" : "重置绑定"}
+              </Button>
+            </div>
           </div>
         )}
 

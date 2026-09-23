@@ -38,6 +38,7 @@ def _enabled_config(db: Session, organization_id: Optional[int]) -> Optional[Crm
         .filter(
             CrmIntegrationConfig.organization_id == organization_id,
             CrmIntegrationConfig.enabled.is_(True),
+            CrmIntegrationConfig.project_id.isnot(None),  # 未绑定项目（含 reset 后）不入队
         )
         .first()
     )
@@ -68,6 +69,8 @@ def enqueue_lead_sync(db: Session, lead: Lead, *, event_type: str = "lead.upsert
         db.query(CrmSyncJob)
         .filter(
             CrmSyncJob.idempotency_key == key,
+            CrmSyncJob.organization_id == lead.organization_id,
+            CrmSyncJob.project_id == cfg.project_id,  # 只与当前项目绑定的 job 去重
             CrmSyncJob.status.in_(ACTIVE_JOB_STATUSES + ("succeeded",)),
         )
         .first()
@@ -78,6 +81,7 @@ def enqueue_lead_sync(db: Session, lead: Lead, *, event_type: str = "lead.upsert
     job = CrmSyncJob(
         organization_id=lead.organization_id,
         lead_id=lead.id,
+        project_id=cfg.project_id,
         event_type=event_type,
         idempotency_key=key,
         payload_version=payload.schemaVersion,

@@ -410,6 +410,10 @@ class CrmIntegrationConfig(SharedBase):
     outcome_cursor = Column(String, nullable=True)
     outcome_polled_at = Column(DateTime, nullable=True)
 
+    # reset-binding 审计
+    last_reset_at = Column(DateTime, nullable=True)
+    last_reset_by = Column(Integer, nullable=True)             # 执行重置的管理员用户 ID
+
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
@@ -460,6 +464,7 @@ class CrmSyncJob(SharedBase):
     id = Column(Integer, primary_key=True, index=True)
     organization_id = Column(Integer, ForeignKey("organizations.id"), index=True)
     lead_id = Column(Integer, ForeignKey("leads.id"), index=True)
+    project_id = Column(String, nullable=True, index=True)     # 入队时绑定的 Genesis 项目（reset 后旧 job 不得投新项目）
 
     event_type = Column(String, default="lead.upsert")           # 首版只有 lead.upsert
     idempotency_key = Column(String, unique=True, index=True)    # lead-<id>-<payload_hash[:16]>
@@ -467,7 +472,7 @@ class CrmSyncJob(SharedBase):
     payload_json = Column(JSON)                                  # CustomerUpsertRequest dump
     payload_hash = Column(String)                                # sha256(规范化载荷)
 
-    # pending / leased / retrying / succeeded / dead
+    # pending / leased / retrying / succeeded / dead / cancelled
     status = Column(String, default="pending", index=True)
     attempt_count = Column(Integer, default=0)
     next_attempt_at = Column(DateTime, default=datetime.now, index=True)
@@ -491,7 +496,8 @@ class CrmEntityLink(SharedBase):
     """
     外部实体映射（阶段 2 Wave C）。
     AutoForceAI lead ↔ Genesis customer 的稳定引用；两端只读引用，不靠姓名/邮箱猜测。
-    阶段 2.7 的 outcome 轮询把 last_outcome_cursor 存在这里（按 org+project）。
+    outcome 轮询游标存于 crm_integration_configs（org+project 粒度）。
+    reset-binding 时旧项目映射标记 archived_at（不物理删除，保留审计）。
     """
     __tablename__ = "crm_entity_links"
 
@@ -505,8 +511,8 @@ class CrmEntityLink(SharedBase):
 
     remote_status = Column(String, nullable=True)                # Genesis 八段状态快照
     remote_updated_at = Column(DateTime, nullable=True)
-    last_outcome_cursor = Column(String, nullable=True)          # opaque cursor（org+project 粒度）
     synced_at = Column(DateTime, nullable=True)
+    archived_at = Column(DateTime, nullable=True)                # 重置绑定后归档
 
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
@@ -514,8 +520,8 @@ class CrmEntityLink(SharedBase):
     lead = relationship("Lead")
 
     __table_args__ = (
-        # 一个线索在同一提供商下只关联一个远端客户；一个远端客户也只属于一个线索
-        Index("uq_crm_link_org_lead", "provider", "organization_id", "lead_id", unique=True),
+        # 一个线索在同一（提供商+项目）下只关联一个远端客户；重置绑定后可绑新项目
+        Index("uq_crm_link_org_lead_project", "provider", "organization_id", "lead_id", "project_id", unique=True),
         Index("uq_crm_link_remote", "provider", "project_id", "remote_customer_id", unique=True),
     )
 

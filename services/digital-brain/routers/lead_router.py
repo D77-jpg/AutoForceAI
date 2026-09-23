@@ -100,21 +100,35 @@ def _to_dict(lead: Lead) -> dict:
 
 
 def _crm_status_map(db: Session, organization_id: Optional[int], lead_ids: list[int]) -> dict:
-    """每条线索的 CRM 同步摘要：实体映射 + 最新 job 状态。"""
+    """每条线索的 CRM 同步摘要：只反映当前项目绑定的有效映射与 job（归档/旧项目不展示）。"""
     if not lead_ids:
         return {}
+    from database.shared_models import CrmIntegrationConfig
+
+    cfg = None
+    if organization_id is not None:
+        cfg = (
+            db.query(CrmIntegrationConfig)
+            .filter(CrmIntegrationConfig.organization_id == organization_id)
+            .first()
+        )
     link_query = db.query(CrmEntityLink).filter(
         CrmEntityLink.provider == "genesis_crm",
         CrmEntityLink.lead_id.in_(lead_ids),
+        CrmEntityLink.archived_at.is_(None),
     )
     if organization_id is not None:
         link_query = link_query.filter(CrmEntityLink.organization_id == organization_id)
+    if cfg is not None and cfg.project_id:
+        link_query = link_query.filter(CrmEntityLink.project_id == cfg.project_id)
     link_by_lead = {l.lead_id: l for l in link_query.all()}
 
     latest_job: dict[int, CrmSyncJob] = {}
     job_query = db.query(CrmSyncJob).filter(CrmSyncJob.lead_id.in_(lead_ids)).order_by(CrmSyncJob.id.desc())
     if organization_id is not None:
         job_query = job_query.filter(CrmSyncJob.organization_id == organization_id)
+    if cfg is not None and cfg.project_id:
+        job_query = job_query.filter(CrmSyncJob.project_id == cfg.project_id)
     for job in job_query.all():
         latest_job.setdefault(job.lead_id, job)
 

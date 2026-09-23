@@ -134,11 +134,18 @@ def _deliver(db: Session, job: CrmSyncJob) -> None:
         .first()
     )
     # 配置缺失/停用/凭证失效/解密失败：不占尝试次数的退避，等待管理员处理
-    if cfg is None or not cfg.enabled or not cfg.service_token:
+    if cfg is None or not cfg.enabled or not cfg.service_token or not cfg.project_id:
         job.status = "pending"
         job.next_attempt_at = now + timedelta(seconds=600)
         job.last_error_code = "CONFIG_DISABLED"
-        job.last_error_summary = "集成配置缺失或未启用"
+        job.last_error_summary = "集成配置缺失、未启用或未绑定项目"
+        return
+    # 纵深防御：旧项目绑定的 job 绝不投递到新项目（正常路径已在 reset 时取消）
+    if job.project_id and job.project_id != cfg.project_id:
+        job.status = "cancelled"
+        job.last_error_code = "PROJECT_BINDING_CHANGED"
+        job.last_error_summary = "项目绑定已变更，旧 job 取消（不投递到新项目）"
+        logger.warning("job %s 属于旧项目绑定，已取消", job.id)
         return
     if cfg.last_health_status in PAUSED_HEALTH_STATUSES:
         job.status = "retrying"
@@ -206,7 +213,7 @@ def _deliver(db: Session, job: CrmSyncJob) -> None:
             job.next_attempt_at = now + timedelta(seconds=_backoff_delay(job.attempt_count))
         return
 
-    # 成功：写实体映射（幂等 upsert）
+    # 成功：写实体映射（按 org+lead+project 幂等 upsert；同项目归档映射可复活复用）
     job.status = "succeeded"
     job.succeeded_at = now
     job.last_error_code = None
@@ -218,6 +225,7 @@ def _deliver(db: Session, job: CrmSyncJob) -> None:
             CrmEntityLink.provider == "genesis_crm",
             CrmEntityLink.organization_id == job.organization_id,
             CrmEntityLink.lead_id == job.lead_id,
+            CrmEntityLink.project_id == resp.projectId,
         )
         .first()
     )
@@ -230,6 +238,7 @@ def _deliver(db: Session, job: CrmSyncJob) -> None:
             remote_customer_id=resp.customerId,
         )
         db.add(link)
+    link.archived_at = None  # 重新投递成功即视为有效映射
     link.remote_customer_id = resp.customerId
     link.project_id = resp.projectId
     try:

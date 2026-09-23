@@ -34,6 +34,14 @@ def _sqlite_add_columns():
         "ALTER TABLE crm_integration_configs ADD COLUMN web_base_url VARCHAR",
         # 阶段 2.9 P0-1：token 脱敏预览（与密文分离）
         "ALTER TABLE crm_integration_configs ADD COLUMN token_last4 VARCHAR",
+        # 阶段 2.9 P0-2：绑定变更保护
+        "ALTER TABLE crm_sync_jobs ADD COLUMN project_id VARCHAR",
+        "ALTER TABLE crm_entity_links ADD COLUMN archived_at DATETIME",
+        "ALTER TABLE crm_entity_links DROP COLUMN last_outcome_cursor",
+        "ALTER TABLE crm_integration_configs ADD COLUMN last_reset_at DATETIME",
+        "ALTER TABLE crm_integration_configs ADD COLUMN last_reset_by INTEGER",
+        "DROP INDEX IF EXISTS uq_crm_link_org_lead",
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_crm_link_org_lead_project ON crm_entity_links (provider, organization_id, lead_id, project_id)",
     ]
     with SHARED_ENGINE.begin() as conn:
         for sql in statements:

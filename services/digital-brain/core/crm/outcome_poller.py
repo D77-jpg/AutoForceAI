@@ -63,6 +63,7 @@ def _apply_event(db: Session, cfg: CrmIntegrationConfig, event) -> bool:
             CrmEntityLink.provider == "genesis_crm",
             CrmEntityLink.project_id == cfg.project_id,
             CrmEntityLink.remote_customer_id == event.customerId,
+            CrmEntityLink.archived_at.is_(None),  # 归档映射不接收回流
         )
         .first()
     )
@@ -144,6 +145,7 @@ def poll_all_outcomes(db: Session) -> int:
         .filter(
             CrmIntegrationConfig.enabled.is_(True),
             CrmIntegrationConfig.service_token.isnot(None),
+            CrmIntegrationConfig.project_id.isnot(None),
         )
         .all()
     )
