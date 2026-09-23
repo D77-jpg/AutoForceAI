@@ -27,13 +27,15 @@
 |---|---|---|---|
 | `D:\Trade\AutoForceAI` | 后端 / CRM / services / db | 临时 `codex/<主题>` | — |
 | `D:\Trade\AutoForceAI\.codex-worktrees\autoforce-main-release` | 前端 UI（`apps/web-console`） | 临时 `ui/<主题>`；空闲时 detached 于最新 main | 3051 |
-| `D:\Trade\afai-release` | **验收站**（只读） | 始终 `main` | **3050** |
+| `D:\Trade\afai-release` | **验收站**（只读） | 始终 `main`（验收时可临时切到待验收分支） | **3050** |
+| `D:\Trade\wt\<主题>` | **跨端任务**（临时创建，用完即删） | `task/<主题>` | 按需 |
 
 **纪律**
 
 1. 一个目录只服务一个用途，**不要跨目录改动**——别的 agent 可能正在那里有未提交的工作。
 2. 验收站 `afai-release` **只允许 `git switch main` / `git pull`，不允许提交任何东西**。
 3. 改动前先 `git fetch origin` 并让工作区干净。
+4. **分支的单位是「任务」，不是「目录」。** 一个任务横跨前后端时不要拆成两个分支/两个 PR——见下方「3.1 跨端改动」。
 
 ---
 
@@ -65,6 +67,41 @@ git push origin --delete ui/首页改版     # 若远端分支还在
 
 ---
 
+### 3.1 跨端改动（一个任务同时改前端 + 后端）
+
+**分支的单位是「任务」，不是「目录」。**
+三个工作树是**同一个仓库**的摊开，共用同一份历史——一个分支里同时改 `apps/web-console/` 与 `services/**` 完全正常，git 不关心文件属于哪个子系统。工作树只决定「你从哪个目录打开编辑器、跑哪个 dev server」。
+
+先判断任务形态：
+
+| 任务形态 | 在哪里做 | 分支名 |
+|---|---|---|
+| 只改前端 | 常驻前端工位 `autoforce-main-release` | `ui/<主题>` |
+| 只改后端 | 常驻主工位 `D:\Trade\AutoForceAI` | `codex/<主题>` |
+| **横跨前后端** | ① 该任务由你独占 → 直接在**你的常驻工位**里改两边；② 多 agent 并行 / 想与常驻工位隔离 → 建**临时任务工作树** | `task/<主题>` |
+
+临时任务工作树（跨端推荐，已封装成脚本）：
+
+```powershell
+# 创建：从最新 origin/main 建分支 + 工作树，并自动复用前端依赖
+.\scripts\wt-new.ps1 -Topic crm-portal        # → D:\Trade\wt\crm-portal
+
+# ...在 D:\Trade\wt\crm-portal 里同时改前端与后端，提交、推送、开 PR...
+
+# 收尾：PR 合并后（脚本会拒绝删除有未提交改动的工作树）
+.\scripts\wt-done.ps1 -Topic crm-portal -DeleteBranch
+```
+
+要点：
+
+- 工作树落在**仓库之外**（`D:\Trade\wt\`），不污染 `git status`
+- 前端依赖用 Junction 复用，无需重新 `npm install`；后端 Python 依赖是系统级的，直接可用
+- **一个跨端任务 = 一个分支 = 一个 PR**：前后端改动在同一份提交里，评审与回滚都是一个整体
+- 脚本以 **UTF-8 BOM** 保存，兼容 Windows PowerShell 5.1 与 PowerShell 7+。
+  **改脚本时务必保留 BOM**：无 BOM 的 UTF-8 `.ps1` 会被 PowerShell 5.1 按 ANSI(GBK) 解析，中文注释直接导致语法错误。
+
+---
+
 ## 四、禁止事项
 
 1. **禁止用 `git cherry-pick` 搬运功能代码。**
@@ -84,6 +121,11 @@ git push origin --delete ui/首页改版     # 若远端分支还在
 
 - **验收**：浏览器打开 <http://localhost:3050>（内容 = main）
 - **前端预览**：<http://localhost:3051>（UI 工作树自己的 dev server）
+- **端到端验收（跨端改动必用）**：验收站允许**临时切到待验收分支**（只读，绝不提交），验完切回 main：
+  ```powershell
+  git -C D:\Trade\afai-release switch task/crm-portal   # 3050 现在跑该任务的全栈效果
+  git -C D:\Trade\afai-release switch main              # 验完回主线
+  ```
 - **发布**：main 即发布线；快照用 tag，不新建长期分支
 
 ---
@@ -97,11 +139,12 @@ git -C D:\Trade\AutoForceAI log --oneline -5 origin/main
 git -C D:\Trade\AutoForceAI status --short       # 当前目录是否有未提交改动
 ```
 
-判断"我该不该提交"的三个问题：
+判断"我该不该提交 / 怎么提交"的四个问题：
 
-1. 我在**我的**目录里吗？（对照第二节的表）
+1. 我在**正确的**目录里吗？（对照第二节的表；跨端任务见 3.1）
 2. 我的分支是**从最新 main** 开的吗？
 3. 这个改动**只做了一件事**吗？（是 → 提交 + PR；不是 → 拆开）
+4. 这个任务**横跨前后端**吗？（是 → **同一个分支、同一个 PR**，不要拆成两个）
 
 ---
 
