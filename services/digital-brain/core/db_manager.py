@@ -28,6 +28,10 @@ def _sqlite_add_columns():
         "ALTER TABLE chat_sessions ADD COLUMN language VARCHAR",
         "ALTER TABLE chat_sessions ADD COLUMN intent JSON",
         "ALTER TABLE knowledge_docs ADD COLUMN error_msg TEXT",
+        # 阶段 2 Wave D：outcome 轮询游标
+        "ALTER TABLE crm_integration_configs ADD COLUMN outcome_cursor VARCHAR",
+        "ALTER TABLE crm_integration_configs ADD COLUMN outcome_polled_at DATETIME",
+        "ALTER TABLE crm_integration_configs ADD COLUMN web_base_url VARCHAR",
     ]
     with SHARED_ENGINE.begin() as conn:
         for sql in statements:

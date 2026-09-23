@@ -393,6 +393,7 @@ class CrmIntegrationConfig(SharedBase):
 
     provider = Column(String, default="genesis_crm")           # 固定 genesis_crm
     base_url = Column(String)                                  # e.g. http://localhost:5000/api
+    web_base_url = Column(String, nullable=True)               # Genesis 前端地址（深链用），空则按 base_url 推导
     project_id = Column(String)                                # Genesis ObjectId，必填
     project_name = Column(String, nullable=True)               # 最近一次连接测试返回的显示名
 
@@ -400,9 +401,13 @@ class CrmIntegrationConfig(SharedBase):
     contract_version = Column(String, default="1.0")
 
     enabled = Column(Boolean, default=False)                   # 是否允许新任务投递
-    last_health_status = Column(String, nullable=True)         # ok / error / unchecked
+    last_health_status = Column(String, nullable=True)         # ok / error / auth_invalid / unchecked
     last_health_detail = Column(Text, nullable=True)           # 脱敏的连接测试摘要
     last_health_checked_at = Column(DateTime, nullable=True)
+
+    # outcome 轮询游标（org+project 粒度，opaque；与批处理同事务提交）
+    outcome_cursor = Column(String, nullable=True)
+    outcome_polled_at = Column(DateTime, nullable=True)
 
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
@@ -484,6 +489,34 @@ class CrmEntityLink(SharedBase):
         # 一个线索在同一提供商下只关联一个远端客户；一个远端客户也只属于一个线索
         Index("uq_crm_link_org_lead", "provider", "organization_id", "lead_id", unique=True),
         Index("uq_crm_link_remote", "provider", "project_id", "remote_customer_id", unique=True),
+    )
+
+
+class CrmOutcomeEvent(SharedBase):
+    """
+    已消费的成交/流失事件流水（阶段 2 Wave D）。
+    按 (provider, organization_id, event_id) 幂等：重复事件直接跳过，不重复归因。
+    """
+    __tablename__ = "crm_outcome_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), index=True)
+    provider = Column(String, default="genesis_crm")
+
+    event_id = Column(String)                                  # Genesis CustomerEvent id
+    remote_customer_id = Column(String)
+    external_id = Column(String, nullable=True)                # lead:<id>；CRM 原生客户为 None
+    lead_id = Column(Integer, ForeignKey("leads.id"), nullable=True)
+
+    from_status = Column(String, nullable=True)
+    to_status = Column(String)                                 # won / lost
+    occurred_at = Column(DateTime)
+    processed_at = Column(DateTime, default=datetime.now)
+
+    lead = relationship("Lead")
+
+    __table_args__ = (
+        Index("uq_crm_outcome_event", "provider", "organization_id", "event_id", unique=True),
     )
 
 

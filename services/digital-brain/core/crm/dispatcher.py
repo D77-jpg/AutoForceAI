@@ -243,13 +243,22 @@ def dispatch_once(db: Session, worker_id: str, batch_size: int = 20) -> int:
 
 def _loop(interval: float, batch_size: int, worker_id: str) -> None:
     from core.db_manager import SharedSessionLocal
+    from core.crm.outcome_poller import poll_all_outcomes
 
-    logger.info("CRM dispatcher 启动: worker=%s interval=%ss batch=%s", worker_id, interval, batch_size)
+    outcome_interval = float(os.getenv("CRM_OUTCOME_POLL_INTERVAL", "60"))
+    last_outcome_poll = 0.0
+
+    logger.info("CRM dispatcher 启动: worker=%s interval=%ss batch=%s outcome=%ss",
+                worker_id, interval, batch_size, outcome_interval)
     while not _stop_event.is_set():
         try:
             db = SharedSessionLocal()
             try:
                 dispatch_once(db, worker_id, batch_size)
+                # 成交/流失回流：按自身节奏轮询（默认 60s）
+                if time.monotonic() - last_outcome_poll >= outcome_interval:
+                    last_outcome_poll = time.monotonic()
+                    poll_all_outcomes(db)
             finally:
                 db.close()
         except Exception:

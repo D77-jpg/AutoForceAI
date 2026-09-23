@@ -20,7 +20,14 @@ from core.dependencies import get_current_user
 from core.crm.client import CrmApiError, GenesisCRMClient
 from core.crm.contract import REQUIRED_SCOPES
 from core.crm.outbox import enqueue_lead_sync
-from database.shared_models import CrmIntegrationConfig, CrmSyncJob, Lead, User, UserRole
+from database.shared_models import (
+    CrmEntityLink,
+    CrmIntegrationConfig,
+    CrmSyncJob,
+    Lead,
+    User,
+    UserRole,
+)
 
 router = APIRouter(prefix="/api/v1/crm/integration", tags=["CRM Integration"])
 
@@ -38,6 +45,16 @@ def _admin_user(payload: dict, db: Session) -> User:
     return user
 
 
+def _member_user(payload: dict, db: Session) -> User:
+    """门户概览只读：组织成员即可（不暴露任何凭证）。"""
+    user = db.query(User).filter(User.id == payload["id"]).first()
+    if not user:
+        raise HTTPException(401, "用户不存在")
+    if not user.organization_id:
+        raise HTTPException(400, "当前用户未绑定企业组织")
+    return user
+
+
 def _get_config(db: Session, organization_id: int) -> Optional[CrmIntegrationConfig]:
     return (
         db.query(CrmIntegrationConfig)
@@ -46,12 +63,27 @@ def _get_config(db: Session, organization_id: int) -> Optional[CrmIntegrationCon
     )
 
 
+def _derive_web_base(cfg: CrmIntegrationConfig) -> Optional[str]:
+    """Genesis 前端地址：显式配置优先；否则按本地默认端口约定推导（5000/api → 5173）。"""
+    if cfg.web_base_url:
+        return cfg.web_base_url.rstrip("/")
+    if not cfg.base_url:
+        return None
+    base = cfg.base_url.rstrip("/")
+    if base.endswith("/api"):
+        base = base[: -len("/api")]
+    if ":5000" in base:
+        base = base.replace(":5000", ":5173")
+    return base
+
+
 def _to_public(cfg: CrmIntegrationConfig) -> dict:
     return {
         "id": cfg.id,
         "organization_id": cfg.organization_id,
         "provider": cfg.provider,
         "base_url": cfg.base_url,
+        "web_base_url": _derive_web_base(cfg),
         "project_id": cfg.project_id,
         "project_name": cfg.project_name,
         "token_preview": cfg.token_preview,      # 永不返回明文
@@ -61,6 +93,7 @@ def _to_public(cfg: CrmIntegrationConfig) -> dict:
         "last_health_status": cfg.last_health_status,
         "last_health_detail": cfg.last_health_detail,
         "last_health_checked_at": cfg.last_health_checked_at.isoformat() if cfg.last_health_checked_at else None,
+        "outcome_polled_at": cfg.outcome_polled_at.isoformat() if cfg.outcome_polled_at else None,
         "updated_at": cfg.updated_at.isoformat() if cfg.updated_at else None,
     }
 
@@ -69,6 +102,7 @@ class ConfigIn(BaseModel):
     base_url: str = Field(..., min_length=1, max_length=300)
     project_id: str = Field(..., min_length=1, max_length=64)
     service_token: Optional[str] = Field(default=None, max_length=200)  # 不传则保留原值
+    web_base_url: Optional[str] = Field(default=None, max_length=300)   # Genesis 前端地址（深链）
     enabled: bool = False
 
 
@@ -106,6 +140,8 @@ def save_config(body: ConfigIn, payload: dict = Depends(get_current_user), db: S
 
     cfg.base_url = body.base_url.rstrip("/")
     cfg.project_id = body.project_id.strip()
+    if body.web_base_url is not None:
+        cfg.web_base_url = body.web_base_url.strip().rstrip("/") or None
     if body.service_token:  # 不传 = 保留原 token
         cfg.service_token = body.service_token.strip()
     cfg.enabled = body.enabled
@@ -163,7 +199,80 @@ def test_connection(payload: dict = Depends(get_current_user), db: Session = Dep
     return result
 
 
-# ---------- Outbox job 管理（死信列表并入配置页） ----------
+# ---------- /crm 门户概览（Wave D：真实摘要，非伪功能） ----------
+
+@router.get("/overview")
+def portal_overview(payload: dict = Depends(get_current_user), db: Session = Depends(get_shared_db)):
+    """
+    /crm 门户数据：连接状态 + 投递队列计数 + 本地同步摘要 + Genesis 实时漏斗。
+    Genesis 不可达时返回已缓存的本地摘要与错误说明（门户不因此白屏）。
+    """
+    user = _member_user(payload, db)
+    org_id = user.organization_id
+    cfg = _get_config(db, org_id)
+
+    # 投递队列计数
+    counts_rows = (
+        db.query(CrmSyncJob.status, func.count())
+        .filter(CrmSyncJob.organization_id == org_id)
+        .group_by(CrmSyncJob.status)
+        .all()
+    )
+    counts = {s: 0 for s in ("pending", "leased", "retrying", "succeeded", "dead")}
+    counts.update({s: c for s, c in counts_rows})
+
+    # 本地同步摘要（实体映射视角）
+    link_query = db.query(CrmEntityLink).filter(
+        CrmEntityLink.provider == "genesis_crm",
+        CrmEntityLink.organization_id == org_id,
+    )
+    links = link_query.all()
+    won = sum(1 for l in links if l.remote_status == "won")
+    lost = sum(1 for l in links if l.remote_status == "lost")
+
+    recent_links = (
+        link_query.order_by(CrmEntityLink.synced_at.desc().nullslast(), CrmEntityLink.id.desc())
+        .limit(10)
+        .all()
+    )
+    lead_ids = {l.lead_id for l in recent_links}
+    leads = {l.id: l for l in db.query(Lead).filter(Lead.id.in_(lead_ids)).all()} if lead_ids else {}
+    recent = [
+        {
+            "lead_id": l.lead_id,
+            "name": leads[l.lead_id].name if l.lead_id in leads else None,
+            "company": leads[l.lead_id].company if l.lead_id in leads else None,
+            "remote_customer_id": l.remote_customer_id,
+            "remote_status": l.remote_status,
+            "synced_at": l.synced_at.isoformat() if l.synced_at else None,
+            "genesis_url": f"{_derive_web_base(cfg)}/customers/{l.remote_customer_id}" if cfg else None,
+        }
+        for l in recent_links
+    ]
+
+    # Genesis 实时漏斗（best-effort）
+    genesis_stats = None
+    genesis_error = None
+    if cfg and cfg.service_token and cfg.last_health_status != "auth_invalid":
+        try:
+            client = GenesisCRMClient(cfg.base_url, cfg.service_token, cfg.project_id)
+            overview = client.stats_overview()
+            genesis_stats = overview.model_dump(mode="json")
+        except CrmApiError as exc:
+            genesis_error = f"[{exc.code}] {exc}" if exc.code else str(exc)
+
+    return {
+        "config": _to_public(cfg) if cfg else None,
+        "queue": counts,
+        "local": {
+            "synced_total": len(links),
+            "won": won,
+            "lost": lost,
+        },
+        "recent_synced": recent,
+        "genesis": genesis_stats,
+        "genesis_error": genesis_error,
+    }
 
 def _job_to_dict(job: CrmSyncJob, lead: Optional[Lead] = None) -> dict:
     return {

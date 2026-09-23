@@ -314,25 +314,19 @@ export default function Sidebar() {
           ]
         };
     } else if (pathname?.startsWith('/crm') || pathname?.startsWith('/leads')) {
+      // /crm 是「集成门户与摘要」：客户/商机/报价明细在 Genesis_CRM 操作，此处不重复建设
       return {
         appName: 'AI CRM',
-        appEnName: '智能客户关系管理',
-        homeLink: '/leads',
+        appEnName: 'Genesis 集成门户',
+        homeLink: '/crm',
         groups: [
             {
-              title: '客户管理',
+              title: '集成门户',
               items: [
                 { href: '/crm', icon: LayoutDashboard, label: '概览' },
                 { href: '/leads', icon: Users, label: '本地线索池' },
-                { href: '/crm/customers', icon: Building2, label: '客户列表', badge: '开发中' }
-              ]            
-            },
-            {
-                title: '销售漏斗',
-                items: [
-                    { href: '/crm/opportunities', icon: BarChart4, label: '商机管理', badge: '开发中' },
-                    { href: '/crm/contracts', icon: FileText, label: '合同归档', badge: '开发中' }
-                ]            
+                { href: '/crm/settings', icon: SlidersHorizontal, label: '集成设置' }
+              ]
             }
         ]
       };
