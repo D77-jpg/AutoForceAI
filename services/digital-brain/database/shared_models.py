@@ -416,3 +416,75 @@ class CrmIntegrationConfig(SharedBase):
         return f"****{self.service_token[-4:]}"
 
 
+class CrmSyncJob(SharedBase):
+    """
+    CRM 同步 Outbox（阶段 2 Wave C）。
+    线索写入与 job 创建在同一数据库事务完成；投递器用租约抢占避免多进程重复消费。
+    重试必须复用原 idempotency_key（Genesis 侧据此幂等重放）。
+    """
+    __tablename__ = "crm_sync_jobs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), index=True)
+    lead_id = Column(Integer, ForeignKey("leads.id"), index=True)
+
+    event_type = Column(String, default="lead.upsert")           # 首版只有 lead.upsert
+    idempotency_key = Column(String, unique=True, index=True)    # lead-<id>-<payload_hash[:16]>
+    payload_version = Column(String, default="1.0")
+    payload_json = Column(JSON)                                  # CustomerUpsertRequest dump
+    payload_hash = Column(String)                                # sha256(规范化载荷)
+
+    # pending / leased / retrying / succeeded / dead
+    status = Column(String, default="pending", index=True)
+    attempt_count = Column(Integer, default=0)
+    next_attempt_at = Column(DateTime, default=datetime.now, index=True)
+
+    lease_owner = Column(String, nullable=True)                  #  worker 标识
+    lease_expires_at = Column(DateTime, nullable=True)
+
+    last_error_code = Column(String, nullable=True)              # 稳定错误码（VALIDATION_ERROR 等）
+    last_error_summary = Column(Text, nullable=True)             # 脱敏错误摘要
+    last_http_status = Column(Integer, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    succeeded_at = Column(DateTime, nullable=True)
+    dead_at = Column(DateTime, nullable=True)
+
+    lead = relationship("Lead")
+
+
+class CrmEntityLink(SharedBase):
+    """
+    外部实体映射（阶段 2 Wave C）。
+    AutoForceAI lead ↔ Genesis customer 的稳定引用；两端只读引用，不靠姓名/邮箱猜测。
+    阶段 2.7 的 outcome 轮询把 last_outcome_cursor 存在这里（按 org+project）。
+    """
+    __tablename__ = "crm_entity_links"
+
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), index=True)
+    lead_id = Column(Integer, ForeignKey("leads.id"), index=True)
+
+    provider = Column(String, default="genesis_crm")
+    project_id = Column(String)                                  # Genesis projectId
+    remote_customer_id = Column(String)                          # Genesis customerId
+
+    remote_status = Column(String, nullable=True)                # Genesis 八段状态快照
+    remote_updated_at = Column(DateTime, nullable=True)
+    last_outcome_cursor = Column(String, nullable=True)          # opaque cursor（org+project 粒度）
+    synced_at = Column(DateTime, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+    lead = relationship("Lead")
+
+    __table_args__ = (
+        # 一个线索在同一提供商下只关联一个远端客户；一个远端客户也只属于一个线索
+        Index("uq_crm_link_org_lead", "provider", "organization_id", "lead_id", unique=True),
+        Index("uq_crm_link_remote", "provider", "project_id", "remote_customer_id", unique=True),
+    )
+
+
+

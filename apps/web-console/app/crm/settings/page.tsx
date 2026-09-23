@@ -33,6 +33,26 @@ interface TestResult {
   contract_version?: string | null;
 }
 
+interface SyncJob {
+  id: number;
+  lead_id: number;
+  lead_email?: string | null;
+  lead_name?: string | null;
+  status: string;
+  attempt_count: number;
+  last_error_code?: string | null;
+  last_error_summary?: string | null;
+  dead_at?: string | null;
+}
+
+const JOB_STATUS_LABELS: Record<string, string> = {
+  pending: "待投递",
+  leased: "投递中",
+  retrying: "重试中",
+  succeeded: "已同步",
+  dead: "死信",
+};
+
 export default function CrmIntegrationSettingsPage() {
   const [config, setConfig] = useState<CrmConfig | null>(null);
   const [baseUrl, setBaseUrl] = useState("");
@@ -44,6 +64,21 @@ export default function CrmIntegrationSettingsPage() {
   const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [forbidden, setForbidden] = useState(false);
+  const [deadJobs, setDeadJobs] = useState<SyncJob[]>([]);
+  const [jobCounts, setJobCounts] = useState<Record<string, number>>({});
+
+  const loadJobs = async () => {
+    const res = await fetch(API + "/api/v1/crm/integration/jobs?status=dead", { headers: auth() });
+    if (!res.ok) return;
+    const data = await res.json();
+    setDeadJobs(data.items || []);
+    setJobCounts(data.counts || {});
+  };
+
+  const retryJob = async (id: number) => {
+    await fetch(API + `/api/v1/crm/integration/jobs/${id}/retry`, { method: "POST", headers: auth() });
+    loadJobs();
+  };
 
   const load = async () => {
     const res = await fetch(API + "/api/v1/crm/integration/config", { headers: auth() });
@@ -57,7 +92,7 @@ export default function CrmIntegrationSettingsPage() {
       setEnabled(!!cfg.enabled);
     }
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); loadJobs(); }, []);
 
   const save = async () => {
     setSaving(true); setError(null);
@@ -169,6 +204,44 @@ export default function CrmIntegrationSettingsPage() {
             最近连接测试：{config.last_health_checked_at ? new Date(config.last_health_checked_at).toLocaleString() : "从未"}
             {config.last_health_status && ` · ${config.last_health_status}`}
             {config.last_health_detail ? ` · ${config.last_health_detail}` : ""}
+          </div>
+        )}
+
+        {/* 投递队列与死信（Wave C） */}
+        {config && (
+          <div className="bg-surface border border-border rounded-lg p-6 space-y-3 shadow-card">
+            <div className="flex items-center justify-between">
+              <h2 className="font-medium">投递队列</h2>
+              <Button variant="outline" size="sm" onClick={loadJobs}>刷新</Button>
+            </div>
+            <div className="flex gap-4 text-sm text-text-secondary">
+              {Object.entries(JOB_STATUS_LABELS).map(([k, label]) => (
+                <span key={k} className={k === "dead" && (jobCounts[k] || 0) > 0 ? "text-red-500" : ""}>
+                  {label} {jobCounts[k] || 0}
+                </span>
+              ))}
+            </div>
+            {deadJobs.length > 0 ? (
+              <div className="divide-y divide-separator">
+                {deadJobs.map((job) => (
+                  <div key={job.id} className="py-3 flex items-start justify-between gap-4">
+                    <div className="text-sm">
+                      <div className="font-medium">
+                        线索 #{job.lead_id} {job.lead_name || ""} {job.lead_email ? `<${job.lead_email}>` : ""}
+                      </div>
+                      <div className="text-text-secondary text-xs mt-1">
+                        尝试 {job.attempt_count} 次 · {job.last_error_code || "未知错误"}
+                        {job.last_error_summary ? ` · ${job.last_error_summary}` : ""}
+                        {job.dead_at ? ` · ${new Date(job.dead_at).toLocaleString()}` : ""}
+                      </div>
+                    </div>
+                    <Button variant="secondary" size="sm" onClick={() => retryJob(job.id)}>重投</Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-text-secondary">无死信。字段类错误会在修复配置或数据后可从此处重投。</p>
+            )}
           </div>
         )}
       </div>

@@ -12,13 +12,15 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from core.db_manager import get_shared_db
 from core.dependencies import get_current_user
 from core.crm.client import CrmApiError, GenesisCRMClient
 from core.crm.contract import REQUIRED_SCOPES
-from database.shared_models import CrmIntegrationConfig, User, UserRole
+from core.crm.outbox import enqueue_lead_sync
+from database.shared_models import CrmIntegrationConfig, CrmSyncJob, Lead, User, UserRole
 
 router = APIRouter(prefix="/api/v1/crm/integration", tags=["CRM Integration"])
 
@@ -159,3 +161,124 @@ def test_connection(payload: dict = Depends(get_current_user), db: Session = Dep
         cfg.project_name = result.project_name
     db.commit()
     return result
+
+
+# ---------- Outbox job 管理（死信列表并入配置页） ----------
+
+def _job_to_dict(job: CrmSyncJob, lead: Optional[Lead] = None) -> dict:
+    return {
+        "id": job.id,
+        "lead_id": job.lead_id,
+        "lead_email": lead.email if lead else None,
+        "lead_name": lead.name if lead else None,
+        "event_type": job.event_type,
+        "status": job.status,
+        "attempt_count": job.attempt_count,
+        "next_attempt_at": job.next_attempt_at.isoformat() if job.next_attempt_at else None,
+        "last_error_code": job.last_error_code,
+        "last_error_summary": job.last_error_summary,
+        "last_http_status": job.last_http_status,
+        "created_at": job.created_at.isoformat() if job.created_at else None,
+        "succeeded_at": job.succeeded_at.isoformat() if job.succeeded_at else None,
+        "dead_at": job.dead_at.isoformat() if job.dead_at else None,
+    }
+
+
+@router.get("/jobs")
+def list_jobs(
+    status: Optional[str] = None,
+    limit: int = 50,
+    payload: dict = Depends(get_current_user),
+    db: Session = Depends(get_shared_db),
+):
+    """同步 job 列表（默认用于死信页：?status=dead）。"""
+    user = _admin_user(payload, db)
+    query = db.query(CrmSyncJob).filter(CrmSyncJob.organization_id == user.organization_id)
+    if status:
+        query = query.filter(CrmSyncJob.status == status)
+    rows = query.order_by(CrmSyncJob.id.desc()).limit(min(limit, 200)).all()
+    lead_ids = {r.lead_id for r in rows}
+    leads = {l.id: l for l in db.query(Lead).filter(Lead.id.in_(lead_ids)).all()} if lead_ids else {}
+    # 汇总计数（门户/配置页展示）
+    counts = dict(
+        db.query(CrmSyncJob.status, func.count())
+        .filter(CrmSyncJob.organization_id == user.organization_id)
+        .group_by(CrmSyncJob.status)
+        .all()
+    )
+    return {
+        "items": [_job_to_dict(r, leads.get(r.lead_id)) for r in rows],
+        "counts": {s: counts.get(s, 0) for s in ("pending", "leased", "retrying", "succeeded", "dead")},
+    }
+
+
+@router.post("/jobs/{job_id}/retry")
+def retry_job(job_id: int, payload: dict = Depends(get_current_user), db: Session = Depends(get_shared_db)):
+    """死信/失败 job 重投：只改变 job 状态，不生成新业务线索。"""
+    user = _admin_user(payload, db)
+    job = (
+        db.query(CrmSyncJob)
+        .filter(CrmSyncJob.id == job_id, CrmSyncJob.organization_id == user.organization_id)
+        .first()
+    )
+    if not job:
+        raise HTTPException(404, "同步任务不存在")
+    if job.status not in ("dead", "retrying", "pending"):
+        raise HTTPException(400, f"当前状态 {job.status} 不可重投")
+    job.status = "pending"
+    job.attempt_count = 0
+    job.next_attempt_at = datetime.now()
+    job.lease_owner = None
+    job.lease_expires_at = None
+    job.dead_at = None
+    job.updated_at = datetime.now()
+    db.commit()
+    return {"job": _job_to_dict(job)}
+
+
+@router.post("/leads/{lead_id}/resync")
+def resync_lead(lead_id: int, payload: dict = Depends(get_current_user), db: Session = Depends(get_shared_db)):
+    """单条线索手动重投（含 dropped 的显式重投场景）。"""
+    user = _admin_user(payload, db)
+    lead = (
+        db.query(Lead)
+        .filter(Lead.id == lead_id, Lead.organization_id == user.organization_id)
+        .first()
+    )
+    if not lead:
+        raise HTTPException(404, "线索不存在")
+    job = enqueue_lead_sync(db, lead)
+    if job is None:
+        # dropped 状态默认不入队；显式重投时强制映射为 pending 推送
+        from core.crm.mapping import build_upsert_payload, lead_idempotency_key
+        from core.crm.outbox import _payload_hash
+        from core.crm.contract import CustomerUpsertRequest
+
+        body = build_upsert_payload(lead)
+        if body is None:
+            body = CustomerUpsertRequest(
+                externalId=f"lead:{lead.id}",
+                initialStatus="pending",
+                name=lead.name, company=lead.company,
+                email=(lead.email or "").strip().lower() or None,
+                phone=lead.phone, country=lead.country,
+                interestedProducts=lead.products,
+                leadSource=f"AutoForceAI / {lead.source or 'unknown'}",
+                tags=["autoforce", "manual-resync"],
+            )
+        payload_dict = body.model_dump(exclude_none=True)
+        digest = _payload_hash(payload_dict)
+        job = CrmSyncJob(
+            organization_id=lead.organization_id,
+            lead_id=lead.id,
+            event_type="lead.upsert",
+            idempotency_key=lead_idempotency_key(lead.id, digest),
+            payload_version=body.schemaVersion,
+            payload_json=payload_dict,
+            payload_hash=digest,
+            status="pending",
+            next_attempt_at=datetime.now(),
+        )
+        db.add(job)
+    db.commit()
+    return {"job": _job_to_dict(job)}

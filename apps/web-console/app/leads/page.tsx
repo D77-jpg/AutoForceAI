@@ -18,6 +18,32 @@ const STATUS_LABELS: Record<string, string> = {
 };
 const ACTION_STATUSES = ["contacted", "converted", "dropped"];
 
+// CRM 同步状态（Wave C）
+const CRM_LABELS: Record<string, { label: string; cls: string }> = {
+  succeeded: { label: "已同步", cls: "text-green-500" },
+  pending: { label: "待投递", cls: "text-text-secondary" },
+  leased: { label: "投递中", cls: "text-accent" },
+  retrying: { label: "重试中", cls: "text-amber-500" },
+  dead: { label: "死信", cls: "text-red-500" },
+};
+
+function CrmBadge({ crm }: { crm: any }) {
+  if (!crm || (!crm.job_status && !crm.synced)) return <span className="text-text-secondary">-</span>;
+  if (crm.synced) {
+    return (
+      <span className="text-green-500" title={`Genesis 客户 ${crm.remote_customer_id || ""}`}>
+        已同步{crm.remote_status ? ` · ${crm.remote_status}` : ""}
+      </span>
+    );
+  }
+  const meta = CRM_LABELS[crm.job_status] || { label: crm.job_status, cls: "text-text-secondary" };
+  return (
+    <span className={meta.cls} title={crm.last_error || undefined}>
+      {meta.label}
+    </span>
+  );
+}
+
 export default function LeadsPage() {
   const [items, setItems] = useState([]);
   const [status, setStatus] = useState("");
@@ -33,6 +59,10 @@ export default function LeadsPage() {
   useEffect(()=>{ load(); }, [status]);
   const setSt = async (id, s) => {
     await fetch(API+"/api/v1/leads/"+id, { method:"PATCH", headers:{...auth(),"Content-Type":"application/json"}, body: JSON.stringify({status:s}) });
+    load();
+  };
+  const resync = async (id) => {
+    await fetch(API+`/api/v1/crm/integration/leads/${id}/resync`, { method:"POST", headers: auth() });
     load();
   };
   const exportCsv = () => {
@@ -76,6 +106,7 @@ export default function LeadsPage() {
                 <TableHeaderCell>产品</TableHeaderCell>
                 <TableHeaderCell>来源</TableHeaderCell>
                 <TableHeaderCell>状态</TableHeaderCell>
+                <TableHeaderCell>CRM 同步</TableHeaderCell>
                 <TableHeaderCell className="text-right">操作</TableHeaderCell>
               </TableRow>
             </TableHead>
@@ -87,7 +118,11 @@ export default function LeadsPage() {
                   <TableCell>{it.products || (it.intent_json && it.intent_json.intent) || "-"}</TableCell>
                   <TableCell>{it.source}</TableCell>
                   <TableCell>{STATUS_LABELS[it.status] || it.status}</TableCell>
+                  <TableCell><CrmBadge crm={it.crm} /></TableCell>
                   <TableCell className="text-right space-x-1">
+                    {it.crm && !it.crm.synced && it.crm.job_status !== "pending" && it.crm.job_status !== "leased" && (
+                      <Button variant="secondary" size="sm" onClick={()=>resync(it.id)}>重投</Button>
+                    )}
                     {ACTION_STATUSES.map(s=>(
                       <Button key={s} variant="secondary" size="sm" onClick={()=>setSt(it.id,s)}>{STATUS_LABELS[s]}</Button>
                     ))}

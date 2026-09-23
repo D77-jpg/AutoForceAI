@@ -49,7 +49,18 @@ async def lifespan(app: FastAPI):
         start_geo_scheduler(interval_seconds=int(os.getenv("GEO_SCHEDULER_INTERVAL", "60")))
     except Exception as exc:
         print(f"[Warn] GEO scheduler not started: {exc}")
+    # CRM Outbox 投递器（阶段 2 Wave C）：租约抢占 + 退避 + 死信
+    try:
+        from core.crm.dispatcher import start_dispatcher
+        start_dispatcher()
+    except Exception as exc:
+        print(f"[Warn] CRM dispatcher not started: {exc}")
     yield
+    try:
+        from core.crm.dispatcher import stop_dispatcher
+        stop_dispatcher()
+    except Exception:
+        pass
     try:
         from core.geo_scheduler import stop as stop_geo_scheduler
         stop_geo_scheduler()
