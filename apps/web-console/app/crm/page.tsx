@@ -23,6 +23,9 @@ export default function CrmPage() {
           <Link href="/leads">
             <Button>打开本地线索池</Button>
           </Link>
+          <Link href="/crm/settings">
+            <Button variant="outline">集成连接设置</Button>
+          </Link>
           <Link href="/">
             <Button variant="outline">
               <ArrowLeft size={16} className="mr-2" /> 返回门户

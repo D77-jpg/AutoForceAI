@@ -379,3 +379,40 @@ class Lead(SharedBase):
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
+
+class CrmIntegrationConfig(SharedBase):
+    """
+    CRM 集成连接配置（阶段 2 Wave B）。
+    一个 organization 显式绑定一个 Genesis_CRM projectId，禁止默认项目回退。
+    service_token 为服务端机密：任何 API 响应都不得返回明文，只返回脱敏预览。
+    """
+    __tablename__ = "crm_integration_configs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), unique=True, index=True)
+
+    provider = Column(String, default="genesis_crm")           # 固定 genesis_crm
+    base_url = Column(String)                                  # e.g. http://localhost:5000/api
+    project_id = Column(String)                                # Genesis ObjectId，必填
+    project_name = Column(String, nullable=True)               # 最近一次连接测试返回的显示名
+
+    service_token = Column(String, nullable=True)              # 服务端机密，禁止回传前端
+    contract_version = Column(String, default="1.0")
+
+    enabled = Column(Boolean, default=False)                   # 是否允许新任务投递
+    last_health_status = Column(String, nullable=True)         # ok / error / unchecked
+    last_health_detail = Column(Text, nullable=True)           # 脱敏的连接测试摘要
+    last_health_checked_at = Column(DateTime, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+    organization = relationship("Organization")
+
+    @property
+    def token_preview(self):
+        if not self.service_token:
+            return None
+        return f"****{self.service_token[-4:]}"
+
+
