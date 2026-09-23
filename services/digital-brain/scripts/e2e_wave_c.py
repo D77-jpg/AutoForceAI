@@ -20,7 +20,8 @@ from database.shared_models import CrmEntityLink, CrmIntegrationConfig, CrmSyncJ
 from routers.lead_router import upsert_lead
 
 GENESIS = "http://localhost:5000/api"
-TOKEN = os.environ["GENESIS_TEST_TOKEN"]  # local dev credential from env, never committed
+# 凭证不落库：从环境变量读取本地开发凭证（绝不提交真实 token）
+TOKEN = os.environ["GENESIS_TEST_TOKEN"]
 PROJECT = "6aa2360776ab59e92117bb18"
 
 Base.metadata.create_all(bind=SHARED_ENGINE)
