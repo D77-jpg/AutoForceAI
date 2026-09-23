@@ -14,7 +14,7 @@
 - 不需要判断"这是单端还是跨端"——**跨端改动就放在同一条分支、同一个 PR 里**
 - 不直接 push main（已开分支保护时技术上也不可能），不在 main 之外长期停留
 
-branches 命名只为人类可读，不承载规则含义：`<agent>/<主题>`，如 `ui/首页改版`、`codex/crm-portal`、`docs/xxx`。
+branches 命名只为人类可读，不承载规则含义：`<agent>/<主题>`，如 `feat/首页改版`、`codex/crm-portal`、`docs/xxx`。
 
 **提交由谁触发（默认约定）**
 
@@ -34,7 +34,7 @@ branches 命名只为人类可读，不承载规则含义：`<agent>/<主题>`�
 
 ### 1. 未提交 = 不存在
 
-改动只要还留在工作区（没 `commit`、没 `push`），它对**其他 agent、其他工作树、验收站、CI 全部不可见**。
+改动只要还留在工作区（没 `commit`、没 `push`），它对**其他 agent、其他目录、验收站、CI 全部不可见**。
 别的 agent 合并代码后"发现少了一块"，根因就是这一条——**不是合并顺序问题，是那份改动从未进入 git**。
 
 > 改完立刻提交并推送；没写完就先推 WIP 分支（`git push -u origin HEAD`），不要留在本地。
@@ -50,37 +50,39 @@ cherry-pick 会在两条分支上生成「内容相同、SHA 不同」的重复�
 
 ---
 
-## 三、常驻目录（这是运行便利，不是提交规则）
+## 三、目录：一份干活、一份验收
 
-`git worktree` 把同一个仓库摊成多份目录，各站一条分支——它们不是三个项目。
+本仓库只保留**两份常驻目录**：一份干活、一份验收。
 
-| 目录 | 这里跑着什么 | 服务端口 |
+| 目录 | 用途 | 服务端口 |
 |---|---|---|
-| `D:\Trade\AutoForceAI` | 后端 / CRM / db 的日常开发 | — |
-| `D:\Trade\AutoForceAI\.codex-worktrees\autoforce-main-release` | 前端 UI（`apps/web-console`）的日常开发 | 3051 |
-| `D:\Trade\afai-release` | **验收站**：只读，始终跟随 `main` | **3050** |
-| `D:\Trade\wt\<主题>` | 临时任务工作树（可选，用完即删） | 按需 |
+| `D:\Trade\AutoForceAI` | **干活目录**：前后端都在这里改（`apps/web-console` 与 `services/**`） | 后端 **8010**；前端预览按需 3051 |
+| `D:\Trade\afai-release` | **验收站**：只读，始终跟随 `main`——你看效果的地方 | **3050** |
+| `D:\Trade\wt\<主题>` | 临时任务工作树（可选，多 agent 并行时用，用完即删） | 按需 |
 
-这张表只回答"**我想跑起某个服务该去哪个目录**"，**不回答"我该不该开分支"**——那个问题永远只有一个答案：见第一条规则。
+- **前端预览（3051）是按需启动的**：在干活目录执行 `cd apps\web-console` 后 `npx next dev -p 3051`。
+  只有想在**合并前**看某个分支的界面时才需要它；平时不用开——3050 就是 main 的效果。
+- **后端（8010）**：在 `services\digital-brain` 下用 `venv\Scripts\python.exe server.py` 启动。
+- `.codex-worktrees\` 里另有 **Genesis_CRM 仓库的克隆**（`genesis-*`）——那是另一个仓库，**不是**本仓库的工作树，别在这里提交。
 
 **纪律**
 
-1. 一个目录一个用途；**不要跨目录改动**（别的 agent 可能在那里有未提交的工作）。
-2. 验收站 `afai-release` **只允许 `git switch main` / `git merge --ff-only origin/main`**，不允许提交任何东西。
-3. 动手前先 `git fetch origin`，并让工作区干净。
+1. 干活只在 `D:\Trade\AutoForceAI`；验收站 `afai-release` **只允许 `git switch main` / `git merge --ff-only origin/main`**，不允许提交任何东西。
+2. 动手前先 `git fetch origin`，并让工作区干净。
+3. **前端依赖**：在 `apps\web-console` 下执行 `npm ci`（锁文件已提交）。若报 `Can't resolve 'clsx' / 'sonner' / '@radix-ui/react-tabs'`，就是依赖没装全——本条曾真实踩过。
 
 ---
 
 ## 四、标准流程（照抄即可）
 
 ```powershell
-# 0. 进入你要工作的目录（见第三节）
-cd D:\Trade\AutoForceAI\.codex-worktrees\autoforce-main-release
+# 0. 进入干活目录
+cd D:\Trade\AutoForceAI
 
 # 1. 从最新 main 开一条短命分支
 git fetch origin
 git switch --detach origin/main
-git switch -c ui/首页改版
+git switch -c feat/首页改版
 
 # 2. 改代码；随即提交并推送（未提交 = 不存在）
 git add -A
@@ -93,11 +95,11 @@ git push -u origin HEAD
 # 4. 合并后清理（别省）
 git fetch origin --prune
 git switch --detach origin/main
-git branch -D ui/首页改版
-git push origin --delete ui/首页改版     # 若远端还在
+git branch -D feat/首页改版
+git push origin --delete feat/首页改版     # 若远端还在
 ```
 
-多 agent 并行、或想在常驻工位之外隔离地改一个跨端任务时，用脚本开临时工作树：
+多 agent 并行、或想在干活目录之外隔离地改一个跨端任务时，用脚本开临时工作树：
 
 ```powershell
 .\scripts\wt-new.ps1 -Topic crm-portal        # → D:\Trade\wt\crm-portal（仓库外，自动复用前端依赖）
@@ -163,4 +165,5 @@ git -C D:\Trade\AutoForceAI log --oneline HEAD..origin/main
 | `origin/main` | GitHub 上的主线，**唯一权威** |
 | PR | 合入 main 的唯一通道 |
 | tag | 不可变的发布快照，替代"长期 release 分支" |
+| 干活目录 | `D:\Trade\AutoForceAI`，前后端都在这里改 |
 | 验收站 | `D:\Trade\afai-release`，只读跟随 main，端口 3050 |
