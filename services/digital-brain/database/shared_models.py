@@ -379,3 +379,217 @@ class Lead(SharedBase):
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
+
+class CrmIntegrationConfig(SharedBase):
+    """
+    CRM 集成连接配置（阶段 2 Wave B）。
+    一个 organization 显式绑定一个 Genesis_CRM projectId，禁止默认项目回退。
+    service_token 为服务端机密：任何 API 响应都不得返回明文，只返回脱敏预览。
+    """
+    __tablename__ = "crm_integration_configs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), unique=True, index=True)
+
+    provider = Column(String, default="genesis_crm")           # 固定 genesis_crm
+    base_url = Column(String)                                  # e.g. http://localhost:5000/api
+    web_base_url = Column(String, nullable=True)               # Genesis 前端地址（深链用），空则按 base_url 推导
+    project_id = Column(String)                                # Genesis ObjectId，必填
+    project_name = Column(String, nullable=True)               # 最近一次连接测试返回的显示名
+
+    service_token = Column(String, nullable=True)              # enc:v1: 密文（旧记录可能为明文，读取时迁移）
+    token_last4 = Column(String, nullable=True)                # 明文末 4 位，仅用于脱敏预览
+    contract_version = Column(String, default="1.0")
+
+    enabled = Column(Boolean, default=False)                   # 是否允许新任务投递
+    last_health_status = Column(String, nullable=True)         # ok / error / auth_invalid / credential_error / unchecked
+    last_health_detail = Column(Text, nullable=True)           # 脱敏的连接测试摘要
+    last_health_checked_at = Column(DateTime, nullable=True)
+    # 启用门槛（P0-5）：最近一次成功测试时的配置指纹（base_url|project_id|token密文|契约版本）
+    health_fingerprint = Column(String, nullable=True)
+
+    # outcome 轮询游标（org+project 粒度，opaque；与批处理同事务提交）
+    outcome_cursor = Column(String, nullable=True)
+    outcome_polled_at = Column(DateTime, nullable=True)
+
+    # reset-binding 审计
+    last_reset_at = Column(DateTime, nullable=True)
+    last_reset_by = Column(Integer, nullable=True)             # 执行重置的管理员用户 ID
+
+    # outcome poller 分布式租约（§3.6：多实例下同 org+project 只有一个推进 cursor）
+    outcome_lease_owner = Column(String, nullable=True)
+    outcome_lease_expires_at = Column(DateTime, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+    organization = relationship("Organization")
+
+    __table_args__ = (
+        # 首版严格一对一：一个 Genesis project 不得同时绑定到多个 AutoForceAI organization。
+        # NULL 代表 reset-binding 后待重绑，允许多条。
+        Index(
+            "uq_crm_config_provider_project",
+            "provider", "project_id", unique=True,
+            sqlite_where=project_id.isnot(None),
+            postgresql_where=project_id.isnot(None),
+        ),
+    )
+
+    @property
+    def token_preview(self):
+        """脱敏预览只来自单独保存的 token_last4，绝不通过解密密文生成。"""
+        if not self.token_last4:
+            return None
+        return f"****{self.token_last4}"
+
+    def set_service_token(self, plain: str) -> None:
+        """写入 token：加密落库 + 单独保存 last4。"""
+        from core.credentials import encrypt_secret
+        self.service_token = encrypt_secret(plain)
+        self.token_last4 = plain[-4:]
+
+    def get_service_token(self) -> str | None:
+        """
+        读取 token 明文（仅服务端内部使用）。
+        密文 → 解密；旧明文 → 返回明文（调用方负责迁移写回，见 migrate_token_if_legacy）。
+        失败抛 core.credentials.CredentialError。
+        """
+        from core.credentials import resolve_secret
+        plain, _needs_migration = resolve_secret(self.service_token)
+        return plain
+
+    def migrate_token_if_legacy(self) -> bool:
+        """旧明文 → 密文的一次性迁移（调用方负责 commit）。返回是否发生了迁移。"""
+        from core.credentials import encrypt_secret, is_encrypted
+        if not self.service_token or is_encrypted(self.service_token):
+            return False
+        plain = self.service_token
+        # 先在局部变量完成所有可失败工作；只有加密成功后才一次性更新 ORM 状态。
+        # 即使调用方捕获 CredentialError 后又 commit health 状态，
+        # 也不会把原明文 token 误提交为 NULL。
+        encrypted = encrypt_secret(plain)
+        self.service_token = encrypted
+        self.token_last4 = plain[-4:]
+        return True
+
+
+class CrmSyncJob(SharedBase):
+    """
+    CRM 同步 Outbox（阶段 2 Wave C）。
+    线索写入与 job 创建在同一数据库事务完成；投递器用租约抢占避免多进程重复消费。
+    重试必须复用原 idempotency_key（Genesis 侧据此幂等重放）。
+    """
+    __tablename__ = "crm_sync_jobs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), index=True)
+    lead_id = Column(Integer, ForeignKey("leads.id"), index=True)
+    project_id = Column(String, nullable=True, index=True)     # 入队时绑定的 Genesis 项目（reset 后旧 job 不得投新项目）
+
+    event_type = Column(String, default="lead.upsert")           # 首版只有 lead.upsert
+    idempotency_key = Column(String, unique=True, index=True)    # lead-<id>-<payload_hash[:16]>
+    payload_version = Column(String, default="1.0")
+    payload_json = Column(JSON)                                  # CustomerUpsertRequest dump
+    payload_hash = Column(String)                                # sha256(规范化载荷)
+
+    # pending / leased / retrying / succeeded / dead / cancelled
+    status = Column(String, default="pending", index=True)
+    attempt_count = Column(Integer, default=0)
+    next_attempt_at = Column(DateTime, default=datetime.now, index=True)
+
+    lease_owner = Column(String, nullable=True)                  #  worker 标识
+    lease_expires_at = Column(DateTime, nullable=True)
+
+    last_error_code = Column(String, nullable=True)              # 稳定错误码（VALIDATION_ERROR 等）
+    last_error_summary = Column(Text, nullable=True)             # 脱敏错误摘要
+    last_http_status = Column(Integer, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    succeeded_at = Column(DateTime, nullable=True)
+    dead_at = Column(DateTime, nullable=True)
+
+    lead = relationship("Lead")
+
+
+class CrmEntityLink(SharedBase):
+    """
+    外部实体映射（阶段 2 Wave C）。
+    AutoForceAI lead ↔ Genesis customer 的稳定引用；两端只读引用，不靠姓名/邮箱猜测。
+    outcome 轮询游标存于 crm_integration_configs（org+project 粒度）。
+    reset-binding 时旧项目映射标记 archived_at（不物理删除，保留审计）。
+    """
+    __tablename__ = "crm_entity_links"
+
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), index=True)
+    lead_id = Column(Integer, ForeignKey("leads.id"), index=True)
+
+    provider = Column(String, default="genesis_crm")
+    project_id = Column(String)                                  # Genesis projectId
+    remote_customer_id = Column(String)                          # Genesis customerId
+
+    remote_status = Column(String, nullable=True)                # Genesis 八段状态快照
+    remote_updated_at = Column(DateTime, nullable=True)
+    synced_at = Column(DateTime, nullable=True)
+    archived_at = Column(DateTime, nullable=True)                # 重置绑定后归档
+
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+    lead = relationship("Lead")
+
+    __table_args__ = (
+        # 一个线索在同一（提供商+项目）下只关联一个远端客户；重置绑定后可绑新项目
+        Index("uq_crm_link_org_lead_project", "provider", "organization_id", "lead_id", "project_id", unique=True),
+        Index("uq_crm_link_remote", "provider", "project_id", "remote_customer_id", unique=True),
+    )
+
+
+class CrmWorkerState(SharedBase):
+    """
+    CRM 后台 worker 全局健康状态（阶段 2.9 §3.6，单行表 id=1）。
+    供 /crm 门户与运维观察：worker 开关、dispatcher/poller 心跳、最近错误。
+    """
+    __tablename__ = "crm_worker_state"
+
+    id = Column(Integer, primary_key=True)
+    dispatcher_worker_id = Column(String, nullable=True)
+    dispatcher_last_success_at = Column(DateTime, nullable=True)
+    poller_worker_id = Column(String, nullable=True)
+    poller_last_success_at = Column(DateTime, nullable=True)
+    last_error = Column(Text, nullable=True)                   # 脱敏错误摘要
+    last_error_at = Column(DateTime, nullable=True)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+
+class CrmOutcomeEvent(SharedBase):
+    """
+    已消费的成交/流失事件流水（阶段 2 Wave D）。
+    按 (provider, organization_id, event_id) 幂等：重复事件直接跳过，不重复归因。
+    """
+    __tablename__ = "crm_outcome_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), index=True)
+    provider = Column(String, default="genesis_crm")
+
+    event_id = Column(String)                                  # Genesis CustomerEvent id
+    remote_customer_id = Column(String)
+    external_id = Column(String, nullable=True)                # lead:<id>；CRM 原生客户为 None
+    lead_id = Column(Integer, ForeignKey("leads.id"), nullable=True)
+
+    from_status = Column(String, nullable=True)
+    to_status = Column(String)                                 # won / lost
+    occurred_at = Column(DateTime)
+    processed_at = Column(DateTime, default=datetime.now)
+
+    lead = relationship("Lead")
+
+    __table_args__ = (
+        Index("uq_crm_outcome_event", "provider", "organization_id", "event_id", unique=True),
+    )
+
+
+

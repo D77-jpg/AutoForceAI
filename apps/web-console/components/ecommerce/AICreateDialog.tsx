@@ -164,15 +164,15 @@ export function AICreateDialog({ isOpen, onClose, onSuccess }: AICreateDialogPro
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className="bg-[#1e293b] border border-white/10 w-full max-w-lg rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg/60 backdrop-blur-sm">
+            <div className="bg-surface border border-separator w-full max-w-lg rounded-xl shadow-modal overflow-hidden animate-modal-in">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-white/8 bg-[#1c1c1e]/70">
-                    <div className="flex items-center gap-2 text-[#0a84ff]">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-separator bg-surface/70">
+                    <div className="flex items-center gap-2 text-accent">
                         <Sparkles size={20} />
-                        <h3 className="font-bold text-lg text-slate-200">AI 智能一键发布</h3>
+                        <h3 className="font-bold text-lg text-text">AI 智能一键发布</h3>
                     </div>
-                    <button onClick={onClose} className="text-slate-500 hover:text-slate-300">
+                    <button onClick={onClose} className="text-text-secondary hover:text-text">
                         <X size={20} />
                     </button>
                 </div>
@@ -182,19 +182,19 @@ export function AICreateDialog({ isOpen, onClose, onSuccess }: AICreateDialogPro
                     {step === 'input' && (
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-300">请输入商品描述或关键词</label>
+                                <label className="text-sm font-medium text-text">请输入商品描述或关键词</label>
                                 <textarea 
-                                    className="w-full h-32 bg-black border border-white/8 rounded-lg p-3 text-slate-200 focus:ring-2 focus:ring-[#0a84ff]/40 focus:border-[#0a84ff] transition-all resize-none placeholder:text-slate-600"
+                                    className="w-full h-32 bg-bg border border-separator rounded-lg p-3 text-text focus:ring-2 focus:ring-accent/40 focus:border-accent transition-all resize-none placeholder:text-text-tertiary"
                                     placeholder="例如：一件红色的法式复古碎花连衣裙，适合夏天海边度假，材质要轻薄透气..."
                                     value={prompt}
                                     onChange={e => setPrompt(e.target.value)}
                                 />
                             </div>
                             
-                            <div className="bg-yellow-500/10 rounded-lg p-4 border border-yellow-500/30 border-dashed">
-                                <p className="text-xs text-yellow-500/80 mb-3 text-center">或者上传参考图（可选）</p>
+                            <div className="bg-warning/10 rounded-lg p-4 border border-warning/30 border-dashed">
+                                <p className="text-xs text-warning/80 mb-3 text-center">或者上传参考图（可选）</p>
                                 <div className="flex justify-center">
-                                    <Button variant="outline" size="sm" className="bg-yellow-500/10 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/20 hover:text-yellow-400">
+                                    <Button variant="outline" size="sm" className="bg-warning/10 border-warning/30 text-warning hover:bg-warning/20 hover:text-warning">
                                         <Upload size={14} className="mr-2" /> 上传图片
                                     </Button>
                                 </div>
@@ -205,27 +205,27 @@ export function AICreateDialog({ isOpen, onClose, onSuccess }: AICreateDialogPro
                     {step === 'processing' && (
                         <div className="py-10 flex flex-col items-center justify-center text-center space-y-4">
                             <div className="relative">
-                                <div className="absolute inset-0 bg-[#0a84ff] blur-xl opacity-20 rounded-full animate-pulse"></div>
-                                <Loader2 size={48} className="text-[#0a84ff] animate-spin relative z-10" />
+                                <div className="absolute inset-0 bg-accent blur-xl opacity-20 rounded-full animate-pulse"></div>
+                                <Loader2 size={48} className="text-accent animate-spin relative z-10" />
                             </div>
-                            <p className="text-slate-300 font-medium animate-pulse">{analyzingText}</p>
+                            <p className="text-text font-medium animate-pulse">{analyzingText}</p>
                         </div>
                     )}
 
                     {step === 'result' && result && (
                         <div className="space-y-4">
-                            <div className="flex items-start gap-4 p-3 bg-[#1c1c1e]/70 rounded-lg border border-white/8">
-                                <img src={result.images[0]} alt="Preview" className="w-16 h-16 rounded object-cover bg-[#2c2c2e]" />
+                            <div className="flex items-start gap-4 p-3 bg-surface/70 rounded-lg border border-separator">
+                                <img src={result.images[0]} alt="Preview" className="w-16 h-16 rounded object-cover bg-surface-2" />
                                 <div>
-                                    <h4 className="text-sm font-bold text-slate-200 line-clamp-1">{result.name}</h4>
-                                    <p className="text-xs text-slate-400 mt-1 line-clamp-2">{result.subtitle}</p>
+                                    <h4 className="text-sm font-bold text-text line-clamp-1">{result.name}</h4>
+                                    <p className="text-xs text-text-secondary mt-1 line-clamp-2">{result.subtitle}</p>
                                     <div className="flex gap-2 mt-2">
-                                        <span className="text-xs bg-[#0a84ff]/10 text-[#0a84ff] px-1.5 py-0.5 rounded">¥{result.price}</span>
-                                        <span className="text-xs bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded">ID: {result.categoryId}</span>
+                                        <span className="text-xs bg-accent/10 text-accent px-1.5 py-0.5 rounded">¥{result.price}</span>
+                                        <span className="text-xs bg-surface-2 text-text px-1.5 py-0.5 rounded">ID: {result.categoryId}</span>
                                     </div>
                                 </div>
                             </div>
-                            <div className="text-xs text-center text-green-500 flex items-center justify-center gap-1">
+                            <div className="text-xs text-center text-success flex items-center justify-center gap-1">
                                 <CheckCircle2 size={14} />
                                 已生成完整商品信息，点击应用即可填充
                             </div>
@@ -234,13 +234,13 @@ export function AICreateDialog({ isOpen, onClose, onSuccess }: AICreateDialogPro
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-4 bg-[#1c1c1e]/50 border-t border-white/6 flex justify-end gap-3">
+                <div className="px-6 py-4 bg-surface/50 border-t border-separator flex justify-end gap-3">
                     {step === 'input' && (
                         <>
-                            <Button variant="ghost" onClick={onClose} className="text-slate-400 hover:text-slate-200">取消</Button>
+                            <Button variant="ghost" onClick={onClose} className="text-text-secondary hover:text-text">取消</Button>
                             <Button 
                                 onClick={handleGenerate} 
-                                className="bg-[#0071e3] hover:bg-[#0077ed] text-white"
+                                className="bg-accent hover:bg-accent-hover text-white"
                                 disabled={!prompt.trim()}
                             >
                                 <Wand2 size={16} className="mr-2" />
@@ -251,8 +251,8 @@ export function AICreateDialog({ isOpen, onClose, onSuccess }: AICreateDialogPro
                     
                     {step === 'result' && (
                         <>
-                            <Button variant="ghost" onClick={() => setStep('input')} className="text-slate-400 hover:text-slate-200">重试</Button>
-                            <Button onClick={() => onSuccess(result!)} className="bg-emerald-600 hover:bg-emerald-500 text-white">
+                            <Button variant="ghost" onClick={() => setStep('input')} className="text-text-secondary hover:text-text">重试</Button>
+                            <Button onClick={() => onSuccess(result!)} className="bg-success hover:bg-success text-white">
                                 应用到表单
                                 <ArrowRight size={16} className="ml-2" />
                             </Button>

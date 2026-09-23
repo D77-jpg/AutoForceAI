@@ -20,7 +20,7 @@ const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
           {...props}
         />
         <div className={cn(
-          "w-[51px] h-[31px] bg-[#39393d] rounded-full peer peer-focus:outline-none after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-[27px] after:w-[27px] after:transition-all after:shadow-sm peer-checked:after:translate-x-[20px] peer-checked:bg-[#30d158]",
+          "w-[51px] h-[31px] bg-surface-2 rounded-full peer transition-colors duration-fast ease-apple peer-focus:outline-none peer-focus-visible:ring-[3px] peer-focus-visible:ring-accent/30 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-[27px] after:w-[27px] after:transition-all after:duration-fast after:ease-apple after:shadow-sm peer-checked:after:translate-x-[20px] peer-checked:bg-success",
           className
         )}></div>
       </label>

@@ -1,0 +1,128 @@
+/**
+ * @autoforce/ui-tokens — Apple 风格设计令牌
+ * 深色模式双通道：prefers-color-scheme + [data-theme="dark"]
+ * 仅定义变量与工具类，不含任何组件样式。
+ */
+
+:root {
+  /* ── 颜色（浅色，RGB 通道便于 alpha 组合） ───────────── */
+  --ui-bg: 245 245 247;            /* #F5F5F7 */
+  --ui-surface: 255 255 255;       /* #FFFFFF */
+  --ui-surface-2: 232 232 237;     /* #E8E8ED */
+  --ui-text: 29 29 31;             /* #1D1D1F */
+  --ui-text-secondary: 110 110 115;/* #6E6E73 */
+  --ui-text-tertiary: 134 134 139; /* #86868B */
+  --ui-accent: 0 113 227;          /* #0071E3 */
+  --ui-accent-hover: 0 119 237;    /* #0077ED */
+  --ui-on-accent: 255 255 255;
+  --ui-separator: 0 0 0;           /* alpha 0.08 */
+  --ui-separator-alpha: 0.08;
+  --ui-overlay: 0 0 0;             /* 菜单/弹窗遮罩基色 */
+  --ui-success: 52 199 89;         /* #34C759 */
+  --ui-warning: 255 159 10;        /* #FF9F0A */
+  --ui-danger: 255 59 48;          /* #FF3B30 */
+
+  /* ── 分区主题色（macOS 系统设置风格实心图标底） ────── */
+  --ui-tint-growth: 255 59 48;     /* 增长 #FF3B30 */
+  --ui-tint-revenue: 0 122 255;    /* 营收 #007AFF */
+  --ui-tint-decision: 88 86 214;   /* 决策 #5856D6 */
+  --ui-tint-ops: 255 149 0;        /* 运营 #FF9500 */
+
+  /* ── 圆角 ─────────────────────────────────────────── */
+  --ui-radius-sm: 8px;
+  --ui-radius-md: 10px;
+  --ui-radius-lg: 16px;
+  --ui-radius-xl: 20px;
+  --ui-radius-2xl: 28px;
+  --ui-radius-pill: 9999px;
+
+  /* ── 阴影（极轻） ─────────────────────────────────── */
+  --ui-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.04);
+  --ui-shadow-popover: 0 4px 12px rgba(0, 0, 0, 0.08), 0 16px 40px rgba(0, 0, 0, 0.06);
+  --ui-shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.16);
+
+  /* ── 字体栈：系统字体优先，Inter 经 next/font 注入用于 Windows 英文/数字 ── */
+  --ui-font-sans: -apple-system, BlinkMacSystemFont, var(--font-inter, "Inter"), "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+
+  /* ── 动效 ─────────────────────────────────────────── */
+  --ui-duration-fast: 200ms;
+  --ui-duration-base: 300ms;
+  --ui-duration-slow: 600ms;
+  --ui-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+
+  /* ── 毛玻璃 ───────────────────────────────────────── */
+  --ui-glass-opacity: 0.72;
+}
+
+/* 深色：系统偏好（未被显式 data-theme 覆盖时） */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ui-bg: 0 0 0;                  /* #000000 */
+    --ui-surface: 28 28 30;          /* #1C1C1E */
+    --ui-surface-2: 44 44 46;        /* #2C2C2E */
+    --ui-text: 245 245 247;          /* #F5F5F7 */
+    --ui-text-secondary: 161 161 166;/* #A1A1A6 */
+    --ui-text-tertiary: 134 134 139; /* #86868B */
+    --ui-accent: 41 151 255;         /* #2997FF */
+    --ui-accent-hover: 76 166 255;
+    --ui-success: 48 209 88;         /* #30D158 */
+    --ui-tint-growth: 255 69 58;     /* #FF453A */
+    --ui-tint-revenue: 10 132 255;   /* #0A84FF */
+    --ui-tint-decision: 94 92 230;   /* #5E5CE6 */
+    --ui-tint-ops: 255 159 10;       /* #FF9F0A */
+    --ui-separator: 255 255 255;
+    --ui-separator-alpha: 0.1;
+    --ui-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3);
+    --ui-shadow-popover: 0 4px 12px rgba(0, 0, 0, 0.45), 0 16px 40px rgba(0, 0, 0, 0.35);
+    --ui-shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.55);
+  }
+}
+
+/* 深色：显式属性 */
+[data-theme="dark"] {
+  --ui-bg: 0 0 0;
+  --ui-surface: 28 28 30;
+  --ui-surface-2: 44 44 46;
+  --ui-text: 245 245 247;
+  --ui-text-secondary: 161 161 166;
+  --ui-text-tertiary: 134 134 139;
+  --ui-accent: 41 151 255;
+  --ui-accent-hover: 76 166 255;
+  --ui-success: 48 209 88;           /* #30D158 */
+  --ui-tint-growth: 255 69 58;       /* #FF453A */
+  --ui-tint-revenue: 10 132 255;     /* #0A84FF */
+  --ui-tint-decision: 94 92 230;     /* #5E5CE6 */
+  --ui-tint-ops: 255 159 10;         /* #FF9F0A */
+  --ui-separator: 255 255 255;
+  --ui-separator-alpha: 0.1;
+  --ui-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3);
+  --ui-shadow-popover: 0 4px 12px rgba(0, 0, 0, 0.45), 0 16px 40px rgba(0, 0, 0, 0.35);
+  --ui-shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.55);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+[data-theme="light"] {
+  color-scheme: light;
+}
+
+/* ── 毛玻璃工具类：surface 72% 透明 + blur-xl + 底部细线 ── */
+.ui-glass {
+  background-color: rgb(var(--ui-surface) / var(--ui-glass-opacity));
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid rgb(var(--ui-separator) / var(--ui-separator-alpha));
+}
+
+/* 尊重 prefers-reduced-motion：关闭非必要动效 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

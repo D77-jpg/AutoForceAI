@@ -13,7 +13,8 @@ from sqlalchemy.orm import Session
 
 from core.db_manager import get_shared_db
 from core.dependencies import get_current_user
-from database.shared_models import Lead, User
+from core.crm.outbox import enqueue_lead_sync
+from database.shared_models import CrmEntityLink, CrmSyncJob, Lead, User
 
 router = APIRouter(prefix="/api/v1/leads", tags=["Leads"])
 
@@ -63,12 +64,16 @@ def upsert_lead(db: Session, organization_id: Optional[int], data: dict) -> Lead
                 continue
             setattr(existing, k, v)
         existing.updated_at = datetime.now()
+        db.flush()  # 拿到 id 但暂不提交：与同步 job 同事务
+        enqueue_lead_sync(db, existing)
         db.commit()
         db.refresh(existing)
         return existing
 
     lead = Lead(organization_id=organization_id, email=email, **{k: v for k, v in data.items() if k != "email"})
     db.add(lead)
+    db.flush()  # 分配 id 供 externalId=lead:<id> 使用；与 job 同一事务提交
+    enqueue_lead_sync(db, lead)
     db.commit()
     db.refresh(lead)
     return lead
@@ -94,6 +99,53 @@ def _to_dict(lead: Lead) -> dict:
     }
 
 
+def _crm_status_map(db: Session, organization_id: Optional[int], lead_ids: list[int]) -> dict:
+    """每条线索的 CRM 同步摘要：只反映当前项目绑定的有效映射与 job（归档/旧项目不展示）。"""
+    if not lead_ids:
+        return {}
+    from database.shared_models import CrmIntegrationConfig
+
+    cfg = None
+    if organization_id is not None:
+        cfg = (
+            db.query(CrmIntegrationConfig)
+            .filter(CrmIntegrationConfig.organization_id == organization_id)
+            .first()
+        )
+    link_query = db.query(CrmEntityLink).filter(
+        CrmEntityLink.provider == "genesis_crm",
+        CrmEntityLink.lead_id.in_(lead_ids),
+        CrmEntityLink.archived_at.is_(None),
+    )
+    if organization_id is not None:
+        link_query = link_query.filter(CrmEntityLink.organization_id == organization_id)
+    if cfg is not None and cfg.project_id:
+        link_query = link_query.filter(CrmEntityLink.project_id == cfg.project_id)
+    link_by_lead = {l.lead_id: l for l in link_query.all()}
+
+    latest_job: dict[int, CrmSyncJob] = {}
+    job_query = db.query(CrmSyncJob).filter(CrmSyncJob.lead_id.in_(lead_ids)).order_by(CrmSyncJob.id.desc())
+    if organization_id is not None:
+        job_query = job_query.filter(CrmSyncJob.organization_id == organization_id)
+    if cfg is not None and cfg.project_id:
+        job_query = job_query.filter(CrmSyncJob.project_id == cfg.project_id)
+    for job in job_query.all():
+        latest_job.setdefault(job.lead_id, job)
+
+    result = {}
+    for lid in lead_ids:
+        link = link_by_lead.get(lid)
+        job = latest_job.get(lid)
+        result[lid] = {
+            "synced": link is not None,
+            "remote_customer_id": link.remote_customer_id if link else None,
+            "remote_status": link.remote_status if link else None,
+            "job_status": job.status if job else None,
+            "last_error": job.last_error_summary if job else None,
+        }
+    return result
+
+
 @router.get("")
 def list_leads(
     status: Optional[str] = None,
@@ -116,7 +168,13 @@ def list_leads(
             (Lead.email.ilike(like)) | (Lead.name.ilike(like)) | (Lead.company.ilike(like)) | (Lead.products.ilike(like))
         )
     rows = query.order_by(Lead.id.desc()).all()
-    return {"items": [_to_dict(r) for r in rows], "total": len(rows)}
+    crm_map = _crm_status_map(db, user.organization_id, [r.id for r in rows])
+    items = []
+    for r in rows:
+        d = _to_dict(r)
+        d["crm"] = crm_map.get(r.id)
+        items.append(d)
+    return {"items": items, "total": len(rows)}
 
 
 @router.post("")

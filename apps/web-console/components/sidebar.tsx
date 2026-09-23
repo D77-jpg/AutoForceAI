@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
+import ThemeToggle from './ThemeToggle';
 
 const MenuLink = ({ href, icon: Icon, label, exact, badge }: any) => {
   const pathname = usePathname();
@@ -43,10 +44,10 @@ const MenuLink = ({ href, icon: Icon, label, exact, badge }: any) => {
   
   return (
     <Link href={href} className={`nav-item ${isActive ? 'active' : ''}`}>
-        <Icon size={18} />
+        <Icon size={18} strokeWidth={1.75} />
         <span className="font-medium text-sm">{label}</span>
         {badge && (
-          <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded-full bg-[#ff9f0a]/15 text-[#ffd60a] font-medium shrink-0">
+          <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded-full bg-warning/15 text-warning font-medium shrink-0">
             {badge}
           </span>
         )}
@@ -86,7 +87,7 @@ export default function Sidebar() {
                 {
                     title: '会话管理',
                     items: [
-                        { href: '/service/sessions', icon: Activity, label: '实时会话监控' },
+                        { href: '/service/sessions', icon: Activity, label: '智能接待' },
                         { href: '/service/history', icon: Book, label: '历史会话查询' },
                         { href: '/leads', icon: Users, label: '本地线索池' }
                     ]
@@ -100,8 +101,8 @@ export default function Sidebar() {
                 {
                     title: '客服流程质检',
                     items: [
-                        { href: '/service/rules', icon: ShieldCheck, label: '质检规则配置' },
-                        { href: '/service/stats', icon: BarChart4, label: '服务质量报表' }
+                        { href: '/service/rules', icon: ShieldCheck, label: '质检规则' },
+                        { href: '/service/stats', icon: BarChart4, label: '服务质检' }
                     ]
                 }
             ]
@@ -172,8 +173,8 @@ export default function Sidebar() {
       };
     } else if (pathname?.startsWith('/workforce')) {
       return {
-        appName: 'GlobalPilot AI',
-        appEnName: '全球 B2B 智能增长操作系统',
+        appName: '数字员工',
+        appEnName: '企业级 AI 劳动力编排',
         homeLink: '/workforce',
         groups: [
           {
@@ -209,14 +210,14 @@ export default function Sidebar() {
         };
     } else if (pathname?.startsWith('/organization')) {
         return {
-          appName: '虚拟组织',
-          appEnName: 'AI 团队与组织架构管理',
+          appName: '组织编排',
+          appEnName: '数字员工权限与团队管理',
           homeLink: '/organization',
           groups: [
             {
               title: '组织架构',
               items: [
-                { href: '/organization', icon: Network, label: '团队概览' },
+                { href: '/organization', icon: Network, label: '组织编排' },
                 { href: '/organization/agents', icon: Users, label: '员工管理', badge: '开发中' }
               ]
             }
@@ -224,14 +225,14 @@ export default function Sidebar() {
         };
     } else if (pathname?.startsWith('/ops')) {
         return {
-          appName: '智能运维',
+          appName: '系统运维',
           appEnName: '系统运维与健康度监测',
           homeLink: '/ops',
           groups: [
             {
               title: '基础设施',
               items: [
-                { href: '/ops', icon: Terminal, label: '控制台', exact: true }
+                { href: '/ops', icon: Terminal, label: '系统运维', exact: true }
               ]            },
             {
                 title: '系统管理',
@@ -243,14 +244,14 @@ export default function Sidebar() {
         };
     } else if (pathname?.startsWith('/digital-human')) {
         return {
-          appName: '数字人梦工厂',
-          appEnName: '超写实数字人视频生成',
+          appName: '数字人',
+          appEnName: '高保真数字人视频生成与直播推流',
           homeLink: '/digital-human',
           groups: [
             {
               title: '内容制作',
               items: [
-                { href: '/digital-human', icon: Video, label: '视频生成' },
+                { href: '/digital-human', icon: Video, label: '数字人直播' },
                 { href: '/digital-human/assets', icon: Users, label: '形象资产', badge: '开发中' }
               ]
             }
@@ -265,7 +266,7 @@ export default function Sidebar() {
              {
                title: '模型服务',
                items: [
-                 { href: '/platform', icon: LayoutDashboard, label: '总览 Dashboard' },
+                 { href: '/platform', icon: LayoutDashboard, label: '总览' },
                  { href: '/platform/models', icon: BrainCircuit, label: '模型纳管' },
                ]
              },
@@ -285,16 +286,16 @@ export default function Sidebar() {
            ]
          };    } else if (pathname?.startsWith('/marketing')) {
         return {
-          appName: 'AI 营销云',
+          appName: 'AI 营销',
           appEnName: 'AIGC 内容生产与全域投放',
           homeLink: '/marketing',
           groups: [
             {
-              title: '内容创作 (AIGC)',
+              title: '内容创作',
               items: [
-                { href: '/marketing', icon: LayoutDashboard, label: '营销看板' },
-                { href: '/marketing/text-gen', icon: FileText, label: '文生文 (Copy)' },
-                { href: '/marketing/image-gen', icon: BrainCircuit, label: '文生图 (Image)' },
+                { href: '/marketing', icon: LayoutDashboard, label: '投放参谋' },
+                { href: '/marketing/text-gen', icon: FileText, label: '文生文' },
+                { href: '/marketing/image-gen', icon: BrainCircuit, label: '文生图' },
               ]
             },
             {
@@ -313,46 +314,40 @@ export default function Sidebar() {
           ]
         };
     } else if (pathname?.startsWith('/crm') || pathname?.startsWith('/leads')) {
+      // /crm 是「集成门户与摘要」：客户/商机/报价明细在 Genesis_CRM 操作，此处不重复建设
       return {
         appName: 'AI CRM',
-        appEnName: '智能客户关系管理',
-        homeLink: '/leads',
+        appEnName: 'Genesis 集成门户',
+        homeLink: '/crm',
         groups: [
             {
-              title: '客户管理',
+              title: '集成门户',
               items: [
-                { href: '/crm', icon: LayoutDashboard, label: '概览 Dashboard' },
+                { href: '/crm', icon: LayoutDashboard, label: '概览' },
                 { href: '/leads', icon: Users, label: '本地线索池' },
-                { href: '/crm/customers', icon: Building2, label: '客户列表', badge: '开发中' }
-              ]            
-            },
-            {
-                title: '销售漏斗',
-                items: [
-                    { href: '/crm/opportunities', icon: BarChart4, label: '商机管理', badge: '开发中' },
-                    { href: '/crm/contracts', icon: FileText, label: '合同归档', badge: '开发中' }
-                ]            
+                { href: '/crm/settings', icon: SlidersHorizontal, label: '集成设置' }
+              ]
             }
         ]
       };
     } else {
       // Default: GEO workspace
       return {
-        appName: 'GlobalPilot AI | GEO',
-        appEnName: 'AI Operating System for Global B2B Growth',
+        appName: 'GEO 全域洞察',
+        appEnName: '品牌舆情与心智份额追踪',
         homeLink: '/geo',
         groups: [
           {
             title: '核心平台',
             items: [
-              { href: '/geo', icon: LayoutDashboard, label: '品牌资产' },
-              { href: '/diagnosis', icon: BrainCircuit, label: '品牌洞察' },
+              { href: '/geo', icon: LayoutDashboard, label: '全域洞察' },
+              { href: '/diagnosis', icon: BrainCircuit, label: '竞争诊断' },
             ]
           },
           {
             title: '执行中心',
             items: [
-              { href: '/optimize', icon: FlaskConical, label: '内容构建' },
+              { href: '/optimize', icon: FlaskConical, label: '内容工场' },
               { href: '/distribution', icon: RadioTower, label: '营销矩阵' },
             ]
           }
@@ -364,10 +359,10 @@ export default function Sidebar() {
   const appConfig = getAppConfig();
 
   return (
-    <aside className="w-[248px] m-3 mr-0 flex flex-col shrink-0 rounded-[24px] bg-[#1c1c1e]/80 backdrop-blur-2xl border border-white/8 shadow-apple">
-         <div className="p-5 pb-4 border-b border-white/6">
+    <aside className="w-[248px] m-3 mr-0 flex flex-col shrink-0 rounded-2xl bg-surface/80 backdrop-blur-2xl border border-separator shadow-card">
+         <div className="p-5 pb-4 border-b border-separator">
             <div className="flex items-center gap-3 mb-4">
-              <div className="relative w-8 h-8 rounded-xl overflow-hidden bg-[#2c2c2e]">
+              <div className="relative w-8 h-8 rounded-xl overflow-hidden bg-surface-2">
                  <Image 
                     src="/logo.png" 
                     alt="Logo" 
@@ -376,8 +371,8 @@ export default function Sidebar() {
                  />
               </div>
               <div className="min-w-0">
-                <h1 className="font-semibold text-[15px] tracking-tight truncate">{appConfig.appName}</h1>
-                <p className="text-[11px] text-[#86868b] mt-0.5 truncate">
+                <h1 className="font-semibold text-[15px] tracking-tight leading-snug break-words">{appConfig.appName}</h1>
+                <p className="text-[11px] text-text-secondary mt-0.5 leading-snug break-words">
                     {appConfig.appEnName}
                 </p>
               </div>
@@ -385,9 +380,9 @@ export default function Sidebar() {
 
             <Link 
                 href="/" 
-                className="flex items-center gap-2 w-full p-2 rounded-full bg-white/6 hover:bg-white/10 transition-colors text-[12px] text-[#f5f5f7] font-medium group"
+                className="flex items-center gap-2 w-full p-2 rounded-full bg-text/5 hover:bg-text/10 transition-colors text-[12px] text-text font-medium group"
             >
-                <LayoutGrid size={14} className="text-[#86868b] group-hover:text-[#0a84ff] transition-colors" />
+                <LayoutGrid size={14} className="text-text-secondary group-hover:text-accent transition-colors" />
                 <span>切换应用</span>
             </Link>
          </div>
@@ -395,7 +390,7 @@ export default function Sidebar() {
          <div className="flex-1 overflow-y-auto py-5 px-2.5 space-y-1">
             {appConfig.groups.map((group, idx) => (
                 <div key={idx} className="mb-5 last:mb-0">
-                    <div className="text-[11px] font-semibold text-[#6e6e73] px-3 mb-1.5 uppercase tracking-[0.12em]">
+                    <div className="text-[11px] font-semibold text-text-tertiary px-3 mb-1.5">
                         {group.title}
                     </div>
                     {group.items.map((item, itemIdx) => (
@@ -412,49 +407,50 @@ export default function Sidebar() {
             ))}
          </div>
 
-         <div className="p-3 border-t border-white/6 relative">
+         <div className="p-3 border-t border-separator relative">
             <div 
-                className="flex items-center gap-3 p-2 rounded-2xl hover:bg-white/6 transition-colors cursor-pointer group"
+                className="flex items-center gap-3 p-2 rounded-2xl hover:bg-text/5 transition-colors cursor-pointer group"
                 onClick={() => setShowMenu(!showMenu)}
             >
-               <div className="w-8 h-8 rounded-full bg-[#3a3a3c] flex items-center justify-center overflow-hidden relative">
+               <div className="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center overflow-hidden relative">
                   {user?.avatar || user?.headimgurl ? (
                       <img src={user?.headimgurl || user?.avatar} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
-                      <span className="text-xs font-semibold text-[#f5f5f7]">
+                      <span className="text-xs font-semibold text-text">
                           {(user?.nickname || user?.username || 'U')?.[0]?.toUpperCase()}
                       </span>
                   )}
                </div>
                <div className="flex-1 overflow-hidden min-w-0">
-                  <p className="text-sm font-medium text-[#f5f5f7] truncate" title={user?.nickname || user?.username}>
+                  <p className="text-sm font-medium text-text truncate" title={user?.nickname || user?.username}>
                       {user?.nickname || user?.username || '未登录用户'}
                   </p>
-                  <p className="text-[10px] text-[#86868b] truncate flex items-center gap-1">
+                  <p className="text-[10px] text-text-secondary truncate flex items-center gap-1">
                       {user?.org_name && (
-                          <span className="text-[#0a84ff] font-medium truncate max-w-[80px]" title={user.org_name}>
+                          <span className="text-accent font-medium truncate max-w-[80px]" title={user.org_name}>
                               {user.org_name}
                           </span>
                       )}
-                      {user?.org_name && <span className="text-[#3a3a3c]">|</span>}
+                      {user?.org_name && <span className="text-surface-2">|</span>}
                       <span className="shrink-0">
                         {user?.role === 'admin' ? '系统管理员' : (user?.role === 'enterprise_admin' ? '管理员' : '成员')}
                       </span>
                   </p>
                </div>
-               <Settings size={16} className={`text-[#6e6e73] group-hover:text-white transition-transform ${showMenu ? 'rotate-90' : ''}`}/>
+               <ThemeToggle className="w-7 h-7" />
+               <Settings size={16} className={`text-text-tertiary group-hover:text-text transition-transform ${showMenu ? 'rotate-90' : ''}`}/>
             </div>
 
             {showMenu && (
-                <div className="absolute bottom-full left-3 right-3 mb-2 bg-[#1c1c1e] border border-white/10 rounded-2xl shadow-apple-lg p-1.5 z-50 animate-fade-in-up">
+                <div className="absolute bottom-full left-3 right-3 mb-2 bg-surface border border-separator rounded-2xl shadow-popover p-1.5 z-50 animate-fade-in-up">
                     {user?.role === 'enterprise_admin' && user?.invite_code && (
-                        <div className="px-3 py-3 border-b border-white/6 mb-1 bg-[#2c2c2e] rounded-xl">
+                        <div className="px-3 py-3 border-b border-separator mb-1 bg-surface-2 rounded-xl">
                             <div className="flex justify-between items-center mb-1">
-                                <span className="text-xs text-[#86868b]">企业邀请码</span>
-                                <span className="text-[10px] text-[#6e6e73]">点击复制</span>
+                                <span className="text-xs text-text-secondary">企业邀请码</span>
+                                <span className="text-[10px] text-text-tertiary">点击复制</span>
                             </div>
                             <div 
-                                className="text-[#0a84ff] font-semibold font-mono text-lg text-center tracking-widest cursor-pointer select-all" 
+                                className="text-accent font-semibold font-mono text-lg text-center tracking-widest cursor-pointer select-all" 
                                 title="点击复制" 
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -463,21 +459,21 @@ export default function Sidebar() {
                             >
                                 {user.invite_code}
                             </div>
-                            <p className="text-[10px] text-[#6e6e73] text-center mt-1">
+                            <p className="text-[10px] text-text-tertiary text-center mt-1">
                                 发送给同事以加入企业
                             </p>
                         </div>
                     )}
-                    <Link href="/settings/profile" className="flex items-center gap-2 px-3 py-2 text-sm text-[#f5f5f7] hover:bg-white/6 rounded-xl transition-colors" onClick={() => setShowMenu(false)}>
+                    <Link href="/settings/profile" className="flex items-center gap-2 px-3 py-2 text-sm text-text hover:bg-text/5 rounded-xl transition-colors" onClick={() => setShowMenu(false)}>
                         <UserIcon size={14} /> 用户中心
                     </Link>
-                    <Link href="/ops" className="flex items-center gap-2 px-3 py-2 text-sm text-[#f5f5f7] hover:bg-white/6 rounded-xl transition-colors" onClick={() => setShowMenu(false)}>
+                    <Link href="/ops" className="flex items-center gap-2 px-3 py-2 text-sm text-text hover:bg-text/5 rounded-xl transition-colors" onClick={() => setShowMenu(false)}>
                         <Settings size={14} /> 系统设置
                     </Link>
-                    <div className="h-px bg-white/8 my-1"></div>
+                    <div className="h-px bg-text/10 my-1"></div>
                     <button 
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#ff453a] hover:bg-white/6 rounded-xl transition-colors text-left"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-danger hover:bg-text/5 rounded-xl transition-colors text-left"
                     >
                         <LogOut size={14} /> 退出登录
                     </button>

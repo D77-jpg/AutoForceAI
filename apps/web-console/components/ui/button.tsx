@@ -9,27 +9,27 @@ export interface ButtonProps
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "default", size = "default", ...props }, ref) => {
-    
+
     const variants = {
-      default: "bg-[#0071e3] text-white hover:bg-[#0077ed] shadow-sm",
-      destructive: "bg-[#ff453a] text-white hover:bg-[#ff6961]",
-      outline: "border border-white/12 bg-transparent hover:bg-white/6 text-[#f5f5f7]",
-      secondary: "bg-[#2c2c2e] text-[#f5f5f7] hover:bg-[#3a3a3c]",
-      ghost: "hover:bg-white/8 text-[#f5f5f7]",
-      link: "text-[#0a84ff] underline-offset-4 hover:underline",
+      default: "bg-accent text-on-accent hover:bg-accent-hover shadow-sm",
+      destructive: "bg-danger text-on-accent hover:bg-danger/90",
+      outline: "border border-separator bg-transparent hover:bg-text/5 text-text",
+      secondary: "bg-surface-2 text-text hover:bg-surface-2/70",
+      ghost: "hover:bg-text/10 text-text",
+      link: "text-accent underline-offset-4 hover:underline",
     }
-    
+
     const sizes = {
-      default: "h-10 px-4 py-2 rounded-full",
-      sm: "h-8 rounded-full px-3 text-[13px]",
-      lg: "h-12 rounded-full px-8",
-      icon: "h-10 w-10 rounded-full",
+      default: "h-10 px-4 py-2 rounded-md",
+      sm: "h-8 rounded-md px-3 text-[13px]",
+      lg: "h-12 rounded-md px-8",
+      icon: "h-10 w-10 rounded-md",
     }
 
     return (
       <button
         className={cn(
-          "inline-flex items-center justify-center whitespace-nowrap text-sm font-medium tracking-tight transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0a84ff]/50 disabled:pointer-events-none disabled:opacity-40",
+          "inline-flex items-center justify-center whitespace-nowrap text-sm font-medium tracking-tight transition-all duration-fast ease-apple active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:pointer-events-none disabled:opacity-40",
           variants[variant],
           sizes[size],
           className

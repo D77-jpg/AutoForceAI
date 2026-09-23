@@ -225,54 +225,54 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
             </div>
 
             {/* Blocking Overlay */}
-            <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in duration-300">
+            <div className="fixed inset-0 z-[100] bg-bg/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in duration-300">
                 
                 {/* Header for User Profile */}
                 <div className="absolute top-4 right-4 sm:top-8 sm:right-8 z-50">
                     <div className="relative">
                         <button 
                             onClick={() => setShowUserMenu(!showUserMenu)}
-                            className="flex items-center gap-3 bg-[#1c1c1e] hover:bg-[#2c2c2e] border border-white/5 rounded-full pl-2 pr-4 py-1.5 transition-colors focus:outline-none"
+                            className="flex items-center gap-3 bg-surface hover:bg-surface-2 border border-separator rounded-full pl-2 pr-4 py-1.5 transition-colors focus:outline-none"
                         >
-                            <div className="relative w-8 h-8 rounded-full overflow-hidden border border-white/10 bg-slate-700">
+                            <div className="relative w-8 h-8 rounded-full overflow-hidden border border-separator bg-surface-2">
                                 {user?.avatar ? (
                                     <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-[#0071e3] text-white font-bold text-xs">
+                                    <div className="w-full h-full flex items-center justify-center bg-accent text-white font-bold text-xs">
                                         {(user?.nickname || user?.username || 'U')[0].toUpperCase()}
                                     </div>
                                 )}
                             </div>
-                            <span className="text-sm font-medium text-slate-200">{user?.nickname || user?.username}</span>
-                            <ChevronDown size={14} className={`text-slate-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
+                            <span className="text-sm font-medium text-text">{user?.nickname || user?.username}</span>
+                            <ChevronDown size={14} className={`text-text-secondary transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
                         </button>
 
                         {/* Dropdown Menu */}
                         {showUserMenu && user && (
-                            <div className="absolute top-full right-0 mt-2 w-64 bg-[#1c1c1e] border border-white/10 rounded-xl shadow-2xl py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-[60]">
-                                <div className="px-4 py-3 border-b border-white/5 bg-white/5">
+                            <div className="absolute top-full right-0 mt-2 w-64 bg-surface border border-separator rounded-xl shadow-2xl py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-[60]">
+                                <div className="px-4 py-3 border-b border-separator bg-text/5">
                                     <div className="text-sm font-medium text-white truncate">
-                                        <span className="font-semibold text-slate-200">{user.nickname || user.username}</span>
-                                        <span className="mx-2 text-slate-500">|</span>
-                                        <span className="text-slate-400 font-normal">
+                                        <span className="font-semibold text-text">{user.nickname || user.username}</span>
+                                        <span className="mx-2 text-text-secondary">|</span>
+                                        <span className="text-text-secondary font-normal">
                                             {user.org_name || '未加入企业'}
                                         </span>
                                     </div>
-                                    <div className="text-xs text-slate-500 truncate mt-0.5">
+                                    <div className="text-xs text-text-secondary truncate mt-0.5">
                                         {user.role === 'admin' ? '系统管理员' : '普通用户'}
                                     </div>
                                 </div>
                                 <Link 
                                     href="/settings/profile" 
-                                    className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
+                                    className="flex items-center gap-2 px-4 py-2.5 text-sm text-text hover:bg-text/5 hover:text-white transition-colors"
                                 >
                                     <User size={16} />
                                     用户中心
                                 </Link>
-                                <div className="h-px bg-white/5 my-1" />
+                                <div className="h-px bg-text/5 my-1" />
                                 <button 
                                     onClick={() => logout()}
-                                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-white/5 hover:text-red-300 transition-colors text-left"
+                                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-danger hover:bg-text/5 hover:text-danger transition-colors text-left"
                                 >
                                     <LogOut size={16} />
                                     退出登录
@@ -287,52 +287,52 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
                     {/* Centered: Creation/Join Form */}
                     <div className="w-full max-w-md shrink-0 z-10 transition-all duration-500">
                         <div className="text-center mb-10">
-                            <div className="mx-auto w-16 h-16 bg-[#0a84ff]/10 rounded-2xl flex items-center justify-center mb-4 border border-[#0a84ff]/20">
-                                <Building2 size={32} className="text-[#0a84ff]" />
+                            <div className="mx-auto w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center mb-4 border border-accent/20">
+                                <Building2 size={32} className="text-accent" />
                             </div>
                             <h1 className="text-2xl font-bold text-white mb-2">欢迎加入 GlobalPilot AI</h1>
-                            <p className="text-slate-400">为了更好地协作，您需要加入一个企业组织</p>
+                            <p className="text-text-secondary">为了更好地协作，您需要加入一个企业组织</p>
                         </div>
 
                         {mode === 'selection' && (
                             <div className="grid gap-4">
                                 <button 
                                     onClick={() => setMode('create')}
-                                    className="group p-6 bg-[#1c1c1e] hover:bg-[#2c2c2e] border border-white/5 hover:border-[#0a84ff]/30 rounded-xl transition-all flex items-center justify-between text-left"
+                                    className="group p-6 bg-surface hover:bg-surface-2 border border-separator hover:border-accent/30 rounded-xl transition-all flex items-center justify-between text-left"
                                 >
                                     <div>
-                                        <h3 className="text-lg font-bold text-white mb-1 group-hover:text-[#0a84ff] transition-colors">我是团队负责人</h3>
-                                        <p className="text-sm text-slate-400">创建新企业，邀请成员加入</p>
+                                        <h3 className="text-lg font-bold text-white mb-1 group-hover:text-accent transition-colors">我是团队负责人</h3>
+                                        <p className="text-sm text-text-secondary">创建新企业，邀请成员加入</p>
                                     </div>
-                                    <ArrowRight size={20} className="text-slate-500 group-hover:text-[#0a84ff] transform group-hover:translate-x-1 transition-all" />
+                                    <ArrowRight size={20} className="text-text-secondary group-hover:text-accent transform group-hover:translate-x-1 transition-all" />
                                 </button>
 
                                 <button 
                                     onClick={() => setMode('join')}
-                                    className="group p-6 bg-[#1c1c1e] hover:bg-[#2c2c2e] border border-white/5 hover:border-[#0a84ff]/30 rounded-xl transition-all flex items-center justify-between text-left"
+                                    className="group p-6 bg-surface hover:bg-surface-2 border border-separator hover:border-accent/30 rounded-xl transition-all flex items-center justify-between text-left"
                                 >
                                     <div>
-                                        <h3 className="text-lg font-bold text-white mb-1 group-hover:text-[#0a84ff] transition-colors">我是团队成员</h3>
-                                        <p className="text-sm text-slate-400">使用邀请码加入现有团队</p>
+                                        <h3 className="text-lg font-bold text-white mb-1 group-hover:text-accent transition-colors">我是团队成员</h3>
+                                        <p className="text-sm text-text-secondary">使用邀请码加入现有团队</p>
                                     </div>
-                                    <UserPlus size={20} className="text-slate-500 group-hover:text-[#0a84ff] transform group-hover:translate-x-1 transition-all" />
+                                    <UserPlus size={20} className="text-text-secondary group-hover:text-accent transform group-hover:translate-x-1 transition-all" />
                                 </button>
                             </div>
                         )}
 
                         {mode === 'create' && !createdCode && (
-                            <div className="bg-[#1c1c1e] border border-white/5 rounded-xl p-6 animate-in slide-in-from-bottom-4 duration-300">
+                            <div className="bg-surface border border-separator rounded-xl p-6 animate-in slide-in-from-bottom-4 duration-300">
                                 <div className="flex items-center justify-between mb-6">
                                     <h3 className="text-xl font-bold text-white">创建新企业</h3>
-                                    <div className="px-2 py-1 rounded bg-[#0a84ff]/16 text-[#64d2ff] text-xs font-bold border border-[#0a84ff]/25">
+                                    <div className="px-2 py-1 rounded bg-accent/15 text-accent text-xs font-bold border border-accent/25">
                                         负责人模式
                                     </div>
                                 </div>
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">企业名称</label>
+                                        <label className="block text-xs font-bold text-text-secondary uppercase mb-2">企业名称</label>
                                         <input 
-                                            className="w-full bg-black border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-[#0a84ff] transition-colors"
+                                            className="w-full bg-bg border border-separator rounded-lg p-3 text-text text-sm focus:outline-none focus:border-accent transition-colors"
                                             placeholder="例如：星之光年"
                                             value={createName}
                                             onChange={e => setCreateName(e.target.value)}
@@ -340,9 +340,9 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">企业描述</label>
+                                        <label className="block text-xs font-bold text-text-secondary uppercase mb-2">企业描述</label>
                                         <textarea 
-                                            className="w-full h-24 bg-black border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-[#0a84ff] transition-colors resize-none"
+                                            className="w-full h-24 bg-bg border border-separator rounded-lg p-3 text-text text-sm focus:outline-none focus:border-accent transition-colors resize-none"
                                             placeholder="简单的介绍..."
                                             value={createDesc}
                                             onChange={e => setCreateDesc(e.target.value)}
@@ -351,14 +351,14 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
                                     <div className="flex gap-3 pt-4">
                                         <button 
                                             onClick={() => setMode('selection')}
-                                            className="flex-1 py-3 text-slate-400 hover:text-white transition-colors"
+                                            className="flex-1 py-3 text-text-secondary hover:text-white transition-colors"
                                         >
                                             返回
                                         </button>
                                         <button 
                                             onClick={handleCreate}
                                             disabled={loading}
-                                            className="flex-[2] py-3 bg-[#0071e3] hover:bg-[#0077ed] text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                                            className="flex-[2] py-3 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                                         >
                                             {loading ? <Loader2 className="animate-spin" size={18}/> : '立即创建'}
                                         </button>
@@ -368,27 +368,27 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
                         )}
 
                         {mode === 'create' && createdCode && (
-                            <div className="bg-[#1c1c1e] border border-white/5 rounded-xl p-6 animate-in zoom-in-95 duration-300 text-center">
-                                <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-500/20">
-                                    <Check size={32} className="text-green-500" />
+                            <div className="bg-surface border border-separator rounded-xl p-6 animate-in zoom-in-95 duration-300 text-center">
+                                <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-success/20">
+                                    <Check size={32} className="text-success" />
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-2">创建成功！</h3>
-                                <p className="text-slate-400 text-sm mb-6">
+                                <p className="text-text-secondary text-sm mb-6">
                                     您的企业已创建，您是超级管理员。<br/>
                                     请将下方的邀请码发送给团队成员。
                                 </p>
                                 
-                                <div className="bg-black border border-white/10 rounded-lg p-4 mb-6 flex items-center justify-between group cursor-pointer" onClick={() => {
+                                <div className="bg-bg border border-separator rounded-lg p-4 mb-6 flex items-center justify-between group cursor-pointer" onClick={() => {
                                     navigator.clipboard.writeText(createdCode);
                                     showToast("已复制到剪贴板", "success");
                                 }}>
-                                    <span className="text-2xl font-mono text-[#0a84ff] font-bold tracking-widest">{createdCode}</span>
-                                    <Copy size={18} className="text-slate-500 group-hover:text-white transition-colors" />
+                                    <span className="text-2xl font-mono text-accent font-bold tracking-widest">{createdCode}</span>
+                                    <Copy size={18} className="text-text-secondary group-hover:text-white transition-colors" />
                                 </div>
 
                                 <button 
                                     onClick={finishCreation}
-                                    className="w-full py-3 bg-[#0071e3] hover:bg-[#0077ed] text-white rounded-lg font-medium transition-colors"
+                                    className="w-full py-3 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium transition-colors"
                                 >
                                     进入工作台
                                 </button>
@@ -396,18 +396,18 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
                         )}
 
                         {mode === 'join' && (
-                            <div className="bg-[#1c1c1e] border border-white/5 rounded-xl p-6 animate-in slide-in-from-bottom-4 duration-300">
+                            <div className="bg-surface border border-separator rounded-xl p-6 animate-in slide-in-from-bottom-4 duration-300">
                                 <div className="flex items-center justify-between mb-6">
                                     <h3 className="text-xl font-bold text-white">加入企业</h3>
-                                    <div className="px-2 py-1 rounded bg-teal-500/20 text-teal-300 text-xs font-bold border border-teal-500/30">
+                                    <div className="px-2 py-1 rounded bg-success/20 text-success text-xs font-bold border border-success/30">
                                         成员模式
                                     </div>
                                 </div>
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">企业名称</label>
+                                        <label className="block text-xs font-bold text-text-secondary uppercase mb-2">企业名称</label>
                                         <input 
-                                            className="w-full bg-black border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-[#0a84ff] transition-colors"
+                                            className="w-full bg-bg border border-separator rounded-lg p-3 text-text text-sm focus:outline-none focus:border-accent transition-colors"
                                             placeholder="请输入需加入的企业全称"
                                             value={joinName}
                                             onChange={e => setJoinName(e.target.value)}
@@ -415,32 +415,32 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">邀请码</label>
+                                        <label className="block text-xs font-bold text-text-secondary uppercase mb-2">邀请码</label>
                                         <input 
-                                            className="w-full bg-black border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-[#0a84ff] transition-colors font-mono tracking-widest"
+                                            className="w-full bg-bg border border-separator rounded-lg p-3 text-text text-sm focus:outline-none focus:border-accent transition-colors font-mono tracking-widest"
                                             placeholder="6位邀请码"
                                             value={joinCode}
                                             onChange={e => setJoinCode(e.target.value)}
                                             maxLength={6}
                                         />
                                     </div>
-                                    <div className="bg-[#2c2c2e]/60 rounded-lg p-3 flex gap-3 items-start border border-white/5">
-                                        <Info size={16} className="text-slate-400 mt-0.5 shrink-0" />
-                                        <p className="text-xs text-slate-400 leading-relaxed">
+                                    <div className="bg-surface-2/60 rounded-lg p-3 flex gap-3 items-start border border-separator">
+                                        <Info size={16} className="text-text-secondary mt-0.5 shrink-0" />
+                                        <p className="text-xs text-text-secondary leading-relaxed">
                                             请联系您的企业管理员获取邀请码。只有输入正确的企业名称和对应的邀请码才能成功加入。
                                         </p>
                                     </div>
                                     <div className="flex gap-3 pt-2">
                                         <button 
                                             onClick={() => setMode('selection')}
-                                            className="flex-1 py-3 text-slate-400 hover:text-white transition-colors"
+                                            className="flex-1 py-3 text-text-secondary hover:text-white transition-colors"
                                         >
                                             返回
                                         </button>
                                         <button 
                                             onClick={handleJoin}
                                             disabled={loading}
-                                            className="flex-[2] py-3 bg-[#0071e3] hover:bg-[#0077ed] text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                                            className="flex-[2] py-3 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                                         >
                                             {loading ? <Loader2 className="animate-spin" size={18}/> : '验证并加入'}
                                         </button>
@@ -452,42 +452,42 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
 
                      {/* Right Side: Guide / Instructions - Absolute Positioned */}
                      <div className="hidden lg:block absolute right-0 top-1/2 -translate-y-1/2 w-full max-w-sm text-left animate-in slide-in-from-right-8 duration-500 delay-100 pr-8">
-                        <div className="bg-[#1c1c1e]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-sm">
+                        <div className="bg-surface/50 border border-separator rounded-2xl p-6 backdrop-blur-sm">
                             <h3 className="text-white font-bold flex items-center gap-2 mb-4">
-                                <HelpCircle size={18} className="text-[#0a84ff]" />
+                                <HelpCircle size={18} className="text-accent" />
                                 操作指引
                             </h3>
                             
                             <div className="space-y-6 relative">
                                 {/* Vertical line connecting steps */}
-                                <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-[#0a84ff]/16" />
+                                <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-accent/15" />
 
                                 <div className="relative pl-10">
-                                    <div className="absolute left-0 top-0 w-6 h-6 rounded-full bg-black border-2 border-[#0a84ff] flex items-center justify-center z-10">
+                                    <div className="absolute left-0 top-0 w-6 h-6 rounded-full bg-bg border-2 border-accent flex items-center justify-center z-10">
                                         <span className="text-[10px] font-bold text-white">1</span>
                                     </div>
-                                    <h4 className="text-sm font-bold text-slate-200 mb-1">何时“创建企业”？</h4>
-                                    <p className="text-xs text-slate-400 leading-relaxed">
+                                    <h4 className="text-sm font-bold text-text mb-1">何时“创建企业”？</h4>
+                                    <p className="text-xs text-text-secondary leading-relaxed">
                                         如果您是团队的负责人或管理员，且您的组织尚未在平台上注册，请选择此选项。您将成为该组织的“超级管理员”，拥有最高权限。
                                     </p>
                                 </div>
 
                                 <div className="relative pl-10">
-                                    <div className="absolute left-0 top-0 w-6 h-6 rounded-full bg-black border-2 border-teal-500 flex items-center justify-center z-10">
+                                    <div className="absolute left-0 top-0 w-6 h-6 rounded-full bg-bg border-2 border-success flex items-center justify-center z-10">
                                         <span className="text-[10px] font-bold text-white">2</span>
                                     </div>
-                                    <h4 className="text-sm font-bold text-slate-200 mb-1">何时“加入企业”？</h4>
-                                    <p className="text-xs text-slate-400 leading-relaxed">
+                                    <h4 className="text-sm font-bold text-text mb-1">何时“加入企业”？</h4>
+                                    <p className="text-xs text-text-secondary leading-relaxed">
                                         如果您是团队成员，且您的组织已经由管理员创建。请先向管理员索要“邀请码”，然后选择此选项加入。
                                     </p>
                                 </div>
 
                                 <div className="relative pl-10">
-                                    <div className="absolute left-0 top-0 w-6 h-6 rounded-full bg-black border-2 border-yellow-500 flex items-center justify-center z-10">
+                                    <div className="absolute left-0 top-0 w-6 h-6 rounded-full bg-bg border-2 border-warning flex items-center justify-center z-10">
                                         <span className="text-[10px] font-bold text-white">3</span>
                                     </div>
-                                    <h4 className="text-sm font-bold text-slate-200 mb-1">关于“企业邀请码”</h4>
-                                    <p className="text-xs text-slate-400 leading-relaxed">
+                                    <h4 className="text-sm font-bold text-text mb-1">关于“企业邀请码”</h4>
+                                    <p className="text-xs text-text-secondary leading-relaxed">
                                         每个企业有一个唯一的6位邀请码。它就像进门的钥匙。管理员可以在“系统设置”或创建成功页面找到它。
                                     </p>
                                 </div>

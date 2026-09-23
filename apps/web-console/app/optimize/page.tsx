@@ -2,24 +2,24 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { 
-  Bot, 
-  Send, 
-  RefreshCw, 
-  Sparkles, 
-  Image as ImageIcon, 
-  Hash, 
-  Share2, 
-  CheckCircle2, 
+import {
+  Bot,
+  Send,
+  Sparkles,
+  Image as ImageIcon,
+  Share2,
+  CheckCircle2,
   Loader2,
   Smartphone,
-  Globe,
+  Heart,
   Edit3,
   X
 } from 'lucide-react';
 import api from '../../lib/api';
 import { useGlobalState } from '../../contexts/GlobalStateContext';
 import { useToast } from '../../contexts/ToastContext';
+import { PageHeader } from '@/components/PageHeader';
+import { EmptyState } from '@/components/ui/empty-state';
 
 // --- Types ---
 
@@ -33,19 +33,19 @@ interface LogStep {
 // --- Data ---
 
 const PLATFORMS = [
-  { id: 'linkedin', name: 'LinkedIn', icon: 'in', color: 'bg-blue-600' },
-  { id: 'wordpress', name: 'WordPress', icon: '🅦', color: 'bg-[#0071e3]' },
-  { id: 'x', name: 'X / Twitter', icon: '𝕏', color: 'bg-slate-700' },
-  { id: 'redbook', name: '小红书', icon: '📕', color: 'bg-red-500' },
-  { id: 'zhihu', name: '知乎', icon: '❓', color: 'bg-blue-500' },
-  { id: 'baidu_baike', name: '百度词条', icon: '📖', color: 'bg-blue-600' },
+  { id: 'linkedin', name: 'LinkedIn' },
+  { id: 'wordpress', name: 'WordPress' },
+  { id: 'x', name: 'X / Twitter' },
+  { id: 'redbook', name: '小红书' },
+  { id: 'zhihu', name: '知乎' },
+  { id: 'baidu_baike', name: '百度词条' },
 ];
 
 const TONES = [
-    { id: 'professional', name: '专业权威', emoji: '🧐' },
-    { id: 'viral', name: '爆款网感', emoji: '🔥' },
-    { id: 'empathetic', name: '情感共鸣', emoji: '🥰' },
-    { id: 'controversial', name: '犀利观点', emoji: '⚡' },
+    { id: 'professional', name: '专业权威' },
+    { id: 'viral', name: '爆款网感' },
+    { id: 'empathetic', name: '情感共鸣' },
+    { id: 'controversial', name: '犀利观点' },
 ];
 
 // --- Components ---
@@ -59,48 +59,48 @@ const PhoneMockup = ({
     isEditing: boolean; 
     onUpdate: (newContent: any) => void; 
 }) => (
-    <div className="relative mx-auto border-gray-800 bg-gray-900 border-[8px] rounded-[30px] h-[600px] w-[300px] shadow-2xl overflow-hidden flex flex-col">
+    <div className="relative mx-auto border-separator bg-surface-2 border-[8px] rounded-[30px] h-[600px] w-[300px] shadow-modal overflow-hidden flex flex-col">
         {/* Notch */}
-        <div className="h-[24px] bg-gray-800 absolute top-0 left-[50%] translate-x-[-50%] w-[120px] rounded-b-[16px] z-20"></div>
+        <div className="h-[24px] bg-surface-2 absolute top-0 left-[50%] translate-x-[-50%] w-[120px] rounded-b-[16px] z-20"></div>
         
         {/* Status Bar */}
-        <div className="h-8 bg-black w-full flex justify-between items-center px-6 text-[10px] text-white z-10">
-            <span>9:41</span>
-            <div className="flex gap-1">
-                <div className="w-3 h-3 bg-white rounded-full opacity-0" />
+        <div className="h-8 bg-bg w-full flex justify-between items-center px-6 text-[10px] text-text z-10">
+            <span className="tabular-nums">9:41</span>
+            <div className="flex gap-1 items-center">
                 <span className="font-bold">5G</span>
-                <div className="w-4 h-2.5 border border-white rounded-[2px]" />
+                <div className="w-4 h-2.5 border border-separator rounded-[2px]" />
             </div>
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 bg-white text-black overflow-y-auto custom-scrollbar relative">
+        <div className="flex-1 bg-bg text-text overflow-y-auto custom-scrollbar relative">
             {!content ? (
-                <div className="h-full flex flex-col items-center justify-center text-slate-400 p-8 text-center space-y-4">
-                    <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center">
-                        <Smartphone size={32} className="text-slate-300" />
-                    </div>
-                    <p className="text-sm">准备生成预览...</p>
-                </div>
+                <EmptyState
+                    size="sm"
+                    icon={Smartphone}
+                    title="准备生成预览"
+                    description="填写左侧战略简报并点击「立即生成」，这里将展示实机预览。"
+                    className="h-full"
+                />
             ) : (
                 <div className="flex flex-col min-h-full">
                     {/* Image Area */}
-                    <div className="h-64 bg-slate-200 relative group overflow-hidden shrink-0">
+                    <div className="h-64 bg-surface-2 relative group overflow-hidden shrink-0">
                         {content.image_url ? (
                             <img 
                                 src={content.image_url} 
-                                alt="Generated Visual" 
+alt="生成的视觉图"
                                 className="w-full h-full object-cover animate-in fade-in duration-700"
                             />
                         ) : (
-                            <div className="absolute inset-0 flex items-center justify-center text-slate-400 bg-slate-100">
+                            <div className="absolute inset-0 flex items-center justify-center text-text-secondary bg-surface-2">
                                 <ImageIcon size={32} />
                                 <span className="ml-2 text-xs font-medium">AI 生成视觉图</span>
                             </div>
                         )}
                         
                         {/* Overlay Gradient */}
-                        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/60 to-transparent" />
+                        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-overlay to-transparent" />
                     </div>
 
                     {/* Text Content */}
@@ -108,21 +108,21 @@ const PhoneMockup = ({
                         {isEditing ? (
                             <div className="space-y-4 flex-1">
                                 <input 
-                                    className="w-full text-lg font-bold border-b border-gray-300 pb-1 focus:border-pink-500 outline-none bg-transparent"
+                                    className="w-full text-lg font-bold border-b border-separator pb-1 focus:border-accent outline-none bg-transparent"
                                     value={content.title || ''}
                                     onChange={(e) => onUpdate({ ...content, title: e.target.value })}
                                     placeholder="输入标题"
                                 />
                                 <textarea 
-                                    className="w-full text-sm text-slate-800 leading-relaxed border border-gray-200 rounded p-2 focus:border-pink-500 outline-none resize-none h-[200px] bg-gray-50"
+                                    className="w-full text-sm text-text-secondary leading-relaxed border border-separator rounded p-2 focus:border-accent outline-none resize-none h-[200px] bg-surface-2"
                                     value={content.body || ''}
                                     onChange={(e) => onUpdate({ ...content, body: e.target.value })}
                                     placeholder="输入正文内容"
                                 />
                                 <div className="space-y-1">
-                                    <label className="text-xs text-slate-400">标签 (逗号分隔)</label>
+                                    <label className="text-xs text-text-secondary">标签 (逗号分隔)</label>
                                     <input 
-                                        className="w-full text-xs text-blue-600 border-b border-gray-300 pb-1 focus:border-pink-500 outline-none bg-transparent"
+                                        className="w-full text-xs text-accent border-b border-separator pb-1 focus:border-accent outline-none bg-transparent"
                                         value={content.tags?.join(', ') || ''}
                                         onChange={(e) => onUpdate({ ...content, tags: e.target.value.split(',').map((t: string) => t.trim()) })}
                                     />
@@ -131,18 +131,18 @@ const PhoneMockup = ({
                         ) : (
                             <>
                                 <h3 className="font-bold text-lg leading-tight mb-2">{content.title}</h3>
-                                <p className="text-sm text-slate-800 whitespace-pre-line leading-relaxed mb-4 min-h-[100px]">
+                                <p className="text-sm text-text-secondary whitespace-pre-line leading-relaxed mb-4 min-h-[100px]">
                                     {content.body}
                                 </p>
                                 <div className="flex flex-wrap gap-1 mb-4">
                                     {content.tags?.map((tag:string, i:number) => (
-                                        <span key={i} className="text-blue-600 text-xs">#{tag}</span>
+                                        <span key={i} className="text-accent text-xs">#{tag}</span>
                                     ))}
                                 </div>
                             </>
                         )}
                         
-                        <div className="text-xs text-slate-400 border-t pt-3 flex justify-between items-center mt-auto">
+                        <div className="text-xs text-text-secondary border-t pt-3 flex justify-between items-center mt-auto">
                             <span>2 分钟前</span>
                             <div className="flex gap-3">
                                 <Share2 size={14} />
@@ -152,8 +152,8 @@ const PhoneMockup = ({
                     
                     {/* Mock Floating Action */}
                     {!isEditing && (
-                        <div className="absolute bottom-4 right-4 w-12 h-12 bg-red-500 rounded-full shadow-lg flex items-center justify-center text-white">
-                            <span className="text-xl">❤</span>
+                        <div className="absolute bottom-4 right-4 w-12 h-12 bg-accent rounded-full shadow-card flex items-center justify-center text-on-accent">
+                            <Heart size={20} strokeWidth={1.75} />
                         </div>
                     )}
                 </div>
@@ -367,49 +367,55 @@ export default function ContentFactory() {
   };
 
   return (
-    <div className="min-h-screen bg-[#020408] text-slate-200 font-sans selection:bg-pink-500/30 w-full overflow-hidden flex flex-col">
+    <div className="h-screen bg-bg text-text font-sans selection:bg-accent/30 w-full overflow-hidden flex flex-col">
       
+      <div className="px-6 pt-4 shrink-0">
+        <PageHeader
+          title="内容工场"
+          description="定义内容生成任务，实时跟踪 Leo 的生成进程，并在发布前预览效果。"
+        />
+      </div>
+
       {/* 2. Main Workspace */}
-      <main className="flex-1 flex h-screen">
+      <main className="flex-1 flex flex-col lg:flex-row min-h-0">
           
           {/* LEFT: Strategic Brief (Input) */}
-          <div className="w-[400px] border-r border-white/5 p-6 flex flex-col gap-6 overflow-y-auto bg-[#1c1c1e]/40">
+          <div className="w-full lg:w-[400px] shrink-0 border-b lg:border-b-0 lg:border-r border-separator p-6 flex flex-col gap-6 overflow-y-auto">
               <div>
-                  <h2 className="text-lg font-bold text-white mb-1">战略简报 (Strategic Brief)</h2>
-                  <p className="text-xs text-slate-500">为 Leo 定义内容生成任务。</p>
+                  <h2 className="text-lg font-bold text-text mb-1">战略简报</h2>
+                  <p className="text-xs text-text-secondary">为 Leo 定义内容生成任务。</p>
               </div>
 
               <div className="space-y-4">
                   {/* Topic */}
                   <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">核心话题 (Core Topic)</label>
+                      <label className="text-xs font-bold text-text-secondary">核心话题</label>
                       <div className="relative">
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             value={topic}
                             onChange={(e) => setTopic(e.target.value)}
-                            placeholder="例如: 2026年AI营销趋势..." 
-                            className="w-full bg-[#0a0f1c] border border-white/10 rounded-lg p-3 text-sm text-white focus:border-pink-500 focus:outline-none transition-colors"
+                            placeholder="例如: 2026年AI营销趋势..."
+                            className="w-full bg-surface border border-separator rounded-lg p-3 text-sm text-text focus:border-accent focus:outline-none transition-colors"
                           />
-                          <Sparkles size={14} className="absolute right-3 top-3.5 text-pink-500 opacity-50" />
+                          <Sparkles size={14} className="absolute right-3 top-3.5 text-accent opacity-50" />
                       </div>
                   </div>
 
                   {/* Platform */}
                   <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">发布平台 (Target Platform)</label>
+                      <label className="text-xs font-bold text-text-secondary">发布平台</label>
                       <div className="grid grid-cols-2 gap-2">
                           {PLATFORMS.map(p => (
-                              <button 
+                              <button
                                 key={p.id}
                                 onClick={() => setPlatform(p.id)}
                                 className={`flex items-center gap-2 p-2 rounded-lg border text-xs font-medium transition-all ${
-                                    platform === p.id 
-                                    ? `bg-white/10 border-pink-500 text-white shadow-[0_0_10px_rgba(236,72,153,0.2)]` 
-                                    : 'bg-transparent border-white/5 text-slate-400 hover:bg-white/5'
+                                    platform === p.id
+                                    ? 'border-accent/40 bg-accent/10 text-accent'
+                                    : 'bg-transparent border-separator text-text-secondary hover:bg-text/5'
                                 }`}
                               >
-                                  <span>{p.icon}</span>
                                   {p.name}
                               </button>
                           ))}
@@ -418,19 +424,18 @@ export default function ContentFactory() {
 
                    {/* Tone */}
                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">语气风格 (Tone of Voice)</label>
+                      <label className="text-xs font-bold text-text-secondary">语气风格</label>
                       <div className="grid grid-cols-2 gap-2">
                           {TONES.map(t => (
-                              <button 
+                              <button
                                 key={t.id}
                                 onClick={() => setTone(t.id)}
                                 className={`flex items-center gap-2 p-2 rounded-lg border text-xs font-medium transition-all ${
-                                    tone === t.id 
-                                    ? `bg-white/10 border-pink-500 text-white` 
-                                    : 'bg-transparent border-white/5 text-slate-400 hover:bg-white/5'
+                                    tone === t.id
+                                    ? 'border-accent/40 bg-accent/10 text-accent'
+                                    : 'bg-transparent border-separator text-text-secondary hover:bg-text/5'
                                 }`}
                               >
-                                  <span>{t.emoji}</span>
                                   {t.name}
                               </button>
                           ))}
@@ -439,24 +444,24 @@ export default function ContentFactory() {
 
                   {/* Key Points */}
                   <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">关键卖点 (Key Selling Points)</label>
-                      <textarea 
+                      <label className="text-xs font-bold text-text-secondary">关键卖点</label>
+                      <textarea
                         value={points}
                         onChange={(e) => setPoints(e.target.value)}
                         placeholder="- 低成本优势&#10;- 强调易用性..."
-                        className="w-full h-24 bg-[#0a0f1c] border border-white/10 rounded-lg p-3 text-sm text-slate-300 focus:border-pink-500 focus:outline-none transition-colors resize-none"
+                        className="w-full h-24 bg-surface border border-separator rounded-lg p-3 text-sm text-text focus:border-accent focus:outline-none transition-colors resize-none"
                       />
                   </div>
               </div>
 
-              <div className="mt-auto pt-6 border-t border-white/5">
+              <div className="mt-auto pt-6 border-t border-separator">
                   <button 
                     onClick={handleGenerate}
                     disabled={isGenerating || !topic}
                     className={`w-full py-3 rounded-lg flex items-center justify-center gap-2 font-bold text-sm transition-all ${
                         isGenerating || !topic 
-                        ? 'bg-[#2c2c2e] text-slate-500 cursor-not-allowed' 
-                        : 'bg-pink-600 hover:bg-pink-500 text-white shadow-lg shadow-pink-600/20'
+                        ? 'bg-surface-2 text-text-secondary cursor-not-allowed' 
+                        : 'bg-accent hover:bg-accent-hover text-on-accent shadow-card'
                     }`}
                   >
                       {isGenerating ? (
@@ -475,39 +480,40 @@ export default function ContentFactory() {
           </div>
 
           {/* MIDDLE: Thought Chain (Process) */}
-          <div className="flex-1 bg-[#050912] p-8 flex flex-col relative overflow-hidden">
-              <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #ec4899 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-              
+          <div className="flex-1 p-8 flex flex-col relative overflow-hidden">
               <div className="relative z-10 max-w-2xl mx-auto w-full">
-                  <h3 className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-2 border-b border-white/5 pb-2">
-                      Leo 神经网络处理进程 (Neural Process)
+                  <h3 className="text-xs text-text-tertiary mb-2 border-b border-separator pb-2">
+                      生成进度
                   </h3>
 
                   <div className="space-y-6 max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar pr-3 pb-10">
                       {logs.length === 0 && !result && (
-                          <div className="text-center py-20 opacity-30">
-                              <Bot size={48} className="mx-auto mb-4" />
-                              <p className="text-sm font-mono">等待任务指令...</p>
-                          </div>
+                          <EmptyState
+                              size="sm"
+                              icon={Bot}
+                              title="等待任务指令"
+                              description="填写左侧战略简报并点击「立即生成」，这里将展示生成进度。"
+                              className="py-20"
+                          />
                       )}
 
                       {logs.map((log) => (
                           <div key={log.id} className="flex gap-4 animate-in fade-in slide-in-from-left-4 duration-500">
                               <div className="relative flex flex-col items-center">
-                                  <div className={`w-3 h-3 rounded-full border-2 z-10 bg-[#050912] ${
-                                      log.status === 'completed' ? 'border-pink-500 bg-pink-500' :
-                                      log.status === 'active' ? 'border-pink-500 animate-pulse' :
-                                      'border-white/10'
+                                  <div className={`w-3 h-3 rounded-full border-2 z-10 bg-bg ${
+                                      log.status === 'completed' ? 'border-accent bg-accent' :
+                                      log.status === 'active' ? 'border-accent animate-pulse' :
+                                      'border-separator'
                                   }`} />
-                                  <div className="w-px h-full bg-[#2c2c2e] absolute top-3" />
+                                  <div className="w-px h-full bg-surface-2 absolute top-3" />
                               </div>
                               <div className="pb-4">
                                   <div className={`text-sm font-mono mb-1 ${
-                                      log.status === 'active' ? 'text-pink-400' : 'text-slate-300'
+                                      log.status === 'active' ? 'text-accent' : 'text-text'
                                   }`}>
                                       {log.message}
                                   </div>
-                                  <div className="text-[10px] text-slate-600 font-mono">
+                                  <div className="text-[10px] text-text-tertiary font-mono">
                                       {log.timestamp}
                                   </div>
                               </div>
@@ -519,11 +525,11 @@ export default function ContentFactory() {
           </div>
 
           {/* RIGHT: Output Preview */}
-          <div className="w-[380px] border-l border-white/5 bg-[#0a0f1c]/50 backdrop-blur p-8 flex flex-col justify-center relative">
+          <div className="w-full lg:w-[380px] shrink-0 border-t lg:border-t-0 lg:border-l border-separator p-8 flex flex-col justify-center relative">
               <div className="absolute top-4 right-4 z-50">
                   <button 
                     onClick={() => setIsEditing(!isEditing)}
-                    className={`p-2 rounded transition-colors ${isEditing ? 'bg-pink-500 text-white' : 'hover:bg-white/5 text-slate-400 hover:text-white'}`}
+                    className={`p-2 rounded transition-colors ${isEditing ? 'bg-accent text-on-accent' : 'hover:bg-text/5 text-text-secondary hover:text-text'}`}
                     title={isEditing ? "退出编辑" : "编辑内容"}
                     disabled={!result}
                   >
@@ -532,8 +538,8 @@ export default function ContentFactory() {
               </div>
               
               <div className="mb-8 text-center">
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">实机预览 (Live Preview)</h3>
-                  <p className="text-[10px] text-slate-600">iPhone 15 Pro Max • 5G</p>
+                  <h3 className="text-xs font-bold text-text-secondary mb-1">实时预览</h3>
+                  <p className="text-[10px] text-text-tertiary">手机预览</p>
               </div>
 
               <PhoneMockup 
@@ -549,8 +555,8 @@ export default function ContentFactory() {
                         disabled={isPublishing || isEditing}
                         className={`flex-1 py-2 rounded-lg border text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                             isEditing 
-                            ? 'border-white/5 text-slate-600 cursor-not-allowed'
-                            : 'border-pink-500/30 bg-pink-500/10 text-pink-400 hover:bg-pink-500/20'
+                            ? 'border-separator text-text-tertiary cursor-not-allowed'
+                            : 'border-accent/40 bg-accent/10 text-accent hover:bg-accent/20'
                         }`}
                       >
                           {isPublishing ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}

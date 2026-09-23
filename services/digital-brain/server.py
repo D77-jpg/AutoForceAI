@@ -17,7 +17,7 @@ from database.shared_models import SharedBase, RPAJobStatus
 from database.models import RPAJob
 from core.db_manager import SHARED_ENGINE, get_shared_db, init_shared_db
 from routers import auth_router, monitor_router, bot_router, branding_router, content_router, agent_router, platform_router, storage_router, brain_router, export_router, admin_router
-from routers import kb_router, service_chat_router, lead_router, marketing_router
+from routers import kb_router, service_chat_router, lead_router, marketing_router, crm_integration_router
 from core.dependencies import get_db, get_current_user_id
 from core.config import settings
 from fastapi.staticfiles import StaticFiles
@@ -49,7 +49,18 @@ async def lifespan(app: FastAPI):
         start_geo_scheduler(interval_seconds=int(os.getenv("GEO_SCHEDULER_INTERVAL", "60")))
     except Exception as exc:
         print(f"[Warn] GEO scheduler not started: {exc}")
+    # CRM Outbox 投递器（阶段 2 Wave C）：租约抢占 + 退避 + 死信
+    try:
+        from core.crm.dispatcher import start_dispatcher
+        start_dispatcher()
+    except Exception as exc:
+        print(f"[Warn] CRM dispatcher not started: {exc}")
     yield
+    try:
+        from core.crm.dispatcher import stop_dispatcher
+        stop_dispatcher()
+    except Exception:
+        pass
     try:
         from core.geo_scheduler import stop as stop_geo_scheduler
         stop_geo_scheduler()
@@ -110,6 +121,7 @@ app.include_router(brain_router.router)
 app.include_router(export_router.router)
 app.include_router(service_chat_router.router)
 app.include_router(lead_router.router)
+app.include_router(crm_integration_router.router)
 app.include_router(marketing_router.router)
 app.include_router(solution_router.router)
 app.include_router(admin_router.router)

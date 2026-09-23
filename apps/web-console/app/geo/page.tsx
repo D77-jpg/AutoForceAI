@@ -14,6 +14,11 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, 
   ResponsiveContainer, AreaChart, Area, Legend 
 } from 'recharts';
+import { PageHeader } from '@/components/PageHeader';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface Task {
   id: number;
@@ -42,6 +47,7 @@ export default function GEODashboard() {
   const [engine, setEngine] = useState('perplexity');
   const [watches, setWatches] = useState<any[]>([]);
   const [intervalHours, setIntervalHours] = useState(24);
+  const [createOpen, setCreateOpen] = useState(false);
   const router = useRouter();
 
   // Metrics Calculation
@@ -232,96 +238,43 @@ export default function GEODashboard() {
   return (
     <div className="space-y-6 animate-slide-in-right pt-4 h-full overflow-y-auto px-1">
       
-      {/* 1. Practical Action Header */}
-      <div className="flex flex-col md:flex-row gap-6 items-stretch">
-        {/* Left: Quick Launch */}
-        <div className="flex-[2] bg-[#1c1c1e] border border-white/8 rounded-[24px] p-6 flex flex-col justify-between relative overflow-hidden">
-             <div className="relative z-10">
-                <h2 className="text-[22px] font-semibold tracking-tight text-white mb-2 flex items-center gap-2">
-                   <Zap className="text-[#ffd60a] fill-current" size={20}/> 
-                   GEO 优化引擎
-                </h2>
-                <p className="text-[15px] text-[#86868b] mb-6 max-w-lg">
-                   输入品牌与英文查询词（如 best hydraulic pump supplier China），定时查询 Perplexity 等生成式引擎，记录品牌是否被提及。
-                </p>
-                
-                <div className="flex gap-2 w-full max-w-3xl bg-black/40 p-2 rounded-full border border-white/10">
-                    <input 
-                      type="text" 
-                      value={brand}
-                      onChange={(e) => setBrand(e.target.value)}
-                      placeholder="品牌名称 (Brand)"
-                      className="w-1/4 bg-transparent border-r border-white/10 text-white placeholder-slate-500 focus:outline-none px-4 text-sm font-medium"
-                    />
-                    {brand && (
-                       <button onClick={() => setBrand('')} className="absolute left-[22%] top-3 text-slate-500 hover:text-white" title="Clear Filter">
-                          <X size={12} />
-                       </button>
-                    )}
-                    <input 
-                      type="text" 
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      placeholder='英文查询词 e.g. best hydraulic pump supplier China'
-                      className="flex-1 bg-transparent text-white placeholder-slate-500 focus:outline-none px-4 text-sm"
-                    />
-                    <select
-                      value={engine}
-                      onChange={(e) => setEngine(e.target.value)}
-                      className="bg-transparent text-xs text-slate-300 border-l border-white/10 px-2 outline-none"
-                    >
-                      <option value="perplexity">Perplexity</option>
-                      <option value="qwen">Qwen</option>
-                      <option value="zhipu">Zhipu</option>
-                    </select>
-                    <button 
-                      onClick={handleStartTask}
-                      disabled={loading}
-                      className="bg-[#0071e3] hover:bg-[#0077ed] text-white px-4 py-2 rounded-full text-sm font-medium transition-all shadow-apple disabled:opacity-50"
-                    >
-                      {loading ? <span className="animate-pulse">Running...</span> : "立即监测"}
-                    </button>
-                    <button
-                      onClick={handleSchedule}
-                      className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-xs"
-                    >
-                      定时
-                    </button>
-                </div>
-                <div className="flex items-center gap-2 mt-2 text-[11px] text-slate-500">
-                  <span>间隔</span>
-                  <input
-                    type="number"
-                    min={1}
-                    max={168}
-                    value={intervalHours}
-                    onChange={(e) => setIntervalHours(Number(e.target.value) || 24)}
-                    className="w-16 bg-black/30 border border-white/10 rounded px-1 py-0.5"
-                  />
-                  <span>小时 · 历史趋势见下方卡片</span>
-                  {watches.length > 0 && <span className="text-[#64d2ff]">已启用 {watches.filter(w => w.enabled).length} 条监测</span>}
-                </div>
-             </div>
-             
-             {/* Background Decoration */}
-             <div className="absolute right-0 bottom-0 w-64 h-64 bg-[#0a84ff]/10 rounded-full blur-3xl -z-0"></div>
-        </div>
+      {/* 1. Page Header & Score */}
+      <PageHeader
+        title="全域洞察"
+        description="输入品牌与英文查询词（如 best hydraulic pump supplier China），定时查询 Perplexity 等生成式引擎，记录品牌是否被提及。"
+        actions={
+          <Button className="gap-2" onClick={() => setCreateOpen(true)}>
+            <Zap size={16} /> 新建监测任务
+          </Button>
+        }
+      />
 
-        {/* Right: Real-time Score */}
-        <div className="flex-1 glass-card p-6 flex flex-col justify-center items-center text-center relative overflow-hidden bg-[#1c1c1e]/80">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Real-time Score */}
+        <div className="glass-card p-6 flex flex-col justify-center items-center text-center relative overflow-hidden bg-surface/80">
             {metrics ? (
                 <>
-                    <h3 className="text-sm font-medium text-slate-400 uppercase tracking-widest mb-1">GEO 健康度评分</h3>
-                    <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-t from-emerald-400 to-white mb-2">
+                    <h3 className="text-sm font-medium text-text-secondary mb-1">GEO 健康度评分</h3>
+                    <div className="text-5xl font-black text-success tabular-nums mb-2">
                         {metrics.visibilityScore}
                     </div>
-                    <div className="flex gap-4 text-xs font-mono text-slate-500">
+                    <div className="flex gap-4 text-xs font-mono text-text-secondary tabular-nums">
                         <span className="flex items-center gap-1"><Target size={12}/> 提及率 {metrics.visibilityRate.toFixed(0)}%</span>
                         <span className="flex items-center gap-1"><ShieldCheck size={12}/> 情感 {metrics.avgSentiment}</span>
                     </div>
+                    {watches.length > 0 && (
+                        <div className="mt-3 text-[11px] text-accent tabular-nums">
+                            已启用 {watches.filter(w => w.enabled).length} 条定时监测
+                        </div>
+                    )}
                 </>
             ) : (
-                <div className="text-slate-500 text-sm">暂无分析数据</div>
+                <EmptyState
+                  size="sm"
+                  icon={BarChart3}
+                  title="暂无分析数据"
+                  description="点击右上角「新建监测任务」，开始追踪品牌在生成式引擎中的表现。"
+                />
             )}
         </div>
       </div>
@@ -330,14 +283,14 @@ export default function GEODashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* Col 1: Missed Opportunities (High Priority) */}
-          <div className="glass-card flex flex-col border-l-4 border-l-red-500/50 h-[400px]">
-              <div className="p-4 border-b border-white/5 flex justify-between items-center bg-red-500/5">
-                  <h3 className="font-bold text-slate-200 flex items-center gap-2">
-                      <AlertTriangle size={18} className="text-red-400"/>
-                      未收录品牌 (Missed)
+          <div className="glass-card flex flex-col border-l-4 border-l-danger/50 h-[400px]">
+              <div className="p-4 border-b border-separator flex justify-between items-center bg-danger/5">
+                  <h3 className="font-bold text-text flex items-center gap-2">
+                      <AlertTriangle size={18} className="text-danger"/>
+                      未收录品牌
                   </h3>
-                  <span className="text-xs bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full">
-                      {metrics?.failedTasks.length || 0} items
+                  <span className="text-xs bg-danger/20 text-danger px-2 py-0.5 rounded-full tabular-nums">
+                      {metrics?.failedTasks.length || 0} 条
                   </span>
               </div>
               <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
@@ -345,52 +298,55 @@ export default function GEODashboard() {
                       <div 
                         key={task.id} 
                         onClick={() => handleCardClick(task)}
-                        className="p-3 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group relative cursor-pointer"
+                        className="p-3 rounded-lg bg-text/5 border border-separator hover:bg-text/10 transition-colors group relative cursor-pointer"
                       >
                           <button 
                              onClick={(e) => handleDeleteTask(e, task.id)}
-                             className="absolute top-2 right-2 p-1 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all z-10"
+                             className="absolute top-2 right-2 p-1 text-text-secondary hover:text-danger opacity-0 group-hover:opacity-100 transition-all z-10"
                           >
                              <X size={14} />
                           </button>
 
                           <div className="flex justify-between items-start mb-1">
-                             <h4 className="text-lg font-bold text-slate-200">{task.target_brand}</h4>
+                             <h4 className="text-lg font-bold text-text">{task.target_brand}</h4>
                           </div>
                           
-                          <p className="text-sm text-slate-400 font-medium mb-3 line-clamp-2">{task.query}</p>
+                          <p className="text-sm text-text-secondary font-medium mb-3 line-clamp-2">{task.query}</p>
 
                           <div className="flex items-center gap-2 mt-auto">
-                             <div className="text-[10px] text-slate-500 bg-black/20 px-2 py-0.5 rounded border border-white/5 flex items-center gap-1">
-                                 <Zap size={10} className="text-[#0a84ff]"/>
-                                 {task.engine_name || 'AI Engine'}
+                             <div className="text-[10px] text-text-secondary bg-bg/20 px-2 py-0.5 rounded border border-separator flex items-center gap-1">
+                                 <Zap size={10} className="text-accent"/>
+                                 {task.engine_name || 'AI 引擎'}
                              </div>
                               <button 
-                                className="ml-auto text-[10px] text-[#0a84ff] flex items-center gap-1 hover:text-[#64d2ff] transition-colors"
+                                className="ml-auto text-[10px] text-accent flex items-center gap-1 hover:text-accent transition-colors"
                               >
-                                  Diagnose <Play size={10} />
+                                  去诊断 <Play size={10} />
                               </button>
                           </div>
                       </div>
                   ))}
                   {(!metrics || metrics.failedTasks.length === 0) && (
-                      <div className="h-full flex flex-col items-center justify-center text-slate-600">
-                          <CheckCircle2 size={32} className="mb-2 opacity-20"/>
-                          <p className="text-xs">太棒了！暂无未收录的关键词</p>
-                      </div>
+                      <EmptyState
+                        size="sm"
+                        icon={CheckCircle2}
+                        title="暂无未收录的关键词"
+                        description="所有监测查询均已收录该品牌。"
+                        className="h-full"
+                      />
                   )}
               </div>
           </div>
 
           {/* Col 2: Optimization Success (References) */}
-          <div className="glass-card flex flex-col border-l-4 border-l-emerald-500/50 h-[400px]">
-              <div className="p-4 border-b border-white/5 flex justify-between items-center bg-emerald-500/5">
-                  <h3 className="font-bold text-slate-200 flex items-center gap-2">
-                      <CheckCircle2 size={18} className="text-emerald-400"/>
-                      已收录品牌 (Visible)
+          <div className="glass-card flex flex-col border-l-4 border-l-success/50 h-[400px]">
+              <div className="p-4 border-b border-separator flex justify-between items-center bg-success/5">
+                  <h3 className="font-bold text-text flex items-center gap-2">
+                      <CheckCircle2 size={18} className="text-success"/>
+                      已收录品牌
                   </h3>
-                  <span className="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full">
-                      {metrics?.successTasks.length || 0} items
+                  <span className="text-xs bg-success/20 text-success px-2 py-0.5 rounded-full tabular-nums">
+                      {metrics?.successTasks.length || 0} 条
                   </span>
               </div>
               <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
@@ -398,53 +354,56 @@ export default function GEODashboard() {
                       <div 
                         key={task.id} 
                         onClick={() => handleCardClick(task)}
-                        className="p-3 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group relative cursor-pointer"
+                        className="p-3 rounded-lg bg-text/5 border border-separator hover:bg-text/10 transition-colors group relative cursor-pointer"
                       >
                           <button 
                              onClick={(e) => handleDeleteTask(e, task.id)}
-                             className="absolute top-2 right-2 p-1 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all z-10"
+                             className="absolute top-2 right-2 p-1 text-text-secondary hover:text-danger opacity-0 group-hover:opacity-100 transition-all z-10"
                           >
                              <X size={14} />
                           </button>
 
                           <div className="flex justify-between items-start mb-1">
-                             <h4 className="text-lg font-bold text-slate-200">{task.target_brand}</h4>
+                             <h4 className="text-lg font-bold text-text">{task.target_brand}</h4>
                              {task.rank_position && task.rank_position > 0 ? (
-                                <span className="text-sm font-black text-emerald-400">#{task.rank_position}</span>
+                                <span className="text-sm font-black text-success">#{task.rank_position}</span>
                              ) : (
-                                <span className="text-xs font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded">收录</span>
+                                <span className="text-xs font-bold text-accent bg-accent/10 px-2 py-0.5 rounded">收录</span>
                              )}
                           </div>
                           
-                          <p className="text-sm text-slate-400 font-medium mb-3 line-clamp-2">{task.query}</p>
+                          <p className="text-sm text-text-secondary font-medium mb-3 line-clamp-2">{task.query}</p>
 
                           <div className="flex items-center gap-2 mt-auto">
-                              <div className="text-[10px] text-slate-500 bg-black/20 px-2 py-0.5 rounded border border-white/5 flex items-center gap-1">
-                                 <Zap size={10} className="text-[#0a84ff]"/>
-                                 {task.engine_name || 'AI Engine'}
+                              <div className="text-[10px] text-text-secondary bg-bg/20 px-2 py-0.5 rounded border border-separator flex items-center gap-1">
+                                 <Zap size={10} className="text-accent"/>
+                                 {task.engine_name || 'AI 引擎'}
                              </div>
                              <div className="flex items-center gap-1 ml-auto">
-                                <Activity size={10} className="text-emerald-500"/>
-                                <span className="text-[10px] text-emerald-400">{task.sentiment_score}分</span>
+                                <Activity size={10} className="text-success"/>
+                                <span className="text-[10px] text-success tabular-nums">{task.sentiment_score}分</span>
                              </div>
                           </div>
                       </div>
                   ))}
                   {(!metrics || metrics.successTasks.length === 0) && (
-                      <div className="h-full flex flex-col items-center justify-center text-slate-600">
-                          <CheckCircle2 size={32} className="mb-2 opacity-20"/>
-                          <p className="text-xs">暂无已收录的记录</p>
-                      </div>
+                      <EmptyState
+                        size="sm"
+                        icon={CheckCircle2}
+                        title="暂无已收录的记录"
+                        description="品牌被生成式引擎提及后，将展示在这里。"
+                        className="h-full"
+                      />
                   )}
               </div>
           </div>
 
           {/* Col 3: Trend & Insights */}
           <div className="glass-card flex flex-col h-[400px]">
-              <div className="p-4 border-b border-white/5">
-                  <h3 className="font-bold text-slate-200 flex items-center gap-2">
-                      <TrendingUp size={18} className="text-blue-400"/>
-                      可见性趋势 (Tractions)
+              <div className="p-4 border-b border-separator">
+                  <h3 className="font-bold text-text flex items-center gap-2">
+                      <TrendingUp size={18} className="text-accent"/>
+                      可见性趋势
                   </h3>
               </div>
               <div className="flex-1 p-4">
@@ -452,28 +411,28 @@ export default function GEODashboard() {
                       <AreaChart data={chartData}>
                           <defs>
                               <linearGradient id="colorVis" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
-                                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                                  <stop offset="5%" stopColor="rgb(var(--ui-accent))" stopOpacity={0.3}/>
+                                  <stop offset="95%" stopColor="rgb(var(--ui-accent))" stopOpacity={0}/>
                               </linearGradient>
                           </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} vertical={false}/>
-                          <XAxis dataKey="date" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false}/>
-                          <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} domain={[0, 100]}/>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--ui-text-tertiary))" opacity={0.3} vertical={false}/>
+                          <XAxis dataKey="date" stroke="rgb(var(--ui-text-secondary))" fontSize={10} tickLine={false} axisLine={false}/>
+                          <YAxis stroke="rgb(var(--ui-text-secondary))" fontSize={10} tickLine={false} axisLine={false} domain={[0, 100]}/>
                           <RechartsTooltip 
-                              contentStyle={{ backgroundColor: '#1c1c1e', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
-                              itemStyle={{ color: '#e2e8f0' }}
+                              contentStyle={{ backgroundColor: 'rgb(var(--ui-surface))', borderColor: 'rgb(var(--ui-separator) / var(--ui-separator-alpha))', borderRadius: '8px', fontSize: '12px' }}
+                              itemStyle={{ color: 'rgb(var(--ui-text))' }}
                           />
-                          <Area type="monotone" dataKey="visibility" stroke="#6366f1" fillOpacity={1} fill="url(#colorVis)" strokeWidth={2} name="可见性 %"/>
+                          <Area type="monotone" dataKey="visibility" stroke="rgb(var(--ui-accent))" fillOpacity={1} fill="url(#colorVis)" strokeWidth={2} name="可见性 %"/>
                       </AreaChart>
                   </ResponsiveContainer>
               </div>
               {/* Recommendations Footer */}
-              <div className="p-4 border-t border-white/5 bg-[#1c1c1e]/50">
+              <div className="p-4 border-t border-separator bg-surface/50">
                   <div className="flex items-start gap-3">
-                      <FileText size={16} className="text-[#0a84ff] mt-1"/>
+                      <FileText size={16} className="text-accent mt-1"/>
                       <div>
-                          <h4 className="text-xs font-bold text-slate-300">优化建议 (AI Insights)</h4>
-                          <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">
+                          <h4 className="text-xs font-bold text-text">优化建议</h4>
+                          <p className="text-[10px] text-text-secondary mt-1 leading-relaxed">
                               {metrics?.failedTasks.length ? 
                               `检测到 ${metrics.failedTasks.length} 个查询词未收录您的品牌。建议针对未命中查询词增加结构化数据 (Schema.org) 并优化官网 FAQ 模块。` :
                               "当前品牌 GEO 表现优异，建议持续监控竞品动态，保持内容新鲜度。"}
@@ -484,6 +443,66 @@ export default function GEODashboard() {
           </div>
 
       </div>
+
+      {/* Create Monitor Modal */}
+      <Modal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        title="新建监测任务"
+        description="输入品牌与英文查询词，查询生成式引擎是否提及该品牌。"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>取消</Button>
+            <Button variant="secondary" onClick={() => { setCreateOpen(false); handleSchedule(); }}>定时监测</Button>
+            <Button onClick={() => { setCreateOpen(false); handleStartTask(); }} disabled={loading}>
+              {loading ? "运行中…" : "立即监测"}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-text-secondary mb-1.5">品牌名称</label>
+            <Input
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
+              placeholder="品牌名称"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-text-secondary mb-1.5">英文查询词</label>
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="e.g. best hydraulic pump supplier China"
+            />
+          </div>
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-text-secondary mb-1.5">引擎</label>
+              <select
+                value={engine}
+                onChange={(e) => setEngine(e.target.value)}
+                className="h-10 w-full rounded-md bg-surface-2 border border-transparent px-3 text-sm text-text outline-none focus:border-accent/50"
+              >
+                <option value="perplexity">Perplexity</option>
+                <option value="qwen">Qwen</option>
+                <option value="zhipu">Zhipu</option>
+              </select>
+            </div>
+            <div className="w-28">
+              <label className="block text-xs font-medium text-text-secondary mb-1.5">间隔（小时）</label>
+              <Input
+                type="number"
+                min={1}
+                max={168}
+                value={intervalHours}
+                onChange={(e) => setIntervalHours(Number(e.target.value) || 24)}
+              />
+            </div>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

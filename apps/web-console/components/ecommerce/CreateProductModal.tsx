@@ -186,16 +186,16 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-            <div className={`bg-[#1c1c1e] border border-white/10 w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col transition-all duration-500 ${step === 'review' ? 'max-w-4xl h-[80vh]' : 'max-w-xl'}`}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg/80 backdrop-blur-sm p-4">
+            <div className={`bg-surface border border-separator w-full rounded-xl shadow-modal animate-modal-in overflow-hidden flex flex-col transition-all duration-500 ${step === 'review' ? 'max-w-4xl h-[80vh]' : 'max-w-xl'}`}>
                 
                 {/* Header */}
-                <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/5">
+                <div className="p-5 border-b border-separator flex justify-between items-center bg-text/5">
                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                        <Wand2 className="text-[#0a84ff]" size={20} />
+                        <Wand2 className="text-accent" size={20} />
                         {initialData ? "编辑商品 (Edit Product)" : "AI 新品构建 (Product Creator)"}
                     </h3>
-                    <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
+                    <button onClick={onClose} className="text-text-secondary hover:text-white transition-colors">
                         <X size={20} />
                     </button>
                 </div>
@@ -207,17 +207,17 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
                     {step === 'source' && (
                         <div className="flex flex-col h-full">
                             {/* Tabs */}
-                            <div className="flex border-b border-white/5">
+                            <div className="flex border-b border-separator">
                                 <button 
                                     onClick={() => setActiveTab('generate')}
-                                    className={`flex-1 py-4 text-sm font-medium transition-colors ${activeTab === 'generate' ? 'text-[#0a84ff] border-b-2 border-[#0a84ff] bg-white/5' : 'text-slate-400 hover:text-white'}`}
+                                    className={`flex-1 py-4 text-sm font-medium transition-colors ${activeTab === 'generate' ? 'text-accent border-b-2 border-accent bg-text/5' : 'text-text-secondary hover:text-white'}`}
                                 >
                                     <Sparkles size={14} className="inline mr-2" />
                                     AI 生成 (Text-to-Product)
                                 </button>
                                 <button 
                                     onClick={() => setActiveTab('upload')}
-                                    className={`flex-1 py-4 text-sm font-medium transition-colors ${activeTab === 'upload' ? 'text-[#0a84ff] border-b-2 border-[#0a84ff] bg-white/5' : 'text-slate-400 hover:text-white'}`}
+                                    className={`flex-1 py-4 text-sm font-medium transition-colors ${activeTab === 'upload' ? 'text-accent border-b-2 border-accent bg-text/5' : 'text-text-secondary hover:text-white'}`}
                                 >
                                     <Upload size={14} className="inline mr-2" />
                                     本地上传 (Upload Image)
@@ -230,23 +230,23 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
                                     <div className="h-full flex flex-col gap-4">
                                         <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-4">
                                             {previewImage ? (
-                                                 <div className="relative w-full h-64 rounded-xl overflow-hidden border border-white/10 group">
-                                                    <img src={previewImage} className="w-full h-full object-contain bg-black/40" />
-                                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                                        <button onClick={() => setPreviewImage(null)} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded text-xs backdrop-blur">
+                                                 <div className="relative w-full h-64 rounded-xl overflow-hidden border border-separator group">
+                                                    <img src={previewImage} className="w-full h-full object-contain bg-bg/40" />
+                                                    <div className="absolute inset-0 bg-bg/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                        <button onClick={() => setPreviewImage(null)} className="px-3 py-1.5 bg-text/10 hover:bg-text/15 text-white rounded text-xs backdrop-blur">
                                                             重试
                                                         </button>
                                                     </div>
                                                  </div>
                                             ) : isImageGenerating ? (
                                                 <div className="text-center space-y-4">
-                                                    <div className="w-16 h-16 bg-[#0a84ff]/10 rounded-full flex items-center justify-center mx-auto animate-pulse">
-                                                        <Loader2 className="animate-spin text-[#0a84ff]" size={32} />
+                                                    <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto animate-pulse">
+                                                        <Loader2 className="animate-spin text-accent" size={32} />
                                                     </div>
-                                                    <p className="text-slate-400 text-sm">正在调用云端模型生成设计图...</p>
+                                                    <p className="text-text-secondary text-sm">正在调用云端模型生成设计图...</p>
                                                 </div>
                                             ) : (
-                                                <div className="text-center text-slate-500 text-sm">
+                                                <div className="text-center text-text-secondary text-sm">
                                                     输入描述，AI 将为您创造独一无二的商品图片
                                                 </div>
                                             )}
@@ -256,14 +256,14 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
                                             <textarea 
                                                 value={genPrompt}
                                                 onChange={(e) => setGenPrompt(e.target.value)}
-                                                className="w-full h-24 bg-black/20 border border-white/10 rounded-xl p-3 text-sm text-slate-300 focus:border-[#0a84ff] outline-none resize-none"
+                                                className="w-full h-24 bg-bg/20 border border-separator rounded-xl p-3 text-sm text-text focus:border-accent outline-none resize-none"
                                                 placeholder="Describe the product (e.g. Red silk evening gown...)"
                                             />
                                             <div className="flex justify-end gap-2">
                                                  {previewImage ? (
                                                      <button 
                                                         onClick={() => startAnalysis(previewImage)}
-                                                        className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-sm font-medium shadow-lg transition-all flex items-center gap-2"
+                                                        className="px-6 py-2 bg-success hover:bg-success text-white rounded-full text-sm font-medium shadow-lg transition-all flex items-center gap-2"
                                                      >
                                                          使用此图并分析 <ArrowRight size={16} />
                                                      </button>
@@ -271,7 +271,7 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
                                                      <button 
                                                         onClick={handleAiGenerate}
                                                         disabled={isImageGenerating || !genPrompt}
-                                                        className="px-6 py-2.5 bg-[#0071e3] hover:bg-[#0077ed] disabled:opacity-50 text-white rounded-full text-sm font-medium shadow-lg transition-all flex items-center gap-2"
+                                                        className="px-6 py-2.5 bg-accent hover:bg-accent-hover disabled:opacity-50 text-white rounded-full text-sm font-medium shadow-lg transition-all flex items-center gap-2"
                                                      >
                                                          {isImageGenerating ? '生成中...' : '开始生成 (Generate)'}
                                                      </button>
@@ -283,11 +283,11 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
                                     <div className="h-full flex flex-col items-center justify-center space-y-6">
                                         <div className="text-center">
                                             <h4 className="text-lg font-bold text-white mb-2">拖拽或点击上传</h4>
-                                            <p className="text-slate-400 text-xs">支持 JPG, PNG • 最大 10MB</p>
+                                            <p className="text-text-secondary text-xs">支持 JPG, PNG • 最大 10MB</p>
                                         </div>
                                         <label className="relative group cursor-pointer">
                                             <input type="file" className="hidden" accept="image/*" onChange={handleFileSelect} />
-                                            <div className="flex items-center gap-3 px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-slate-300 rounded-xl font-medium transition-all">
+                                            <div className="flex items-center gap-3 px-8 py-4 bg-text/5 hover:bg-text/10 border border-separator hover:border-separator text-text rounded-xl font-medium transition-all">
                                                 <Upload size={20} />
                                                 选择本地图片
                                             </div>
@@ -303,18 +303,18 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
                         <div className="p-10 flex flex-col items-center justify-center h-full space-y-8">
                              <div className="relative">
                                 {/* Scanning Effect Overlay on Image */}
-                                <div className="w-48 h-48 rounded-lg overflow-hidden relative border-2 border-[#0a84ff]/40 shadow-2xl">
+                                <div className="w-48 h-48 rounded-lg overflow-hidden relative border-2 border-accent/40 shadow-2xl">
                                     {previewImage && <img src={previewImage} className="w-full h-full object-cover opacity-50" />}
-                                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0a84ff]/20 to-transparent w-full h-full animate-scan"></div>
+                                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-accent/20 to-transparent w-full h-full animate-scan"></div>
                                 </div>
-                                <div className="absolute -bottom-3 -right-3 bg-[#0071e3] text-white text-[10px] px-2 py-1 rounded-full font-mono flex items-center gap-1">
+                                <div className="absolute -bottom-3 -right-3 bg-accent text-white text-[10px] px-2 py-1 rounded-full font-mono flex items-center gap-1">
                                     <Loader2 size={10} className="animate-spin" /> PROCESSING
                                 </div>
                              </div>
 
                              <div className="text-center space-y-2">
                                  <h4 className="text-lg font-bold text-white">AI 数字导购正在分析...</h4>
-                                 <p className="text-[#64d2ff] font-mono text-sm h-6 transition-all">{analyzingStep}</p>
+                                 <p className="text-accent font-mono text-sm h-6 transition-all">{analyzingStep}</p>
                              </div>
                         </div>
                     )}
@@ -323,19 +323,19 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
                     {step === 'review' && (
                         <div className="flex h-full">
                             {/* Left: Image & Quick Stats */}
-                            <div className="w-1/3 bg-black/20 p-6 border-r border-white/5 flex flex-col gap-4">
-                                <div className="aspect-[3/4] bg-white/5 rounded-lg overflow-hidden border border-white/10 relative group">
+                            <div className="w-1/3 bg-bg/20 p-6 border-r border-separator flex flex-col gap-4">
+                                <div className="aspect-[3/4] bg-text/5 rounded-lg overflow-hidden border border-separator relative group">
                                     {previewImage && <img src={previewImage} className="w-full h-full object-cover" />}
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <button className="px-4 py-2 bg-white/10 backdrop-blur text-white rounded-lg text-xs hover:bg-white/20">更换图片</button>
+                                    <div className="absolute inset-0 bg-bg/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <button className="px-4 py-2 bg-text/10 backdrop-blur text-white rounded-lg text-xs hover:bg-text/15">更换图片</button>
                                     </div>
                                 </div>
                                 
                                 <div className="space-y-3">
-                                    <h5 className="text-xs font-bold text-slate-500 uppercase">Detect Traits</h5>
+                                    <h5 className="text-xs font-bold text-text-secondary uppercase">Detect Traits</h5>
                                     <div className="flex flex-wrap gap-2">
                                         {Object.entries(formData.attributes).map(([k,v]: any) => (
-                                            <span key={k} className="px-2 py-1 bg-[#0a84ff]/10 text-[#64d2ff] border border-[#0a84ff]/20 rounded text-xs">
+                                            <span key={k} className="px-2 py-1 bg-accent/10 text-accent border border-accent/20 rounded text-xs">
                                                 {v}
                                             </span>
                                         ))}
@@ -346,48 +346,48 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
                             {/* Right: AI Generated Form */}
                             <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
                                 <div className="space-y-6">
-                                    <div className="flex items-center gap-2 mb-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-400 text-xs">
+                                    <div className="flex items-center gap-2 mb-2 p-3 bg-success/10 border border-success/20 rounded-lg text-success text-xs">
                                         <CheckCircle2 size={16} />
                                         <span>分析完成！AI 已自动为您填充 90% 的商品信息。</span>
                                     </div>
 
                                     {/* Title */}
                                     <div className="space-y-2">
-                                        <label className="text-xs text-slate-400 uppercase font-bold flex items-center gap-1">
+                                        <label className="text-xs text-text-secondary uppercase font-bold flex items-center gap-1">
                                              <Type size={14} /> 商品标题 (Product Title)
                                         </label>
                                         <input 
                                             type="text" 
                                             value={formData.name}
                                             onChange={(e) => setFormData({...formData, name: e.target.value})}
-                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-[#0a84ff] focus:bg-white/10 transition-all outline-none font-medium"
+                                            className="w-full bg-text/5 border border-separator rounded-lg px-4 py-3 text-white focus:border-accent focus:bg-text/10 transition-all outline-none font-medium"
                                         />
                                     </div>
 
                                     {/* Category & Price Grid */}
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <label className="text-xs text-slate-400 uppercase font-bold flex items-center gap-1">
+                                            <label className="text-xs text-text-secondary uppercase font-bold flex items-center gap-1">
                                                 <Tag size={14} /> 类目 (Category)
                                             </label>
                                             <input 
                                                 type="text" 
                                                 value={formData.category} 
                                                 onChange={(e) => setFormData({...formData, category: e.target.value})}
-                                                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-slate-300 outline-none focus:border-[#0a84ff]"
+                                                className="w-full bg-text/5 border border-separator rounded-lg px-4 py-3 text-text outline-none focus:border-accent"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-xs text-slate-400 uppercase font-bold flex items-center gap-1">
+                                            <label className="text-xs text-text-secondary uppercase font-bold flex items-center gap-1">
                                                 <DollarSign size={14} /> 建议售价 (Price)
                                             </label>
                                             <div className="relative">
-                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">¥</span>
+                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary">¥</span>
                                                 <input 
                                                     type="text" 
                                                     value={formData.price} 
                                                     onChange={(e) => setFormData({...formData, price: e.target.value})}
-                                                    className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-4 py-3 text-emerald-400 font-mono font-bold outline-none focus:border-[#0a84ff]"
+                                                    className="w-full bg-text/5 border border-separator rounded-lg pl-8 pr-4 py-3 text-success font-mono font-bold outline-none focus:border-accent"
                                                 />
                                             </div>
                                         </div>
@@ -395,29 +395,29 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
 
                                     {/* Description */}
                                     <div className="space-y-2">
-                                        <label className="text-xs text-slate-400 uppercase font-bold flex items-center justify-between">
+                                        <label className="text-xs text-text-secondary uppercase font-bold flex items-center justify-between">
                                             <span className="flex items-center gap-1"><Box size={14} /> AI 营销文案 (Description)</span>
-                                            <button className="text-[10px] text-[#0a84ff] hover:text-white flex items-center gap-1">
+                                            <button className="text-[10px] text-accent hover:text-white flex items-center gap-1">
                                                 <Sparkles size={10} /> 重新生成
                                             </button>
                                         </label>
                                         <textarea 
                                             value={formData.description}
                                             onChange={(e) => setFormData({...formData, description: e.target.value})}
-                                            className="w-full h-32 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-slate-300 leading-relaxed outline-none focus:border-[#0a84ff] resize-none"
+                                            className="w-full h-32 bg-text/5 border border-separator rounded-lg px-4 py-3 text-text leading-relaxed outline-none focus:border-accent resize-none"
                                         />
                                     </div>
 
                                     {/* Tags */}
                                     <div className="space-y-2">
-                                        <label className="text-xs text-slate-400 uppercase font-bold">SEO Tags</label>
+                                        <label className="text-xs text-text-secondary uppercase font-bold">SEO Tags</label>
                                         <div className="flex flex-wrap gap-2">
                                             {formData.tags.map(tag => (
-                                                <span key={tag} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded-full text-xs text-slate-300 border border-white/5 cursor-pointer transition-colors">
+                                                <span key={tag} className="px-3 py-1 bg-text/5 hover:bg-text/10 rounded-full text-xs text-text border border-separator cursor-pointer transition-colors">
                                                     #{tag}
                                                 </span>
                                             ))}
-                                            <button className="px-3 py-1 border border-dashed border-white/20 rounded-full text-xs text-slate-500 hover:text-white hover:border-white/50">
+                                            <button className="px-3 py-1 border border-dashed border-separator rounded-full text-xs text-text-secondary hover:text-white hover:border-separator">
                                                 + Add
                                             </button>
                                         </div>
@@ -432,7 +432,7 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
 
                 {/* Footer */}
                 {step === 'review' && (
-                    <div className="p-5 border-t border-white/5 bg-black/20 flex justify-end gap-3 rounded-b-2xl">
+                    <div className="p-5 border-t border-separator bg-bg/20 flex justify-end gap-3 rounded-b-2xl">
                         <button 
                             onClick={() => {
                                 setStep('source');
@@ -440,13 +440,13 @@ export function CreateProductModal({ isOpen, onClose, onSuccess, initialData }: 
                                 setAnalyzingStep('');
                                 onClose();
                             }}
-                            className="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors"
+                            className="px-4 py-2 text-sm text-text-secondary hover:text-white transition-colors"
                         >
                             放弃 (Discard)
                         </button>
                         <button 
                             onClick={handleCreate}
-                            className="px-8 py-2 bg-[#0071e3] hover:bg-[#0077ed] text-white rounded-full text-sm font-medium shadow-apple transition-all flex items-center gap-2"
+                            className="px-8 py-2 bg-accent hover:bg-accent-hover text-white rounded-full text-sm font-medium shadow-card transition-all flex items-center gap-2"
                         >
                             {initialData ? '保存修改 (Update)' : '确认创建商品 (Create)'} <ArrowRight size={16} />
                         </button>

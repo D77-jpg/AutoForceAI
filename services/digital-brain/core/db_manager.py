@@ -28,6 +28,25 @@ def _sqlite_add_columns():
         "ALTER TABLE chat_sessions ADD COLUMN language VARCHAR",
         "ALTER TABLE chat_sessions ADD COLUMN intent JSON",
         "ALTER TABLE knowledge_docs ADD COLUMN error_msg TEXT",
+        # 阶段 2 Wave D：outcome 轮询游标
+        "ALTER TABLE crm_integration_configs ADD COLUMN outcome_cursor VARCHAR",
+        "ALTER TABLE crm_integration_configs ADD COLUMN outcome_polled_at DATETIME",
+        "ALTER TABLE crm_integration_configs ADD COLUMN web_base_url VARCHAR",
+        # 阶段 2.9 P0-1：token 脱敏预览（与密文分离）
+        "ALTER TABLE crm_integration_configs ADD COLUMN token_last4 VARCHAR",
+        # 阶段 2.9 P0-2：绑定变更保护
+        "ALTER TABLE crm_sync_jobs ADD COLUMN project_id VARCHAR",
+        "ALTER TABLE crm_entity_links ADD COLUMN archived_at DATETIME",
+        "ALTER TABLE crm_entity_links DROP COLUMN last_outcome_cursor",
+        "ALTER TABLE crm_integration_configs ADD COLUMN last_reset_at DATETIME",
+        "ALTER TABLE crm_integration_configs ADD COLUMN last_reset_by INTEGER",
+        "DROP INDEX IF EXISTS uq_crm_link_org_lead",
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_crm_link_org_lead_project ON crm_entity_links (provider, organization_id, lead_id, project_id)",
+        # 阶段 2.9 P0-5：启用门槛指纹
+        "ALTER TABLE crm_integration_configs ADD COLUMN health_fingerprint VARCHAR",
+        # 阶段 2.9 §3.6：worker 并发保护
+        "ALTER TABLE crm_integration_configs ADD COLUMN outcome_lease_owner VARCHAR",
+        "ALTER TABLE crm_integration_configs ADD COLUMN outcome_lease_expires_at DATETIME",
     ]
     with SHARED_ENGINE.begin() as conn:
         for sql in statements:
@@ -40,10 +59,16 @@ def _sqlite_add_columns():
 # 初始化主数据库 (Merging Tenant Schemas into Shared DB)
 def init_shared_db():
     print("[DB] Initializing Shared Database Schema...")
-    SharedBase.metadata.create_all(bind=SHARED_ENGINE)
-    # Also create Tenant tables in the Shared DB (Single DB Mode)
-    TenantBase.metadata.create_all(bind=SHARED_ENGINE)
-    _sqlite_add_columns()
+    from core.migrations import ensure_schema_current
+    if SHARED_ENGINE.dialect.name == "sqlite":
+        # 仅本地开发 SQLite 保留 create_all/补列兼容路径。
+        SharedBase.metadata.create_all(bind=SHARED_ENGINE)
+        TenantBase.metadata.create_all(bind=SHARED_ENGINE)
+        _sqlite_add_columns()
+        ensure_schema_current(SHARED_ENGINE)
+    else:
+        # PostgreSQL schema 只能由 Alembic 管理；无版本库会在任何 DDL 前失败。
+        ensure_schema_current(SHARED_ENGINE)
     print("[DB] Schema Sync Complete.")
 
 # 租户数据库引擎缓存

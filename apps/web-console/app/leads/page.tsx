@@ -1,7 +1,49 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { Inbox } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from "@/components/ui/table";
+
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8010";
 function auth(){ return { Authorization: "Bearer " + (localStorage.getItem("token")||"") }; }
+
+const STATUS_LABELS: Record<string, string> = {
+  new: "新线索",
+  contacted: "已联系",
+  converted: "已转化",
+  dropped: "已放弃",
+};
+const ACTION_STATUSES = ["contacted", "converted", "dropped"];
+
+// CRM 同步状态（Wave C）
+const CRM_LABELS: Record<string, { label: string; cls: string }> = {
+  succeeded: { label: "已同步", cls: "text-green-500" },
+  pending: { label: "待投递", cls: "text-text-secondary" },
+  leased: { label: "投递中", cls: "text-accent" },
+  retrying: { label: "重试中", cls: "text-amber-500" },
+  dead: { label: "死信", cls: "text-red-500" },
+};
+
+function CrmBadge({ crm }: { crm: any }) {
+  if (!crm || (!crm.job_status && !crm.synced)) return <span className="text-text-secondary">-</span>;
+  if (crm.synced) {
+    return (
+      <span className="text-green-500" title={`Genesis 客户 ${crm.remote_customer_id || ""}`}>
+        已同步{crm.remote_status ? ` · ${crm.remote_status}` : ""}
+      </span>
+    );
+  }
+  const meta = CRM_LABELS[crm.job_status] || { label: crm.job_status, cls: "text-text-secondary" };
+  return (
+    <span className={meta.cls} title={crm.last_error || undefined}>
+      {meta.label}
+    </span>
+  );
+}
+
 export default function LeadsPage() {
   const [items, setItems] = useState([]);
   const [status, setStatus] = useState("");
@@ -19,51 +61,85 @@ export default function LeadsPage() {
     await fetch(API+"/api/v1/leads/"+id, { method:"PATCH", headers:{...auth(),"Content-Type":"application/json"}, body: JSON.stringify({status:s}) });
     load();
   };
+  const resync = async (id) => {
+    await fetch(API+`/api/v1/crm/integration/leads/${id}/resync`, { method:"POST", headers: auth() });
+    load();
+  };
   const exportCsv = () => {
     fetch(API+"/api/v1/leads/export.csv", { headers: auth() }).then(r=>r.blob()).then(b=>{
       const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="leads.csv"; a.click();
     });
   };
   return (
-    <div className="min-h-screen bg-black text-slate-200 p-8">
-      <div className="flex justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">本地线索池</h1>
-          <p className="text-sm text-slate-400">AI 客服识别的询盘先落在这里。CRM 就绪后由投递器同步，无需返工。</p>
-        </div>
-        <button onClick={exportCsv} className="bg-white/10 px-3 py-2 rounded-full text-sm">导出 CSV</button>
-      </div>
+    <div className="min-h-screen bg-bg text-text p-8">
+      <PageHeader
+        title="本地线索池"
+        description="AI 客服识别的询盘先落在这里。CRM 就绪后由投递器同步，无需返工。"
+        actions={<Button variant="outline" onClick={exportCsv}>导出 CSV</Button>}
+      />
       <div className="flex gap-2 mb-4">
-        <input value={q} onChange={e=>setQ(e.target.value)} placeholder="搜索邮箱/公司/产品" className="bg-black/40 border border-white/10 rounded px-3 py-2 text-sm"/>
-        <button onClick={load} className="bg-[#0071e3] px-3 rounded text-sm">搜索</button>
-        <select value={status} onChange={e=>setStatus(e.target.value)} className="bg-black/40 border border-white/10 rounded px-2 text-sm">
+        <Input
+          value={q}
+          onChange={e=>setQ(e.target.value)}
+          placeholder="搜索邮箱/公司/产品"
+          className="max-w-xs"
+        />
+        <Button onClick={load}>搜索</Button>
+        <select
+          value={status}
+          onChange={e=>setStatus(e.target.value)}
+          className="h-10 rounded-md border border-transparent bg-surface-2 px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-accent/30 transition-all"
+        >
           <option value="">全部状态</option>
-          <option value="new">new</option>
-          <option value="contacted">contacted</option>
-          <option value="converted">converted</option>
-          <option value="dropped">dropped</option>
+          {Object.entries(STATUS_LABELS).map(([value, label]) => (
+            <option key={value} value={value}>{label}</option>
+          ))}
         </select>
       </div>
-      <table className="w-full text-sm">
-        <thead className="text-slate-500"><tr><th className="text-left py-2">公司/联系人</th><th>邮箱</th><th>产品</th><th>来源</th><th>状态</th><th></th></tr></thead>
-        <tbody>
-          {items.map(it=>(
-            <tr key={it.id} className="border-t border-white/5">
-              <td className="py-2">{it.company || "-"} / {it.name || "-"}</td>
-              <td>{it.email || "-"}</td>
-              <td>{it.products || (it.intent_json && it.intent_json.intent) || "-"}</td>
-              <td>{it.source}</td>
-              <td>{it.status}</td>
-              <td className="text-right space-x-1">
-                {["contacted","converted","dropped"].map(s=>(
-                  <button key={s} onClick={()=>setSt(it.id,s)} className="text-xs px-2 py-1 bg-white/5 rounded">{s}</button>
-                ))}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {!items.length && <p className="text-slate-500 mt-8">暂无线索。嵌入独立站聊天插件或在检索测试后产生询盘即可入库。</p>}
+      <div className="bg-surface border border-separator rounded-xl">
+        {items.length ? (
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableHeaderCell>公司/联系人</TableHeaderCell>
+                <TableHeaderCell>邮箱</TableHeaderCell>
+                <TableHeaderCell>产品</TableHeaderCell>
+                <TableHeaderCell>来源</TableHeaderCell>
+                <TableHeaderCell>状态</TableHeaderCell>
+                <TableHeaderCell>CRM 同步</TableHeaderCell>
+                <TableHeaderCell className="text-right">操作</TableHeaderCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {items.map(it=>(
+                <TableRow key={it.id}>
+                  <TableCell>{it.company || "-"} / {it.name || "-"}</TableCell>
+                  <TableCell>{it.email || "-"}</TableCell>
+                  <TableCell>{it.products || (it.intent_json && it.intent_json.intent) || "-"}</TableCell>
+                  <TableCell>{it.source}</TableCell>
+                  <TableCell>{STATUS_LABELS[it.status] || it.status}</TableCell>
+                  <TableCell><CrmBadge crm={it.crm} /></TableCell>
+                  <TableCell className="text-right space-x-1">
+                    {it.crm && !it.crm.synced && it.crm.job_status !== "pending" && it.crm.job_status !== "leased" && (
+                      <Button variant="secondary" size="sm" onClick={()=>resync(it.id)}>重投</Button>
+                    )}
+                    {ACTION_STATUSES.map(s=>(
+                      <Button key={s} variant="secondary" size="sm" onClick={()=>setSt(it.id,s)}>{STATUS_LABELS[s]}</Button>
+                    ))}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <EmptyState
+            icon={Inbox}
+            size="sm"
+            title="暂无线索"
+            description="嵌入独立站聊天插件或在检索测试后产生询盘即可入库。"
+          />
+        )}
+      </div>
     </div>
   );
 }

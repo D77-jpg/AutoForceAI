@@ -2,33 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: 0 0 0;
-  --foreground: 245 245 247;
-  --surface: 28 28 30;
-  --surface-raised: 44 44 46;
-  --surface-overlay: 58 58 60;
-  --primary: 10 132 255;
-  --primary-strong: 0 113 227;
-  --secondary-text: 134 134 139;
-  --tertiary-text: 110 110 115;
-  --separator: 255 255 255;
-  --glass-border: 255 255 255 0.08;
-  --glass-bg: 28 28 30 0.72;
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
-}
-
-html {
-  color-scheme: dark;
-}
+/* 颜色/圆角/阴影/动效令牌来自 @autoforce/ui-tokens/tokens.css（layout.tsx 引入） */
 
 body {
-  background-color: #000000;
-  color: #f5f5f7;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", "Inter", system-ui, sans-serif;
+  background-color: rgb(var(--ui-bg));
+  color: rgb(var(--ui-text));
+  font-family: var(--ui-font-sans);
   min-height: 100vh;
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
@@ -36,83 +15,132 @@ body {
 }
 
 h1, h2, h3, h4 {
-  letter-spacing: -0.03em;
-  font-weight: 590;
+  letter-spacing: -0.02em;
+  font-weight: 600;
 }
 
+/* ── 毛玻璃面板 ─────────────────────────────────────── */
 .glass-panel {
-  background: rgba(28, 28, 30, 0.78);
-  backdrop-filter: saturate(180%) blur(28px);
-  -webkit-backdrop-filter: saturate(180%) blur(28px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
-  border-radius: var(--radius-lg);
+  background: rgb(var(--ui-surface) / 0.72);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid rgb(var(--ui-separator) / var(--ui-separator-alpha));
+  box-shadow: var(--ui-shadow-card);
+  border-radius: var(--ui-radius-xl);
 }
 
 .glass-card {
-  @apply glass-panel transition-all duration-300 ease-out;
+  @apply glass-panel;
+  transition: background-color var(--ui-duration-base) var(--ui-ease),
+    box-shadow var(--ui-duration-base) var(--ui-ease),
+    transform var(--ui-duration-base) var(--ui-ease);
 }
 
 .glass-card:hover {
-  background: rgba(44, 44, 46, 0.88);
-  border-color: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--ui-shadow-popover);
   transform: translateY(-1px);
 }
 
+/* ── 主题切换图标显隐（配合 ThemeToggle / data-theme） ── */
+.theme-icon-sun { display: none; }
+.theme-icon-moon { display: inline-flex; }
+[data-theme="dark"] .theme-icon-sun { display: inline-flex; }
+[data-theme="dark"] .theme-icon-moon { display: none; }
+
+/* ── 数字统计：等宽数字 ─────────────────────────────── */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 产品矩阵菜单：近不透明底 + 毛玻璃增强 ──────────────────
+   根因记录：菜单自身的 translate/opacity transition（合成层提升）叠加父级
+   header 的 backdrop-blur（嵌套 backdrop-filter 时子级无法建立 backdrop root），
+   Chromium 会静默丢弃子级 backdrop-filter，故背景提升为近不透明，blur 仅作增强。 */
+.menu-glass {
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: var(--ui-shadow-popover);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .menu-glass {
+    background: rgba(28, 28, 30, 0.95);
+    border-color: rgb(var(--ui-separator) / var(--ui-separator-alpha));
+  }
+}
+[data-theme="dark"] .menu-glass {
+  background: rgba(28, 28, 30, 0.95);
+  border-color: rgb(var(--ui-separator) / var(--ui-separator-alpha));
+}
+
+/* ── 侧边栏导航项：选中为 accent 浅色圆角高亮块 ─────── */
 .nav-item {
-  @apply flex items-center gap-3 px-3 py-2 rounded-[12px] text-[#86868b] transition-all duration-200 cursor-pointer;
+  @apply flex items-center gap-3 px-3 py-2 text-text-tertiary cursor-pointer;
+  border-radius: var(--ui-radius-md);
+  transition: background-color var(--ui-duration-fast) var(--ui-ease),
+    color var(--ui-duration-fast) var(--ui-ease);
 }
 
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #f5f5f7;
+  background: rgb(var(--ui-surface-2) / 0.6);
+  color: rgb(var(--ui-text));
 }
 
 .nav-item.active {
-  background: rgba(10, 132, 255, 0.16);
-  color: #f5f5f7;
-  font-weight: 560;
+  background: rgb(var(--ui-accent) / 0.12);
+  color: rgb(var(--ui-accent));
+  font-weight: 600;
 }
 
+/* ── 页面骨架 ───────────────────────────────────────── */
 .apple-page {
-  @apply w-full max-w-[1280px] mx-auto px-6 py-8 space-y-8;
+  @apply w-full max-w-[1280px] mx-auto px-4 sm:px-6 py-8 space-y-8;
 }
 
 .apple-title {
-  @apply text-[28px] leading-tight font-semibold tracking-tight text-[#f5f5f7];
+  @apply text-[28px] leading-tight font-semibold tracking-tight text-text;
 }
 
 .apple-subtitle {
-  @apply text-[15px] text-[#86868b] mt-1.5;
+  @apply text-[15px] text-text-secondary mt-1.5;
 }
 
 .apple-section-label {
-  @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6e6e73];
+  @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-text-tertiary;
 }
 
 .apple-hairline {
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: rgb(var(--ui-separator) / var(--ui-separator-alpha));
 }
 
+/* iOS inset-grouped 列表容器 */
+.ios-group {
+  background: rgb(var(--ui-surface));
+  border-radius: var(--ui-radius-lg);
+  border: 1px solid rgb(var(--ui-separator) / var(--ui-separator-alpha));
+  overflow: hidden;
+}
+.ios-group > * + * {
+  border-top: 1px solid rgb(var(--ui-separator) / var(--ui-separator-alpha));
+}
+
+/* ── 滚动条 ─────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.14);
-  border-radius: 999px;
+  background: rgb(var(--ui-text-tertiary) / 0.35);
+  border-radius: var(--ui-radius-pill);
   border: 2px solid transparent;
   background-clip: padding-box;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.24);
+  background: rgb(var(--ui-text-tertiary) / 0.55);
   border: 2px solid transparent;
   background-clip: padding-box;
 }
@@ -121,55 +149,67 @@ h1, h2, h3, h4 {
   text-shadow: none;
 }
 
+/* ── 动效（prefers-reduced-motion 已在 tokens.css 全局关闭） ── */
 @keyframes slideInRight {
-  from {
-    transform: translateY(-6px) scale(0.98);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0) scale(1);
-    opacity: 1;
-  }
+  from { transform: translateY(-6px) scale(0.98); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
 }
-
 .animate-slide-in-right {
-  animation: slideInRight 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: slideInRight var(--ui-duration-base) var(--ui-ease) forwards;
 }
 
 @keyframes fade-in-up {
-  from {
-    transform: translateY(8px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
-
 .animate-fade-in-up,
 .animate-fade-in {
-  animation: fade-in-up 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: fade-in-up var(--ui-duration-base) var(--ui-ease) both;
 }
 
 @keyframes border-pulse-glow {
   0%, 100% {
-    border-color: rgba(10, 132, 255, 0.18);
-    box-shadow: 0 0 0 rgba(10, 132, 255, 0);
+    border-color: rgb(var(--ui-accent) / 0.18);
+    box-shadow: 0 0 0 rgb(var(--ui-accent) / 0);
   }
   50% {
-    border-color: rgba(10, 132, 255, 0.4);
-    box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.08);
+    border-color: rgb(var(--ui-accent) / 0.4);
+    box-shadow: 0 0 0 4px rgb(var(--ui-accent) / 0.08);
   }
 }
-
 .animate-border-glow {
-  animation: border-pulse-glow 3.6s infinite ease-in-out;
+  animation: border-pulse-glow 3.6s infinite var(--ui-ease);
+}
+
+/* 弹窗出现：0.96 → 1 + 淡入，300ms */
+@keyframes modal-in {
+  from { transform: scale(0.96); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.animate-modal-in {
+  animation: modal-in var(--ui-duration-base) var(--ui-ease) both;
+}
+
+/* 骨架屏微光 */
+@keyframes ui-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+.ui-skeleton {
+  border-radius: var(--ui-radius-md);
+  background: linear-gradient(
+    100deg,
+    rgb(var(--ui-surface-2)) 40%,
+    rgb(var(--ui-text-tertiary) / 0.14) 50%,
+    rgb(var(--ui-surface-2)) 60%
+  );
+  background-size: 200% 100%;
+  animation: ui-shimmer 1.8s var(--ui-ease) infinite;
 }
 
 .text-shimmer {
   background: none;
-  color: #f5f5f7;
+  color: rgb(var(--ui-text));
 }
 
 input, textarea, select, button {
@@ -177,6 +217,6 @@ input, textarea, select, button {
 }
 
 ::selection {
-  background: rgba(10, 132, 255, 0.28);
-  color: #fff;
+  background: rgb(var(--ui-accent) / 0.24);
+  color: rgb(var(--ui-text));
 }

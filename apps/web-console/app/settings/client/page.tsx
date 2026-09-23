@@ -3,10 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Download, Monitor, FileJson, Copy, CheckCircle2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Download, Monitor } from "lucide-react";
 import { useToast } from "@/contexts/ToastContext";
+import { PageHeader } from "@/components/PageHeader";
 
 // 模拟配置生成 - 实际项目中应从 API 获取当前用户的 Token
 const generateConfig = () => {
@@ -75,12 +75,11 @@ export default function ClientDownloadPage() {
 
     return (
         <div className="container mx-auto py-10 max-w-5xl">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold tracking-tight">RPA 客户端部署</h1>
-                <p className="text-muted-foreground mt-2">
-                    在您的本地电脑运行数字员工，安全、稳定、零封号风险。
-                </p>
-            </div>
+            <PageHeader
+                title="RPA 客户端部署"
+                description="在您的本地电脑运行数字员工，安全、稳定、零封号风险。"
+                className="mb-8"
+            />
 
             <div className="max-w-xl mx-auto">
                 <Card className="relative overflow-hidden">
@@ -94,27 +93,21 @@ export default function ClientDownloadPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-sm text-gray-600 mb-4">
+                        <p className="text-sm text-text-tertiary mb-4">
                             包含了所有必要的运行环境。无需安装 Python，解压即用。
                         </p>
-                        <Alert className="  border-blue-200 mb-4">
-                            {/* <AlertTitle className="text-xs font-bold text-white-800">环境要求</AlertTitle> */}
-                            <AlertDescription className="text-xs text-white-700">
+                        <Alert className="border-accent mb-4">
+                            <AlertDescription className="text-xs text-text-secondary">
                                 环境要求：Windows 10/11, 建议 8G 内存以上
                             </AlertDescription>
-                            <AlertDescription className="text-xs text-white-700">
+                            <AlertDescription className="text-xs text-text-secondary">
                                 下载后点击运行的下载文件：DigitalEmployeeRPA.exe
                             </AlertDescription>
                         </Alert>
-                        {/* <div className="p-3 bg-blue-50/50 rounded border border-blue-100/50">
-                            <p className="text-xs text-blue-800 font-medium text-center">
-                                下载后点击运行的下载文件：DigitalEmployeeRPA.exe
-                            </p>
-                        </div> */}
                     </CardContent>
                     <CardFooter>
                         <Button 
-                            className="w-full bg-blue-600 hover:bg-blue-700" 
+                            className="w-full" 
                             size="lg"
                             disabled={downloading}
                             onClick={() => {
@@ -138,7 +131,7 @@ export default function ClientDownloadPage() {
                         >
                             {downloading ? (
                                 <>
-                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-separator mr-2"></div>
                                  请求中...
                                 </>
                             ) : (

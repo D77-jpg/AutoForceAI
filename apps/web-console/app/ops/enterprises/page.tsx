@@ -6,16 +6,18 @@ import {
   Loader2, 
   RefreshCw, 
   Plus, 
-  UserPlus, 
-  MoreVertical, 
   Trash2, 
   Settings,
   Users,
-  Check,
-  X 
+  Check
 } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { PageHeader } from '@/components/PageHeader';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface Organization {
     id: number;
@@ -281,109 +283,106 @@ export default function EnterprisesPage() {
     );
 
     return (
-        <div className="h-full flex flex-col bg-black overflow-hidden relative">
+        <div className="h-full flex flex-col bg-bg overflow-hidden relative">
              {/* Header */}
-             <div className="flex-none p-6 border-b border-white/5 bg-[#1c1c1e] flex items-center justify-between z-20">
-                <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-[#0a84ff]/16 flex items-center justify-center border border-[#0a84ff]/25">
-                        <Building2 className="text-[#0a84ff]" size={20} />
-                    </div>
-                    <div>
-                        <h1 className="text-xl font-bold text-white">企业管理</h1>
-                        <p className="text-xs text-slate-400 mt-1">
-                            创建与管理多租户企业及管理员
-                        </p>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                     <div className="relative w-64">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-                        <input
-                            placeholder="搜索企业名称..."
-                            className="w-full pl-9 h-9 bg-white/5 border border-white/10 rounded-md text-sm text-slate-300 focus:outline-none focus:border-[#0a84ff]/50 transition-colors"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </div>
-                     <button
-                         onClick={handleRefresh}
-                         className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                         title="刷新"
-                    >
-                        <RefreshCw size={18} className={isRefreshing ? "animate-spin" : ""} />
-                    </button>
-                    <button 
-                        onClick={() => setIsCreating(true)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-[#0071e3] hover:bg-[#0077ed] text-white rounded-full text-sm font-medium transition-colors shadow-apple"
-                    >
-                        <Plus size={16} /> 创建企业
-                    </button>
-                </div>
+             <div className="flex-none px-6 pt-6">
+                <PageHeader
+                    title="企业管理"
+                    description="创建与管理多租户企业及管理员"
+                    className="mb-0"
+                    actions={
+                        <>
+                            <div className="relative w-64">
+                                <Search strokeWidth={1.75} className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary pointer-events-none" />
+                                <Input
+                                    placeholder="搜索企业名称..."
+                                    className="pl-9"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={handleRefresh}
+                                title="刷新"
+                            >
+                                <RefreshCw size={16} strokeWidth={1.75} className={isRefreshing ? "animate-spin" : ""} />
+                            </Button>
+                            <Button onClick={() => setIsCreating(true)}>
+                                <Plus size={16} strokeWidth={1.75} className="mr-2" /> 新建企业
+                            </Button>
+                        </>
+                    }
+                />
             </div>
 
             {/* Content */}
             <div className="flex-1 overflow-auto p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {loading ? (
-                         <div className="col-span-full flex flex-col items-center justify-center text-slate-500 min-h-[400px]">
-                            <Loader2 className="animate-spin text-[#0a84ff]" size={32} />
-                            <p className="mt-4 text-sm">正在加载企业数据...</p>
-                        </div>
-                    ) : filteredOrgs.length === 0 ? (
-                        <div className="col-span-full flex flex-col items-center justify-center text-slate-500 min-h-[400px]">
-                             <Building2 size={48} className="opacity-20 mb-4" />
-                             <p>暂无企业数据</p>
-                        </div>
-                    ) : (
-                        filteredOrgs.map(org => (
-                            <div key={org.id} className="bg-[#1c1c1e] border border-white/5 rounded-xl overflow-hidden hover:border-[#0a84ff]/30 transition-all group relative flex flex-col">
+                {loading ? (
+                     <div className="flex flex-col items-center justify-center text-text-secondary min-h-[400px]">
+                        <Loader2 className="animate-spin text-accent" size={32} strokeWidth={1.75} />
+                        <p className="mt-4 text-sm">正在加载企业数据...</p>
+                    </div>
+                ) : filteredOrgs.length === 0 ? (
+                    <EmptyState
+                        icon={Building2}
+                        title="暂无企业数据"
+                        description="创建第一个企业，开始多租户组织管理"
+                        actionLabel="新建企业"
+                        onAction={() => setIsCreating(true)}
+                        size="lg"
+                    />
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {filteredOrgs.map(org => (
+                            <div key={org.id} className="bg-surface rounded-lg shadow-card hover:shadow-popover overflow-hidden transition-all group relative flex flex-col">
                                 <div className="p-6 flex-1 overflow-hidden">
                                     <div className="flex justify-between items-start mb-4">
-                                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-[#0a84ff]/10 to-[#bf5af2]/10 border border-white/5 flex items-center justify-center">
-                                            <span className="text-xl font-bold text-[#0a84ff]">{org.name[0]}</span>
+                                        <div className="w-12 h-12 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center">
+                                            <span className="text-xl font-bold text-accent">{org.name[0]}</span>
                                         </div>
                                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                              <button 
-                                                className="p-1.5 hover:bg-white/5 rounded text-slate-400 hover:text-white transition-colors" 
+                                                className="p-1.5 hover:bg-text/5 rounded text-text-secondary hover:text-text transition-colors" 
                                                 title="成员管理"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     handleManageMembers(org);
                                                 }}
                                             >
-                                                <Users size={16}/>
+                                                <Users size={16} strokeWidth={1.75}/>
                                             </button>
                                              <button 
-                                                className="p-1.5 hover:bg-white/5 rounded text-slate-400 hover:text-white transition-colors" 
+                                                className="p-1.5 hover:bg-text/5 rounded text-text-secondary hover:text-text transition-colors" 
                                                 title="设置"
                                                 onClick={() => openEditModal(org)}
                                             >
-                                                <Settings size={16}/>
+                                                <Settings size={16} strokeWidth={1.75}/>
                                             </button>
                                         </div>
                                     </div>
                                     
-                                    <h3 className="text-lg font-bold text-white mb-2 truncate" title={org.name}>{org.name}</h3>
-                                    <p className="text-sm text-slate-500 line-clamp-2 h-10 mb-4">
+                                    <h3 className="text-lg font-bold text-text mb-2 truncate" title={org.name}>{org.name}</h3>
+                                    <p className="text-sm text-text-secondary line-clamp-2 h-10 mb-4">
                                         {org.description || "暂无描述"}
                                     </p>
                                     
                                     <div className="space-y-3">
-                                        <div className="flex items-center justify-between text-sm py-2 border-t border-white/5">
-                                            <span className="text-slate-500">成员数量</span>
-                                            <span className="text-slate-200 font-mono">{org.user_count} 人</span>
+                                        <div className="flex items-center justify-between text-sm py-2 border-t border-separator">
+                                            <span className="text-text-secondary">成员数量</span>
+                                            <span className="text-text font-mono tabular-nums">{org.user_count} 人</span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-sm py-2 border-t border-white/5">
-                                            <span className="text-slate-500 whitespace-nowrap">管理员:</span>
+                                        <div className="flex items-center gap-2 text-sm py-2 border-t border-separator">
+                                            <span className="text-text-secondary whitespace-nowrap">管理员:</span>
                                             <div className="flex items-center justify-between gap-2 flex-1 min-w-0">
-                                                <span className="text-slate-200 font-medium truncate shrink-0 max-w-[100px]" title={org.admin_username || "未设置"}>
-                                                    {org.admin_username || <span className="text-slate-600 italic">未设置</span>}
+                                                <span className="text-text font-medium truncate shrink-0 max-w-[100px]" title={org.admin_username || "未设置"}>
+                                                    {org.admin_username || <span className="text-text-tertiary italic">未设置</span>}
                                                 </span>
                                                 <div className="flex-1 flex justify-end">
                                                     {org.invite_code ? (
-                                                        <div className="flex items-center gap-1 bg-[#0a84ff]/10 border border-[#0a84ff]/20 rounded px-1.5 py-0.5 max-w-full overflow-hidden" onClick={(e) => e.stopPropagation()}>
-                                                            <span className="text-xs text-[#0a84ff] font-mono select-all cursor-pointer whitespace-nowrap truncate" 
+                                                        <div className="flex items-center gap-1 bg-accent/10 border border-accent/20 rounded px-1.5 py-0.5 max-w-full overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                                                            <span className="text-xs text-accent font-mono select-all cursor-pointer whitespace-nowrap truncate" 
                                                                 title="点击复制" 
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
@@ -394,16 +393,16 @@ export default function EnterprisesPage() {
                                                                 企业邀请码：{org.invite_code}
                                                             </span>
                                                             <button 
-                                                                className="text-[#0a84ff] hover:text-[#64d2ff] p-0.5 rounded-full hover:bg-[#0077ed]/20 transition-colors shrink-0"
+                                                                className="text-accent hover:text-accent p-0.5 rounded-full hover:bg-accent-hover/20 transition-colors shrink-0"
                                                                 title="刷新邀请码"
                                                                 onClick={(e) => handleRefreshInviteCode(org, e)}
                                                             >
-                                                                <RefreshCw size={10} />
+                                                                <RefreshCw size={10} strokeWidth={1.75} />
                                                             </button>
                                                         </div>
                                                     ) : (
                                                         <button 
-                                                            className="text-xs text-[#0a84ff] hover:text-[#64d2ff] hover:bg-[#0077ed]/10 px-2 py-1 rounded transition-colors"
+                                                            className="text-xs text-accent hover:text-accent hover:bg-accent-hover/10 px-2 py-1 rounded transition-colors"
                                                             onClick={(e) => handleRefreshInviteCode(org, e)}
                                                         >
                                                             生成邀请码
@@ -415,316 +414,257 @@ export default function EnterprisesPage() {
                                     </div>
                                 </div>
                             </div>
-                        ))
-                    )}
-                </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Create Modal */}
-            {isCreating && (
-                <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center animate-in fade-in duration-200">
-                    <div className="bg-[#1c1c1e] border border-white/10 rounded-xl p-6 w-[400px] shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                <Plus size={20} className="text-[#0a84ff]"/>
-                                创建新企业
-                            </h3>
-                            <button onClick={() => setIsCreating(false)} className="text-slate-500 hover:text-white transition-colors">
-                                <X size={20} />
-                            </button>
-                        </div>
-                        
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">企业名称</label>
-                                <input 
-                                    className="w-full bg-black border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-[#0a84ff] transition-colors"
-                                    placeholder="例如：星之光年"
-                                    value={newOrgName}
-                                    onChange={e => setNewOrgName(e.target.value)}
-                                    autoFocus
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">描述 (可选)</label>
-                                <textarea 
-                                    className="w-full h-24 bg-black border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-[#0a84ff] transition-colors resize-none"
-                                    placeholder="企业简介..."
-                                    value={newOrgDesc}
-                                    onChange={e => setNewOrgDesc(e.target.value)}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex justify-end gap-3 mt-8">
-                            <button 
-                                className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 transition-colors text-sm"
-                                onClick={() => setIsCreating(false)}
-                            >
-                                取消
-                            </button>
-                            <button 
-                                className="px-6 py-2 rounded-lg bg-[#0071e3] hover:bg-[#0077ed] text-white font-medium transition-colors text-sm shadow-apple"
-                                onClick={handleCreateOrg}
-                            >
-                                立即创建
-                            </button>
-                        </div>
+            <Modal
+                open={isCreating}
+                onClose={() => setIsCreating(false)}
+                title="新建企业"
+                footer={
+                    <>
+                        <Button variant="outline" onClick={() => setIsCreating(false)}>
+                            取消
+                        </Button>
+                        <Button onClick={handleCreateOrg}>
+                            立即创建
+                        </Button>
+                    </>
+                }
+            >
+                <div className="space-y-4">
+                    <div>
+                        <label className="apple-section-label block mb-1.5">企业名称</label>
+                        <Input 
+                            placeholder="例如：星之光年"
+                            value={newOrgName}
+                            onChange={e => setNewOrgName(e.target.value)}
+                            autoFocus
+                        />
+                    </div>
+                    <div>
+                        <label className="apple-section-label block mb-1.5">描述（可选）</label>
+                        <textarea 
+                            className="w-full h-24 bg-surface-2 border border-transparent rounded-md px-3.5 py-2 text-[15px] text-text placeholder:text-text-tertiary focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-accent/30 focus-visible:border-accent/50 transition-all resize-none"
+                            placeholder="企业简介..."
+                            value={newOrgDesc}
+                            onChange={e => setNewOrgDesc(e.target.value)}
+                        />
                     </div>
                 </div>
-            )}
+            </Modal>
+
             {/* Detail / Edit Modal */}
             {selectedOrg && !isMembersModalOpen && (
-                <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center animate-in fade-in duration-200">
-                    <div className="bg-[#1c1c1e] border border-white/10 rounded-xl p-6 w-[480px] shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                <Building2 size={20} className="text-[#0a84ff]"/>
-                                企业详情
-                            </h3>
-                            <button onClick={() => setSelectedOrg(null)} className="text-slate-500 hover:text-white transition-colors">
-                                <X size={20} />
-                            </button>
-                        </div>
-                        
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">企业名称</label>
-                                <input 
-                                    className="w-full bg-black border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-[#0a84ff] transition-colors"
-                                    value={editName}
-                                    onChange={e => setEditName(e.target.value)}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">描述</label>
-                                <textarea 
-                                    className="w-full h-24 bg-black border border-white/10 rounded-lg p-3 text-slate-200 text-sm focus:outline-none focus:border-[#0a84ff] transition-colors resize-none"
-                                    value={editDesc}
-                                    onChange={e => setEditDesc(e.target.value)}
-                                />
-                            </div>
-                             <div className="grid grid-cols-2 gap-4 pt-2">
-                                <div className="p-3 bg-white/5 rounded-lg border border-white/5 relative group cursor-pointer" onClick={() => setIsUserSelectorOpen(true)}>
-                                    <span className="block text-xs text-slate-500 mb-1">管理员</span>
-                                    <div className="flex items-center justify-between">
-                                        <span className={`text-sm font-medium truncate max-w-[120px] ${pendingAdmin ? 'text-green-400' : 'text-[#64d2ff]'}`}>
-                                            {pendingAdmin ? (pendingAdmin.nickname || pendingAdmin.username) : (selectedOrg.admin_username || "未设置")}
-                                        </span>
-                                        <div className="p-1 rounded bg-white/10 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Settings size={12}/>
-                                        </div>
-                                    </div>
-                                    {pendingAdmin && <span className="text-[10px] text-green-500 absolute top-1 right-2">待保存</span>}
-                                </div>
-                                <div className="p-3 bg-white/5 rounded-lg border border-white/5">
-                                    <span className="block text-xs text-slate-500 mb-1">成员数</span>
-                                    <span className="text-sm text-slate-200 font-mono">
-                                        {selectedOrg.user_count}
-                                    </span>
-                                </div>
-                             </div>
-                             <div className="p-3 bg-white/5 rounded-lg border border-white/5">
-                                <span className="block text-xs text-slate-500 mb-1">创建时间</span>
-                                <span className="text-sm text-slate-400 font-mono">
-                                    {new Date(selectedOrg.created_at).toLocaleString()}
-                                </span>
-                             </div>
-                        </div>
-
-                        <div className="flex justify-end gap-3 mt-8">
-                            <button 
-                                className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 transition-colors text-sm"
-                                onClick={() => setSelectedOrg(null)}
-                            >
+                <Modal
+                    open
+                    onClose={() => setSelectedOrg(null)}
+                    title="企业详情"
+                    footer={
+                        <>
+                            <Button variant="outline" onClick={() => setSelectedOrg(null)}>
                                 关闭
-                            </button>
-                            <button 
-                                className="px-6 py-2 rounded-lg bg-[#0071e3] hover:bg-[#0077ed] text-white font-medium transition-colors text-sm shadow-apple"
-                                onClick={handleSaveOrg}
-                            >
+                            </Button>
+                            <Button onClick={handleSaveOrg}>
                                 保存修改
-                            </button>
+                            </Button>
+                        </>
+                    }
+                >
+                    <div className="space-y-4">
+                        <div>
+                            <label className="apple-section-label block mb-1.5">企业名称</label>
+                            <Input 
+                                value={editName}
+                                onChange={e => setEditName(e.target.value)}
+                            />
                         </div>
+                        <div>
+                            <label className="apple-section-label block mb-1.5">描述</label>
+                            <textarea 
+                                className="w-full h-24 bg-surface-2 border border-transparent rounded-md px-3.5 py-2 text-[15px] text-text placeholder:text-text-tertiary focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-accent/30 focus-visible:border-accent/50 transition-all resize-none"
+                                value={editDesc}
+                                onChange={e => setEditDesc(e.target.value)}
+                            />
+                        </div>
+                         <div className="grid grid-cols-2 gap-4 pt-2">
+                            <div className="p-3 bg-surface-2 rounded-lg border border-separator relative group cursor-pointer" onClick={() => setIsUserSelectorOpen(true)}>
+                                <span className="block text-xs text-text-secondary mb-1">管理员</span>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-medium truncate max-w-[120px] text-accent">
+                                        {pendingAdmin ? (pendingAdmin.nickname || pendingAdmin.username) : (selectedOrg.admin_username || "未设置")}
+                                    </span>
+                                    <div className="p-1 rounded bg-text/10 text-text opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Settings size={12} strokeWidth={1.75}/>
+                                    </div>
+                                </div>
+                                {pendingAdmin && <span className="text-[10px] text-accent absolute top-1 right-2">待保存</span>}
+                            </div>
+                            <div className="p-3 bg-surface-2 rounded-lg border border-separator">
+                                <span className="block text-xs text-text-secondary mb-1">成员数</span>
+                                <span className="text-sm text-text font-mono tabular-nums">
+                                    {selectedOrg.user_count}
+                                </span>
+                            </div>
+                         </div>
+                         <div className="p-3 bg-surface-2 rounded-lg border border-separator">
+                            <span className="block text-xs text-text-secondary mb-1">创建时间</span>
+                            <span className="text-sm text-text-secondary font-mono tabular-nums">
+                                {new Date(selectedOrg.created_at).toLocaleString('zh-CN')}
+                            </span>
+                         </div>
                     </div>
-                </div>
+                </Modal>
             )}
 
             {/* User Selector Modal */}
-            {isUserSelectorOpen && (
-                <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center animate-in fade-in duration-200">
-                    <div className="bg-[#1c1c1e] border border-white/10 rounded-xl p-6 w-[400px] h-[500px] flex flex-col shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
-                        <div className="flex justify-between items-center mb-4 flex-none">
-                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                <Users size={20} className="text-[#0a84ff]"/>
-                                选择管理员
-                            </h3>
-                            <button onClick={() => setIsUserSelectorOpen(false)} className="text-slate-500 hover:text-white transition-colors">
-                                <X size={20} />
-                            </button>
-                        </div>
+            <Modal
+                open={isUserSelectorOpen}
+                onClose={() => setIsUserSelectorOpen(false)}
+                title="选择管理员"
+            >
+                <div className="space-y-4">
+                    <div className="relative">
+                        <Search strokeWidth={1.75} className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary pointer-events-none" />
+                        <Input
+                            placeholder="搜索用户..."
+                            className="pl-9"
+                            value={searchUserQuery}
+                            onChange={(e) => setSearchUserQuery(e.target.value)}
+                            autoFocus
+                        />
+                    </div>
 
-                        <div className="relative mb-4 flex-none">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-                            <input
-                                placeholder="搜索用户..."
-                                className="w-full pl-9 h-9 bg-black border border-white/10 rounded-md text-sm text-slate-300 focus:outline-none focus:border-[#0a84ff] transition-colors"
-                                value={searchUserQuery}
-                                onChange={(e) => setSearchUserQuery(e.target.value)}
-                                autoFocus
-                            />
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto space-y-1 pr-1">
-                            {users.filter(u => 
-                                (u.username && u.username.toLowerCase().includes(searchUserQuery.toLowerCase())) || 
-                                (u.nickname && u.nickname.toLowerCase().includes(searchUserQuery.toLowerCase()))
-                            ).map(user => (
-                                <div 
-                                    key={user.id}
-                                    onClick={() => {
-                                        setPendingAdmin(user);
-                                        setIsUserSelectorOpen(false);
-                                    }}
-                                    className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
-                                        (pendingAdmin?.id === user.id || (!pendingAdmin && selectedOrg?.admin_username === user.username))
-                                            ? 'bg-[#0a84ff]/16 border border-[#0a84ff]/25' 
-                                            : 'hover:bg-white/5 border border-transparent'
-                                    }`}
-                                >
-                                    <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden shrink-0">
-                                        <Users size={14} className="text-slate-400" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-slate-200 truncate">{user.nickname || user.username || '未命名'}</p>
-                                        <div className="flex items-center gap-2">
-                                            <p className="text-xs text-slate-500 truncate">{user.email || user.username}</p>
-                                            {user.organization_name && (
-                                                <span className="text-[10px] bg-slate-700/50 text-slate-400 px-1.5 py-0.5 rounded border border-white/5">
-                                                    {user.organization_name}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                    {(pendingAdmin?.id === user.id || (!pendingAdmin && selectedOrg?.admin_username === user.username)) && (
-                                        <Check size={14} className="text-[#0a84ff]"/>
-                                    )}
+                    <div className="h-[320px] overflow-y-auto space-y-1 pr-1">
+                        {users.filter(u => 
+                            (u.username && u.username.toLowerCase().includes(searchUserQuery.toLowerCase())) || 
+                            (u.nickname && u.nickname.toLowerCase().includes(searchUserQuery.toLowerCase()))
+                        ).map(user => (
+                            <div 
+                                key={user.id}
+                                onClick={() => {
+                                    setPendingAdmin(user);
+                                    setIsUserSelectorOpen(false);
+                                }}
+                                className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
+                                    (pendingAdmin?.id === user.id || (!pendingAdmin && selectedOrg?.admin_username === user.username))
+                                        ? 'bg-accent/10 border border-accent/40' 
+                                        : 'hover:bg-text/5 border border-transparent'
+                                }`}
+                            >
+                                <div className="w-8 h-8 rounded-pill bg-surface-2 flex items-center justify-center overflow-hidden shrink-0">
+                                    <Users size={14} strokeWidth={1.75} className="text-text-secondary" />
                                 </div>
-                            ))}
-                        </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-text truncate">{user.nickname || user.username || '未命名'}</p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-xs text-text-secondary truncate">{user.email || user.username}</p>
+                                        {user.organization_name && (
+                                            <span className="text-[10px] bg-surface-2/50 text-text-secondary px-1.5 py-0.5 rounded border border-separator">
+                                                {user.organization_name}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                {(pendingAdmin?.id === user.id || (!pendingAdmin && selectedOrg?.admin_username === user.username)) && (
+                                    <Check size={14} strokeWidth={1.75} className="text-accent"/>
+                                )}
+                            </div>
+                        ))}
                     </div>
                 </div>
-            )}
+            </Modal>
+
             {/* Members Management Modal */}
             {isMembersModalOpen && selectedOrg && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
-                    <div className="bg-[#1c1c1e] border border-white/10 rounded-xl w-[600px] h-[600px] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
-                        {/* Header */}
-                        <div className="flex items-center justify-between p-6 border-b border-white/10">
-                            <div>
-                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                    <Users className="text-[#0a84ff]" size={24}/>
-                                    成员管理
-                                </h3>
-                                <p className="text-sm text-slate-400 mt-1">管理 {selectedOrg.name} 的成员列表</p>
-                            </div>
-                            <button 
-                                onClick={() => { setIsMembersModalOpen(false); setSelectedOrg(null); }}
-                                className="text-slate-500 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-lg"
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        {/* Content */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                            {orgUsers.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-20 text-slate-500 space-y-4">
-                                    <Users size={48} className="opacity-20" />
-                                    <p>该企业暂无成员</p>
-                                </div>
-                            ) : (
-                                orgUsers.map((user) => (
-                                    <div 
-                                        key={user.id} 
-                                        className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-white/5 hover:bg-black/40 transition-colors group"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-[#2c2c2e] flex items-center justify-center text-slate-400 font-bold border border-white/5">
-                                                {user.nickname?.[0] || user.username?.[0] || '?'}
-                                            </div>
-                                            <div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-slate-200 font-medium">
-                                                        {user.nickname || user.username}
+                <Modal
+                    open
+                    onClose={() => { setIsMembersModalOpen(false); setSelectedOrg(null); }}
+                    title="成员管理"
+                    description={`管理 ${selectedOrg.name} 的成员列表`}
+                    className="max-w-2xl"
+                    footer={
+                        <Button variant="outline" onClick={() => { setIsMembersModalOpen(false); setSelectedOrg(null); }}>
+                            关闭
+                        </Button>
+                    }
+                >
+                    <div className="h-[400px] overflow-y-auto space-y-2">
+                        {orgUsers.length === 0 ? (
+                            <EmptyState
+                                icon={Users}
+                                title="该企业暂无成员"
+                                description="分享企业邀请码，邀请成员加入"
+                                size="sm"
+                            />
+                        ) : (
+                            orgUsers.map((user) => (
+                                <div 
+                                    key={user.id} 
+                                    className="flex items-center justify-between p-3 rounded-lg bg-surface-2 border border-separator hover:bg-surface-2/70 transition-colors group"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-pill bg-surface flex items-center justify-center text-text-secondary font-bold border border-separator">
+                                            {user.nickname?.[0] || user.username?.[0] || '?'}
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-text font-medium">
+                                                    {user.nickname || user.username}
+                                                </span>
+                                                {user.role === 'enterprise_admin' && (
+                                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/10 text-accent border border-accent/20">
+                                                        管理员
                                                     </span>
-                                                    {user.role === 'enterprise_admin' && (
-                                                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#0a84ff]/16 text-[#64d2ff] border border-[#0a84ff]/25">
-                                                            管理员
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
-                                                    <span>ID: {user.id}</span>
-                                                    <span>•</span>
-                                                    <span>{user.email}</span>
-                                                </div>
+                                                )}
+                                            </div>
+                                            <div className="text-xs text-text-secondary flex items-center gap-2 mt-0.5">
+                                                <span className="tabular-nums">ID: {user.id}</span>
+                                                <span>•</span>
+                                                <span>{user.email}</span>
                                             </div>
                                         </div>
-
-                                        <button
-                                            onClick={() => handleRemoveMemberClick(user)}
-                                            className="opacity-0 group-hover:opacity-100 p-2 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-all"
-                                            title="移出企业"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
                                     </div>
-                                ))
-                            )}
-                        </div>
 
-                        {/* Footer */}
-                        <div className="flex items-center justify-end p-4 border-t border-white/10 bg-black/20 rounded-b-xl">
-                            <button
-                                onClick={() => { setIsMembersModalOpen(false); setSelectedOrg(null); }}
-                                className="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors"
-                            >
-                                关闭
-                            </button>
-                        </div>
+                                    <button
+                                        onClick={() => handleRemoveMemberClick(user)}
+                                        className="opacity-0 group-hover:opacity-100 p-2 text-danger hover:text-danger hover:bg-danger/10 rounded-lg transition-all"
+                                        title="移出企业"
+                                    >
+                                        <Trash2 size={16} strokeWidth={1.75} />
+                                    </button>
+                                </div>
+                            ))
+                        )}
                     </div>
-                </div>
+                </Modal>
             )}
 
             {/* Delete Confirmation Modal */}
             {memberToDelete && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-[#1c1c1e] border border-white/10 rounded-xl p-6 w-[400px] shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
-                        <div className="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center mb-4">
-                            <Trash2 size={24} className="text-rose-500"/>
-                        </div>
-                        <h3 className="text-lg font-bold text-white mb-2">确认移出成员？</h3>
-                        <p className="text-sm text-slate-400 mb-6">
-                            您确定要将 <span className="text-slate-200 font-medium">{memberToDelete.nickname || memberToDelete.username}</span> 从企业中移出吗？
-                            此操作无法撤销。
-                        </p>
-                        <div className="flex gap-3 w-full">
-                            <button 
-                                className="flex-1 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 transition-colors text-sm"
-                                onClick={() => setMemberToDelete(null)}
-                            >
+                <Modal
+                    open
+                    onClose={() => setMemberToDelete(null)}
+                    title="确认移出成员？"
+                    footer={
+                        <>
+                            <Button variant="outline" onClick={() => setMemberToDelete(null)}>
                                 取消
-                            </button>
-                            <button 
-                                className="flex-1 px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-medium transition-colors text-sm shadow-lg shadow-rose-500/20"
-                                onClick={confirmRemoveMember}
-                            >
+                            </Button>
+                            <Button variant="destructive" onClick={confirmRemoveMember}>
                                 确认移出
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                            </Button>
+                        </>
+                    }
+                >
+                    <p className="text-sm text-text-secondary">
+                        您确定要将 <span className="text-text font-medium">{memberToDelete.nickname || memberToDelete.username}</span> 从企业中移出吗？
+                        此操作无法撤销。
+                    </p>
+                </Modal>
             )}
         </div>
     );

@@ -5,18 +5,19 @@ import {
   Search, 
   Loader2, 
   RefreshCw,
-  Plus,
-  Shield,
   ShieldAlert,
-  ShieldCheck,
   Building2,
-  Mail,
   User as UserIcon,
-  Crown,
-  X
+  Crown
 } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { PageHeader } from '@/components/PageHeader';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Modal } from '@/components/ui/modal';
+import { Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface User {
     id: number;
@@ -126,229 +127,219 @@ export default function UsersPage() {
     const getRoleBadge = (role: string) => {
         switch(role) {
             case 'admin':
-                return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20"><ShieldAlert size={12}/> 系统管理员</span>;
+                return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill text-xs font-medium bg-accent/10 text-accent border border-accent/20"><ShieldAlert size={12} strokeWidth={1.75}/> 系统管理员</span>;
             case 'enterprise_admin':
-                 return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20"><Crown size={12}/> 企业管理员</span>;
+                 return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill text-xs font-medium bg-surface-2 text-text border border-separator"><Crown size={12} strokeWidth={1.75} className="text-accent"/> 企业管理员</span>;
             default:
-                 return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-500/10 text-slate-400 border border-slate-500/20"><UserIcon size={12}/> 普通账号</span>;
+                 return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill text-xs font-medium bg-surface-2 text-text-secondary border border-separator"><UserIcon size={12} strokeWidth={1.75}/> 普通账号</span>;
         }
     };
 
     return (
-        <div className="h-full flex flex-col bg-black overflow-hidden">
+        <div className="h-full flex flex-col bg-bg overflow-hidden">
              {/* Header */}
-             <div className="flex-none p-6 border-b border-white/5 bg-[#1c1c1e] flex items-center justify-between z-20">
-                <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-blue-600/20 flex items-center justify-center border border-blue-500/30">
-                        <Users className="text-blue-400" size={20} />
-                    </div>
-                    <div>
-                        <h1 className="text-xl font-bold text-white">用户管理</h1>
-                        <p className="text-xs text-slate-400 mt-1">
-                            管理系统所有注册用户及其权限
-                        </p>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                     <div className="relative w-64">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-                        <input
-                            placeholder="搜索用户名、邮箱或企业..."
-                            className="w-full pl-9 h-9 bg-white/5 border border-white/10 rounded-md text-sm text-slate-300 focus:outline-none focus:border-blue-500/50 transition-colors"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </div>
-                     <button
-                         onClick={handleRefresh}
-                         className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                         title="刷新"
-                    >
-                        <RefreshCw size={18} className={isRefreshing ? "animate-spin" : ""} />
-                    </button>
-                    {/* Placeholder for Add User if needed */}
-                    {/* <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-sm font-medium transition-colors">
-                        <Plus size={16} /> 新增用户
-                    </button> */}
-                </div>
+             <div className="flex-none px-6 pt-6">
+                <PageHeader
+                    title="用户管理"
+                    description="管理系统所有注册用户及其权限"
+                    className="mb-0"
+                    actions={
+                        <>
+                            <div className="relative w-64">
+                                <Search strokeWidth={1.75} className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary pointer-events-none" />
+                                <Input
+                                    placeholder="搜索用户名、邮箱或企业..."
+                                    className="pl-9"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={handleRefresh}
+                                title="刷新"
+                            >
+                                <RefreshCw size={16} strokeWidth={1.75} className={isRefreshing ? "animate-spin" : ""} />
+                            </Button>
+                        </>
+                    }
+                />
             </div>
 
             {/* Content */}
             <div className="flex-1 overflow-auto p-6">
-                <div className="bg-[#1c1c1e] border border-white/5 rounded-xl overflow-hidden min-h-[500px] flex flex-col">
+                <div className="bg-surface rounded-lg shadow-card overflow-hidden min-h-[500px] flex flex-col">
                     {loading ? (
-                         <div className="flex-1 flex flex-col items-center justify-center text-slate-500 gap-3">
-                            <Loader2 className="animate-spin text-blue-500" size={32} />
+                         <div className="flex-1 flex flex-col items-center justify-center text-text-secondary gap-3">
+                            <Loader2 className="animate-spin text-accent" size={32} strokeWidth={1.75} />
                             <p className="text-sm">正在加载用户列表...</p>
                         </div>
                     ) : filteredUsers.length === 0 ? (
-                        <div className="flex-1 flex flex-col items-center justify-center text-slate-500">
-                             <Users size={48} className="opacity-20 mb-4" />
-                             <p>暂无符合条件的用户</p>
+                        <div className="flex-1 flex flex-col items-center justify-center">
+                             <EmptyState
+                                icon={Users}
+                                title="暂无符合条件的用户"
+                                description="尝试调整搜索关键词，或稍后刷新重试"
+                                size="sm"
+                             />
                         </div>
                     ) : (
-                        <table className="w-full text-left text-sm">
-                            <thead className="text-xs uppercase text-slate-500 font-bold bg-white/5 border-b border-white/5">
-                                <tr>
-                                    <th className="px-6 py-4">用户</th>
-                                    <th className="px-6 py-4">角色</th>
-                                    <th className="px-6 py-4">所属企业</th>
-                                    <th className="px-6 py-4">状态</th>
-                                    <th className="px-6 py-4">注册时间</th>
-                                    <th className="px-6 py-4 text-right">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5">
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableHeaderCell>用户</TableHeaderCell>
+                                    <TableHeaderCell>角色</TableHeaderCell>
+                                    <TableHeaderCell>所属企业</TableHeaderCell>
+                                    <TableHeaderCell>状态</TableHeaderCell>
+                                    <TableHeaderCell>注册时间</TableHeaderCell>
+                                    <TableHeaderCell className="text-right">操作</TableHeaderCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
                                 {filteredUsers.map(user => (
-                                    <tr key={user.id} className="hover:bg-white/[0.02] transition-colors group">
-                                        <td className="px-6 py-4">
+                                    <TableRow key={user.id}>
+                                        <TableCell>
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden border border-white/10 shrink-0">
+                                                <div className="w-8 h-8 rounded-pill bg-surface-2 flex items-center justify-center overflow-hidden border border-separator shrink-0">
                                                     {user.avatar ? (
                                                         <img src={user.avatar} alt={user.username || 'User'} className="w-full h-full object-cover" />
                                                     ) : (
-                                                        <UserIcon size={14} className="text-slate-400" />
+                                                        <UserIcon size={14} strokeWidth={1.75} className="text-text-secondary" />
                                                     )}
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="text-slate-200 font-medium">{user.nickname || user.username || '未命名用户'}</span>
-                                                    <span className="text-slate-500 text-xs">{user.email || '无邮箱'}</span>
+                                                    <span className="text-text font-medium">{user.nickname || user.username || '未命名用户'}</span>
+                                                    <span className="text-text-secondary text-xs">{user.email || '无邮箱'}</span>
                                                 </div>
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4">
+                                        </TableCell>
+                                        <TableCell>
                                             {getRoleBadge(user.role)}
-                                        </td>
-                                        <td className="px-6 py-4">
+                                        </TableCell>
+                                        <TableCell>
                                             {user.organization_name ? (
-                                                 <div className="flex items-center gap-2 text-slate-300">
-                                                     <Building2 size={14} className="text-[#0a84ff]" />
+                                                 <div className="flex items-center gap-2 text-text">
+                                                     <Building2 size={14} strokeWidth={1.75} className="text-accent" />
                                                      {user.organization_name}
                                                  </div>
                                             ) : (
-                                                <span className="text-slate-600 italic">未加入组织</span>
+                                                <span className="text-text-tertiary italic">未加入组织</span>
                                             )}
-                                        </td>
-                                        <td className="px-6 py-4">
+                                        </TableCell>
+                                        <TableCell>
                                             <div className="flex items-center gap-2">
-                                                <span className={`w-2 h-2 rounded-full ${user.is_active ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></span>
-                                                <span className={user.is_active ? 'text-green-400' : 'text-red-400'}>
+                                                <span className={`w-2 h-2 rounded-pill ${user.is_active ? 'bg-success' : 'bg-text-tertiary'}`}></span>
+                                                <span className={user.is_active ? 'text-success' : 'text-text-tertiary'}>
                                                     {user.is_active ? '正常' : '禁用'}
                                                 </span>
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-slate-500 font-mono text-xs">
-                                            {new Date(user.created_at).toLocaleString()}
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <button 
+                                        </TableCell>
+                                        <TableCell className="text-text-secondary font-mono text-xs tabular-nums">
+                                            {new Date(user.created_at).toLocaleString('zh-CN')}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
                                                 onClick={() => openUserDetail(user)}
-                                                className="text-blue-400 hover:text-blue-300 text-xs font-medium px-3 py-1.5 rounded-md hover:bg-blue-500/10 border border-transparent hover:border-blue-500/20 transition-all">
+                                                className="text-accent hover:text-accent hover:bg-accent/10"
+                                            >
                                                 详情
-                                            </button>
-                                        </td>
-                                    </tr>
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
                                 ))}
-                            </tbody>
-                        </table>
+                            </TableBody>
+                        </Table>
                     )}
                 </div>
             </div>
+
             {/* User Details Modal */}
             {selectedUser && (
-                <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center animate-in fade-in duration-200">
-                    <div className="bg-[#1c1c1e] border border-white/10 rounded-xl p-6 w-[520px] shadow-2xl scale-100 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-                        <div className="flex justify-between items-start mb-6">
-                            <div className="flex items-center gap-4">
-                                <div className="w-14 h-14 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden border border-white/10 shrink-0">
-                                    {selectedUser.avatar ? (
-                                        <img src={selectedUser.avatar} alt={selectedUser.username || ''} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <UserIcon size={28} className="text-slate-400" />
-                                    )}
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-bold text-white">编辑用户</h3>
-                                    <p className="text-xs text-slate-500 font-mono mt-0.5">#{selectedUser.id} · {selectedUser.username}</p>
-                                </div>
-                            </div>
-                            <button onClick={() => setSelectedUser(null)} className="text-slate-500 hover:text-white transition-colors">
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">显示名称</label>
-                                <input
-                                    value={editNickname}
-                                    onChange={(e) => setEditNickname(e.target.value)}
-                                    className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500/50"
-                                    placeholder="用户显示名称"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">电子邮箱</label>
-                                <input
-                                    value={editEmail}
-                                    onChange={(e) => setEditEmail(e.target.value)}
-                                    className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500/50"
-                                    placeholder="user@example.com"
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">角色</label>
-                                    <select
-                                        value={editRole}
-                                        onChange={(e) => setEditRole(e.target.value)}
-                                        className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500/50"
-                                    >
-                                        <option value="user">普通账号</option>
-                                        <option value="enterprise_admin">企业管理员</option>
-                                        <option value="admin">系统管理员</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">账号状态</label>
-                                    <button
-                                        onClick={() => setEditActive(!editActive)}
-                                        className={`w-full py-2.5 rounded-full text-sm font-medium border transition-colors ${
-                                            editActive
-                                                ? 'bg-green-500/10 text-green-400 border-green-500/30'
-                                                : 'bg-red-500/10 text-red-400 border-red-500/30'
-                                        }`}
-                                    >
-                                        {editActive ? '● 正常（点击禁用）' : '● 已禁用（点击启用）'}
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="bg-black/20 rounded-lg p-3 text-xs text-slate-500 flex justify-between">
-                                <span>所属企业：{selectedUser.organization_name || '未加入'}</span>
-                                <span>注册于：{new Date(selectedUser.created_at).toLocaleDateString('zh-CN')}</span>
-                            </div>
-                        </div>
-
-                        <div className="flex justify-end gap-3 mt-6">
-                            <button
-                                className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 transition-colors text-sm"
-                                onClick={() => setSelectedUser(null)}
-                            >
+                <Modal
+                    open
+                    onClose={() => setSelectedUser(null)}
+                    title="编辑用户"
+                    description={`#${selectedUser.id} · ${selectedUser.username}`}
+                    footer={
+                        <>
+                            <Button variant="outline" onClick={() => setSelectedUser(null)}>
                                 取消
-                            </button>
-                            <button
-                                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors text-sm flex items-center gap-2 disabled:opacity-50"
-                                onClick={handleSave}
-                                disabled={saving}
-                            >
-                                {saving ? <Loader2 size={14} className="animate-spin" /> : null}
+                            </Button>
+                            <Button onClick={handleSave} disabled={saving}>
+                                {saving ? <Loader2 size={14} strokeWidth={1.75} className="animate-spin mr-2" /> : null}
                                 {saving ? '保存中...' : '保存修改'}
-                            </button>
+                            </Button>
+                        </>
+                    }
+                >
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 rounded-pill bg-surface-2 flex items-center justify-center overflow-hidden border border-separator shrink-0">
+                                {selectedUser.avatar ? (
+                                    <img src={selectedUser.avatar} alt={selectedUser.username || ''} className="w-full h-full object-cover" />
+                                ) : (
+                                    <UserIcon size={28} strokeWidth={1.75} className="text-text-secondary" />
+                                )}
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-text">{selectedUser.nickname || selectedUser.username}</p>
+                                <p className="text-xs text-text-secondary mt-0.5">{selectedUser.email || '无邮箱'}</p>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="apple-section-label block mb-1.5">显示名称</label>
+                            <Input
+                                value={editNickname}
+                                onChange={(e) => setEditNickname(e.target.value)}
+                                placeholder="用户显示名称"
+                            />
+                        </div>
+                        <div>
+                            <label className="apple-section-label block mb-1.5">电子邮箱</label>
+                            <Input
+                                value={editEmail}
+                                onChange={(e) => setEditEmail(e.target.value)}
+                                placeholder="user@example.com"
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="apple-section-label block mb-1.5">角色</label>
+                                <select
+                                    value={editRole}
+                                    onChange={(e) => setEditRole(e.target.value)}
+                                    className="w-full h-10 bg-surface-2 border border-transparent rounded-md px-3.5 text-[15px] text-text focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-accent/30 focus-visible:border-accent/50 transition-all"
+                                >
+                                    <option value="user">普通账号</option>
+                                    <option value="enterprise_admin">企业管理员</option>
+                                    <option value="admin">系统管理员</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="apple-section-label block mb-1.5">账号状态</label>
+                                <button
+                                    onClick={() => setEditActive(!editActive)}
+                                    className={`w-full h-10 rounded-md text-sm font-medium border transition-colors inline-flex items-center justify-center gap-1.5 ${
+                                        editActive
+                                            ? 'bg-accent/10 text-accent border-accent/30'
+                                            : 'bg-surface-2 text-text-secondary border-separator'
+                                    }`}
+                                >
+                                    <span className={`w-1.5 h-1.5 rounded-pill ${editActive ? 'bg-accent' : 'bg-text-tertiary'}`}></span>
+                                    {editActive ? '正常（点击禁用）' : '已禁用（点击启用）'}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="bg-surface-2 rounded-lg p-3 text-xs text-text-secondary flex justify-between">
+                            <span>所属企业：{selectedUser.organization_name || '未加入'}</span>
+                            <span className="tabular-nums">注册于：{new Date(selectedUser.created_at).toLocaleDateString('zh-CN')}</span>
                         </div>
                     </div>
-                </div>
+                </Modal>
             )}
         </div>
     );

@@ -1,12 +1,14 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import {
-  Terminal, Cpu, HardDrive, Activity, Users, Building2,
+  Cpu, HardDrive, Activity, Users, Building2,
   RefreshCw, AlertTriangle, ArrowRight, BrainCircuit, Bot
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
+import { PageHeader } from '@/components/PageHeader';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8010';
 
@@ -54,93 +56,96 @@ export default function OpsPage() {
   }, []);
 
   const stats = sys ? [
-    { label: 'CPU 使用率', value: sys.cpu_usage.toFixed(0) + '%', status: sys.cpu_usage > 85 ? 'warning' : 'normal', icon: Cpu, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
-    { label: '内存占用', value: formatGB(sys.memory_usage.used) + ' GB', total: formatGB(sys.memory_usage.total) + ' GB', status: sys.memory_usage.percent > 85 ? 'warning' : 'normal', icon: HardDrive, color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' },
-    { label: '活跃用户', value: String(sys.resources.active_users), sub: sys.resources.active_models + ' 个模型在线', status: 'normal', icon: Users, color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/20' },
-    { label: 'RPA 队列', value: String(sys.resources.queued_jobs), sub: '待执行任务', status: 'normal', icon: Bot, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
+    { label: 'CPU 使用率', value: sys.cpu_usage.toFixed(0) + '%', status: sys.cpu_usage > 85 ? 'warning' : 'normal', icon: Cpu },
+    { label: '内存占用', value: formatGB(sys.memory_usage.used) + ' GB', total: formatGB(sys.memory_usage.total) + ' GB', status: sys.memory_usage.percent > 85 ? 'warning' : 'normal', icon: HardDrive },
+    { label: '活跃用户', value: String(sys.resources.active_users), sub: sys.resources.active_models + ' 个模型在线', status: 'normal', icon: Users },
+    { label: 'RPA 队列', value: String(sys.resources.queued_jobs), sub: '待执行任务', status: 'normal', icon: Bot },
   ] : [];
 
   return (
-    <div className="h-full flex flex-col bg-black overflow-hidden">
-      <div className="flex-none p-6 border-b border-white/8">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-[28px] font-semibold tracking-tight text-white flex items-center gap-3">
-              <Terminal className="text-[#0a84ff]" />
-              运维控制台
-            </h1>
-            <p className="text-sm text-slate-400 mt-1">
-              系统运行状态概览与快捷操作中心
-              {sys && <span className="ml-2 text-slate-500">· {sys.system_info.platform} {sys.system_info.release} · Python {sys.system_info.python_version}</span>}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-             {loadError ? (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-red-500/10 border border-red-500/20 rounded-full">
-                   <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                   <span className="text-xs text-red-400 font-medium">后端连接异常</span>
+    <div className="h-full flex flex-col bg-bg overflow-hidden">
+      <div className="flex-none px-6 pt-6">
+        <PageHeader
+          title="系统运维"
+          description={
+            '系统运行状态概览与快捷操作中心' +
+            (sys ? ` · ${sys.system_info.platform} ${sys.system_info.release} · Python ${sys.system_info.python_version}` : '')
+          }
+          className="mb-0"
+          actions={
+            <>
+              {loadError ? (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-danger/10 border border-danger/20 rounded-pill">
+                  <div className="w-2 h-2 rounded-pill bg-danger"></div>
+                  <span className="text-xs text-danger font-medium">后端连接异常</span>
                 </div>
-             ) : (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-full">
-                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                   <span className="text-xs text-green-400 font-medium">系统运行正常</span>
+              ) : (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-success/10 border border-success/20 rounded-pill">
+                  <div className="w-2 h-2 rounded-pill bg-success animate-pulse"></div>
+                  <span className="text-xs text-success font-medium">系统运行正常</span>
                 </div>
-             )}
-             <button onClick={fetchStatus} className="p-1.5 text-slate-500 hover:text-white transition-colors" title="刷新">
-                <RefreshCw size={14} />
-             </button>
-          </div>
-        </div>
+              )}
+              <button onClick={fetchStatus} className="p-1.5 text-text-secondary hover:text-text transition-colors" title="刷新">
+                <RefreshCw size={14} strokeWidth={1.75} />
+              </button>
+            </>
+          }
+        />
       </div>
 
       <div className="flex-1 overflow-auto p-6 space-y-6">
         {sys ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat, idx) => (
-            <div key={idx} className="p-5 rounded-[20px] border border-white/8 bg-[#1c1c1e] relative overflow-hidden group hover:bg-[#2c2c2e] transition-all">
+            <div key={idx} className="p-5 rounded-lg bg-surface shadow-card hover:shadow-popover relative overflow-hidden group transition-all">
               <div className="flex justify-between items-start mb-4">
-                <div className="p-2 rounded-xl bg-white/6">
-                  <stat.icon size={20} className={stat.color} />
+                <div className={`p-2 rounded-lg ${stat.status === 'warning' ? 'bg-warning/10' : 'bg-text/5'}`}>
+                  <stat.icon size={20} strokeWidth={1.75} className={stat.status === 'warning' ? 'text-warning' : 'text-text-secondary'} />
                 </div>
-                {stat.status === 'warning' && <AlertTriangle size={16} className="text-[#ffd60a]" />}
+                {stat.status === 'warning' && <AlertTriangle size={16} strokeWidth={1.75} className="text-warning" />}
               </div>
               <div className="space-y-1">
-                <p className="text-[11px] text-[#86868b] uppercase font-semibold tracking-[0.12em]">{stat.label}</p>
+                <p className="text-[11px] text-text-secondary">{stat.label}</p>
                 <div className="flex items-end gap-2">
-                  <span className="text-[26px] font-semibold tracking-tight text-white">{stat.value}</span>
-                  {stat.total && <span className="text-xs text-slate-500 mb-1">/ {stat.total}</span>}
-                  {stat.sub && <span className="text-xs text-slate-500 mb-1">{stat.sub}</span>}
+                  <span className="text-[26px] font-semibold tracking-tight text-text tabular-nums">{stat.value}</span>
+                  {stat.total && <span className="text-xs text-text-secondary mb-1">/ {stat.total}</span>}
+                  {stat.sub && <span className="text-xs text-text-secondary mb-1">{stat.sub}</span>}
                 </div>
               </div>
             </div>
           ))}
         </div>
+        ) : loadError ? (
+          <EmptyState
+            icon={AlertTriangle}
+            title="无法加载系统状态"
+            description={loadError}
+            size="lg"
+          />
         ) : (
-          <div className="flex items-center justify-center h-40 text-slate-500 gap-2">
-            {loadError ? ('无法加载系统状态：' + loadError) : (
-              <><RefreshCw size={16} className="animate-spin" /> 正在加载系统状态...</>
-            )}
+          <div className="flex items-center justify-center h-40 text-text-secondary gap-2">
+            <RefreshCw size={16} strokeWidth={1.75} className="animate-spin" /> 正在加载系统状态...
           </div>
         )}
 
         <div className="grid grid-cols-1 gap-6">
-           <div className="bg-[#1c1c1e] border border-white/8 rounded-[20px] p-6">
+           <div className="bg-surface rounded-lg shadow-card p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Activity size={18} className="text-[#0a84ff]"/>
+                <h3 className="text-lg font-bold text-text flex items-center gap-2">
+                  <Activity size={18} strokeWidth={1.75} className="text-accent"/>
                   快捷操作
                 </h3>
-                {lastUpdated && <span className="text-xs text-slate-600">数据更新于 {lastUpdated}</span>}
+                {lastUpdated && <span className="text-xs text-text-tertiary">数据更新于 {lastUpdated}</span>}
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {QUICK_ACTIONS.map((action, idx) => (
-                    <Link key={idx} href={action.href} className="flex flex-col p-4 bg-[#2c2c2e]/70 hover:bg-[#3a3a3c] border border-white/6 rounded-[16px] transition-all group">
+                    <Link key={idx} href={action.href} className="flex flex-col p-4 bg-surface-2/70 hover:bg-surface-2 border border-separator rounded-lg transition-all group">
                       <div className="flex justify-between items-center mb-3">
-                         <action.icon size={20} className="text-slate-400 group-hover:text-[#0a84ff] transition-colors" />
-                         <ArrowRight className="opacity-0 group-hover:opacity-100 transition-opacity -rotate-45 text-[#0a84ff]" size={14} />
+                         <action.icon size={20} strokeWidth={1.75} className="text-text-secondary group-hover:text-accent transition-colors" />
+                         <ArrowRight className="opacity-0 group-hover:opacity-100 transition-opacity -rotate-45 text-accent" size={14} strokeWidth={1.75} />
                       </div>
-                      <span className="text-sm font-medium text-slate-200 group-hover:text-white">{action.label}</span>
-                      <span className="text-xs text-slate-500 mt-1 line-clamp-1">{action.desc}</span>
+                      <span className="text-sm font-medium text-text">{action.label}</span>
+                      <span className="text-xs text-text-secondary mt-1 line-clamp-1">{action.desc}</span>
                     </Link>
                 ))}
               </div>
