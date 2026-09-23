@@ -16,6 +16,9 @@
 | 迁移 | `AutoForceAI/services/digital-brain/` 下 `alembic` |
 | 加密密钥 | AutoForceAI 部署环境变量 `CRM_CREDENTIAL_ENCRYPTION_KEY`（只放 .env/密钥管理，永不入库入仓） |
 
+`CRM_CREDENTIAL_ENCRYPTION_KEY` 必须使用 `cryptography.fernet.Fernet.generate_key()` 生成的
+32-byte urlsafe-base64 Fernet key。普通短口令不会被自动派生为密钥，以避免数据库泄露后被离线穷举。
+
 ---
 
 ## 1. Genesis service credential 签发（最小 scope、单 project 绑定）
@@ -66,6 +69,7 @@ npm run integration:credential -- revoke --id <credentialId>
 | 现象 | 原因 | 处理 |
 |---|---|---|
 | `MISSING_ENCRYPTION_KEY` | 部署未配置 `CRM_CREDENTIAL_ENCRYPTION_KEY` | 配置密钥后重启 worker；已有密文需要与加密时**相同**的密钥 |
+| `INVALID_ENCRYPTION_KEY` | 密钥不是合法 Fernet key | 使用 `Fernet.generate_key()` 生成并通过密钥管理器配置 |
 | `DECRYPT_FAILED` | 密钥被更换 / 密文损坏 | 无法恢复旧 token：重新保存 token → 测试 → 启用 |
 | `TOKEN_NOT_SET` | 配置未保存 token | 保存 token |
 | `auth_invalid`（健康状态） | Genesis 端凭证被撤销/过期/scope 不足 | §3 轮换或重签 |
@@ -91,6 +95,9 @@ npm run integration:credential -- revoke --id <credentialId>
 执行效果（事务内）：停用投递 → 解绑 project → 清空回流游标 → 当前项目映射归档（保留可查）→ 取消旧项目未完成 job。
 **审计记录**：`last_reset_at / last_reset_by` 写入配置，服务端写操作日志。前端要求输入 `RESET` 确认。
 
+同一个 Genesis `project_id` 只能绑定一个 AutoForceAI organization；应用层会返回 409，数据库唯一索引
+`uq_crm_config_provider_project` 负责并发兜底。升级到 0004 前如已有重复绑定，需先由管理员确认唯一归属并解绑其余配置。
+
 ## 7. worker 启停与健康
 
 - 开关：`CRM_BACKGROUND_WORKER_ENABLED=0`（或 `false/off/no`）→ 该实例不跑后台投递/回流线程；
@@ -113,7 +120,8 @@ DATABASE_URL="postgresql+psycopg://user:pass@host:5432/dbname" \
 ... -m alembic downgrade 0001_phase1_baseline
 ```
 
-- 启动时 `ensure_schema_current()` 自动对齐：无版本→stamp head；落后→upgrade；库领先代码→**拒绝启动**。
+- 启动时 `ensure_schema_current()` 自动对齐：SQLite 开发库无版本可 stamp；PostgreSQL 无版本会在任何
+  `create_all`/stamp 前**拒绝启动**并提示执行上述显式迁移；落后→upgrade；库领先代码→拒绝启动。
 - PG 迁移会 `CREATE EXTENSION IF NOT EXISTS vector`（需要数据库权限；无权限请先由 DBA 安装）。
 - 枚举类型用幂等 `CREATE TYPE`（重复执行安全）。
 

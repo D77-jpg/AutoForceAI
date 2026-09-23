@@ -20,6 +20,7 @@ import database.models  # noqa: E402,F401
 from core import credentials  # noqa: E402
 from core.credentials import (  # noqa: E402
     ERR_DECRYPT_FAILED,
+    ERR_INVALID_KEY,
     ERR_MISSING_KEY,
     CredentialError,
     decrypt_secret,
@@ -33,16 +34,19 @@ from database.shared_models import (  # noqa: E402
     CrmIntegrationConfig,
     CrmSyncJob,
     Organization,
+    User,
+    UserRole,
 )
+import routers.crm_integration_router as crm_router  # noqa: E402
 from routers.lead_router import upsert_lead  # noqa: E402
 
-TEST_KEY = "phase2-closeout-test-key"
 PLAIN_TOKEN = "gci_aaaabbbbccccddddeeeeffff00001111"
 
 
 @pytest.fixture(autouse=True)
 def _key(monkeypatch):
-    monkeypatch.setenv(credentials.ENV_KEY, TEST_KEY)
+    from cryptography.fernet import Fernet
+    monkeypatch.setenv(credentials.ENV_KEY, Fernet.generate_key().decode())
 
 
 @pytest.fixture()
@@ -73,9 +77,8 @@ def test_encrypt_decrypt_roundtrip():
     assert decrypt_secret(stored) == PLAIN_TOKEN
 
 
-def test_key_passphrase_and_fernet_key_forms():
+def test_fernet_key_form():
     from cryptography.fernet import Fernet
-    # 口令形态已由 autouse fixture 覆盖；这里验证标准 Fernet key 形态
     import os
     fernet_key = Fernet.generate_key().decode()
     old = os.environ[credentials.ENV_KEY]
@@ -87,9 +90,18 @@ def test_key_passphrase_and_fernet_key_forms():
         os.environ[credentials.ENV_KEY] = old
 
 
+def test_plain_passphrase_is_rejected(monkeypatch):
+    monkeypatch.setenv(credentials.ENV_KEY, "short-human-passphrase")
+    with pytest.raises(CredentialError) as exc:
+        encrypt_secret(PLAIN_TOKEN)
+    assert exc.value.code == ERR_INVALID_KEY
+    assert "short-human-passphrase" not in str(exc.value)
+
+
 def test_wrong_key_fails_without_leaking(monkeypatch):
+    from cryptography.fernet import Fernet
     stored = encrypt_secret(PLAIN_TOKEN)
-    monkeypatch.setenv(credentials.ENV_KEY, "another-key")
+    monkeypatch.setenv(credentials.ENV_KEY, Fernet.generate_key().decode())
     with pytest.raises(CredentialError) as exc:
         decrypt_secret(stored)
     assert exc.value.code == ERR_DECRYPT_FAILED
@@ -165,13 +177,43 @@ def test_legacy_migration_requires_key(db, org, monkeypatch):
     with pytest.raises(CredentialError) as exc:
         cfg.migrate_token_if_legacy()
     assert exc.value.code == ERR_MISSING_KEY
-    db.rollback()
     assert cfg.service_token == PLAIN_TOKEN  # 迁移失败不留半成品
+
+
+def test_connection_failure_commit_preserves_legacy_plaintext(db, org, monkeypatch):
+    """完整回归：/test 捕获迁移错误后会 commit health，但不得把旧 token 提交为 NULL。"""
+    admin = User(
+        username=f"cred-admin-{org.id}", email=f"cred-{org.id}@example.com",
+        hashed_password="x", role=UserRole.ENTERPRISE_ADMIN.value,
+        organization_id=org.id,
+    )
+    cfg = CrmIntegrationConfig(
+        organization_id=org.id, base_url="http://localhost:5000/api",
+        project_id="p1", service_token=PLAIN_TOKEN,
+    )
+    db.add_all([admin, cfg])
+    db.commit()
+    monkeypatch.delenv(credentials.ENV_KEY, raising=False)
+
+    result = crm_router.test_connection({"id": admin.id}, db)
+    assert result.ok is False
+    assert ERR_MISSING_KEY in result.detail
+
+    org_id = org.id
+    db.close()
+    verify = SharedSessionLocal()
+    try:
+        persisted = verify.query(CrmIntegrationConfig).filter_by(organization_id=org_id).one()
+        assert persisted.service_token == PLAIN_TOKEN
+        assert persisted.last_health_status == "error"
+    finally:
+        verify.close()
 
 
 # ---------------------------------------------------------------- 运行链路
 
 def test_dispatcher_pauses_on_decrypt_failure(db, org, monkeypatch):
+    from cryptography.fernet import Fernet
     cfg = CrmIntegrationConfig(
         organization_id=org.id, base_url="http://localhost:5000/api",
         project_id="p1", enabled=True,
@@ -182,7 +224,7 @@ def test_dispatcher_pauses_on_decrypt_failure(db, org, monkeypatch):
 
     lead = upsert_lead(db, org.id, {"email": "pause@x.com"})
     # 换密钥 → 解密失败
-    monkeypatch.setenv(credentials.ENV_KEY, "rotated-key-without-migration")
+    monkeypatch.setenv(credentials.ENV_KEY, Fernet.generate_key().decode())
     dispatcher.dispatch_once(db, worker_id="w-cred")
 
     job = db.query(CrmSyncJob).filter_by(lead_id=lead.id).one()

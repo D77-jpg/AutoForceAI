@@ -44,14 +44,16 @@ def main() -> int:
         assert PHASE1_SAMPLE <= names, f"缺阶段1表: {PHASE1_SAMPLE - names}"
         idx = {i["name"]: i for i in insp.get_indexes("crm_entity_links")}
         assert idx["uq_crm_link_org_lead_project"]["unique"]
+        config_idx = {i["name"]: i for i in insp.get_indexes("crm_integration_configs")}
+        assert config_idx["uq_crm_config_provider_project"]["unique"]
         with engine.connect() as conn:
             ext = conn.execute(text("SELECT 1 FROM pg_extension WHERE extname='vector'")).scalar()
             assert ext == 1, "vector 扩展缺失"
             enums = {r[0] for r in conn.execute(text("SELECT typname FROM pg_type WHERE typtype='e'"))}
             assert {"taskstatus", "agentrole", "missionstatus"} <= enums, f"枚举缺失: {enums}"
             rev = conn.execute(text("SELECT version_num FROM alembic_version")).scalar()
-            assert rev == "0003_phase29_worker", rev
-        print("       结构校验通过：5 张 CRM 表、唯一索引、vector 扩展、枚举、版本=0003")
+            assert rev == "0004_phase2_project_ownership", rev
+        print("       结构校验通过：5 张 CRM 表、唯一索引、vector 扩展、枚举、版本=0004")
 
     check_full()
 

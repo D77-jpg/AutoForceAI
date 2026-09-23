@@ -42,7 +42,7 @@ jobs:
         run: |
           python -m alembic -x "url=postgresql+psycopg://gate:gate@127.0.0.1:9/phase2_gate" upgrade head --sql > "$env:TEMP\pg_ddl.sql"
           $ddl = Get-Content "$env:TEMP\pg_ddl.sql" -Raw
-          foreach ($needle in @("SERIAL NOT NULL", "CREATE EXTENSION IF NOT EXISTS vector", "CREATE TYPE taskstatus", "CREATE TABLE crm_worker_state", "outcome_lease_owner", "uq_crm_link_org_lead_project", "TIMESTAMP WITHOUT TIME ZONE")) {
+          foreach ($needle in @("SERIAL NOT NULL", "CREATE EXTENSION IF NOT EXISTS vector", "CREATE TYPE taskstatus", "CREATE TABLE crm_worker_state", "outcome_lease_owner", "uq_crm_link_org_lead_project", "uq_crm_config_provider_project", "TIMESTAMP WITHOUT TIME ZONE")) {
             if (-not $ddl.Contains($needle)) { Write-Error "离线 DDL 缺少: $needle"; exit 1 }
           }
           if ($ddl.Contains("AUTOINCREMENT")) { Write-Error "生成了 SQLite 方言而非 PostgreSQL"; exit 1 }

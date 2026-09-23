@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -77,7 +78,8 @@ def db():
 @pytest.fixture(autouse=True)
 def _enc_key(monkeypatch):
     """保存配置时旧明文 token 会触发迁移，测试统一提供加密密钥。"""
-    monkeypatch.setenv("CRM_CREDENTIAL_ENCRYPTION_KEY", "phase2-binding-test-key")
+    from cryptography.fernet import Fernet
+    monkeypatch.setenv("CRM_CREDENTIAL_ENCRYPTION_KEY", Fernet.generate_key().decode())
 
 
 @pytest.fixture()
@@ -117,6 +119,44 @@ def test_project_change_allowed_without_history(db, env):
     _save(db, env["admin"], PROJECT_B)
     db.refresh(env["cfg"])
     assert env["cfg"].project_id == PROJECT_B
+
+
+def test_same_project_cannot_bind_two_organizations(db, env):
+    """一个 Genesis project 只能由一个 AutoForceAI organization 持有。"""
+    other_org = Organization(name=f"org-other-{datetime.now().timestamp()}")
+    db.add(other_org)
+    db.flush()
+    other_admin = User(
+        username=f"adm-other-{int(datetime.now().timestamp()*1000)}",
+        email="other@x.com",
+        hashed_password="x",
+        role=UserRole.ENTERPRISE_ADMIN.value,
+        organization_id=other_org.id,
+    )
+    db.add(other_admin)
+    db.commit()
+
+    with pytest.raises(HTTPException) as exc:
+        _save(db, other_admin, PROJECT_A)
+    assert exc.value.status_code == 409
+    assert "已绑定" in exc.value.detail
+
+
+def test_database_constraint_closes_project_binding_race(db, env):
+    """并发请求即使越过应用层预检，数据库唯一索引仍拒绝重复绑定。"""
+    other_org = Organization(name=f"org-race-{datetime.now().timestamp()}")
+    db.add(other_org)
+    db.flush()
+    db.add(CrmIntegrationConfig(
+        organization_id=other_org.id,
+        provider="genesis_crm",
+        base_url=BASE_URL,
+        project_id=PROJECT_A,
+        service_token="gci_other",
+    ))
+    with pytest.raises(IntegrityError):
+        db.commit()
+    db.rollback()
 
 
 def test_project_change_blocked_with_history(db, env, monkeypatch):

@@ -1,15 +1,14 @@
 """
 Alembic 版本对齐（阶段 2.9 P0-4）。
 
-启动流程：init_shared_db 的 create_all/补列保证 schema 存在（幂等），
-本模块负责把 alembic_version 对齐到 head：
-- 无 alembic_version → stamp head（历史库由 create_all/补列保证结构；正式空库请走
-  `alembic upgrade head`，见 docs 与 README「数据库迁移」）；
+启动流程：
+- SQLite 开发库仍由 create_all/补列保证 schema 存在，再由本模块 stamp；
+- PostgreSQL 不允许 create_all/stamp 冒充迁移，无版本库必须先显式执行
+  `alembic upgrade head`（历史库须人工核验后 stamp 0001）；
 - 落后 head → 自动 upgrade（迁移均为幂等建表，安全）；
 - 领先 head（代码回滚）→ 明确报错，不静默继续。
 
-正式生产路径（PostgreSQL）应以 `alembic upgrade head` 为准，
-本模块是开发/试运行环境的兜底对齐。
+本模块只为 SQLite 开发库提供无版本兜底，生产路径由 Alembic 独占。
 """
 from __future__ import annotations
 
@@ -40,8 +39,14 @@ def ensure_schema_current(engine) -> None:
     if current == head:
         return
     if current is None:
+        if engine.dialect.name != "sqlite":
+            raise RuntimeError(
+                "PostgreSQL 数据库缺少 alembic_version；已拒绝自动 create_all/stamp。"
+                "空库请执行 `alembic upgrade head`；历史库请核验后执行 "
+                "`alembic stamp 0001_phase1_baseline && alembic upgrade head`。"
+            )
         command.stamp(cfg, head)
-        logger.info("数据库无 alembic 版本记录，已按现有 schema 标记为 head（%s）", head)
+        logger.info("SQLite 开发库无 alembic 版本记录，已按现有 schema 标记为 head（%s）", head)
         return
     heads = script.get_heads()
     if current in script._revision_map and current not in heads:

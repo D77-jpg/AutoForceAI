@@ -34,7 +34,8 @@ BASE_URL = "http://localhost:5000/api"
 
 @pytest.fixture(autouse=True)
 def _enc_key(monkeypatch):
-    monkeypatch.setenv("CRM_CREDENTIAL_ENCRYPTION_KEY", "phase2-enable-gate-key")
+    from cryptography.fernet import Fernet
+    monkeypatch.setenv("CRM_CREDENTIAL_ENCRYPTION_KEY", Fernet.generate_key().decode())
 
 
 @pytest.fixture()

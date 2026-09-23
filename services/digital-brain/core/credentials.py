@@ -2,16 +2,14 @@
 服务凭证加密（阶段 2.9 P0-1）。
 
 - 算法：Fernet（AES-128-CBC + HMAC-SHA256，authenticated encryption，来自 cryptography）。
-- 密钥：环境变量 CRM_CREDENTIAL_ENCRYPTION_KEY。
-  接受两种形态：合法 Fernet key（urlsafe base64 32B）直接使用；任意口令经 SHA-256 派生。
+- 密钥：环境变量 CRM_CREDENTIAL_ENCRYPTION_KEY，必须是高强度 Fernet key
+  （urlsafe base64 编码的 32 字节）；不接受低强度口令派生。
 - 存储格式：`enc:v1:<ciphertext>`；旧明文记录读取到即迁移（不长期保留双格式）。
 - 失败语义：缺密钥 / 错密钥 / 损坏密文均抛出 CredentialError（稳定 code），
   绝不把密文静默当明文使用，也绝不在日志/异常中输出原文或密文内容。
 """
 from __future__ import annotations
 
-import base64
-import hashlib
 import logging
 import os
 
@@ -23,6 +21,7 @@ ENCRYPTED_PREFIX = "enc:v1:"
 ENV_KEY = "CRM_CREDENTIAL_ENCRYPTION_KEY"
 
 ERR_MISSING_KEY = "MISSING_ENCRYPTION_KEY"
+ERR_INVALID_KEY = "INVALID_ENCRYPTION_KEY"
 ERR_DECRYPT_FAILED = "DECRYPT_FAILED"
 ERR_TOKEN_NOT_SET = "TOKEN_NOT_SET"
 
@@ -46,14 +45,13 @@ def _load_fernet() -> Fernet:
             ERR_MISSING_KEY,
             f"缺少环境变量 {ENV_KEY}：存在加密凭证时必须配置密钥",
         )
-    # 形态一：本身就是合法 Fernet key
     try:
         return Fernet(raw.encode())
-    except Exception:
-        pass
-    # 形态二：任意口令 → SHA-256 派生为 Fernet key
-    derived = base64.urlsafe_b64encode(hashlib.sha256(raw.encode("utf-8")).digest())
-    return Fernet(derived)
+    except Exception as exc:
+        raise CredentialError(
+            ERR_INVALID_KEY,
+            f"环境变量 {ENV_KEY} 必须是合法的 Fernet key（urlsafe base64 编码的 32 字节）",
+        ) from exc
 
 
 def is_encrypted(stored: str | None) -> bool:

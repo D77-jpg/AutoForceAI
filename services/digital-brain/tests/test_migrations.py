@@ -19,7 +19,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy import Column, Integer, Table, create_engine, inspect, text
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -27,7 +27,7 @@ import database.models  # noqa: E402,F401
 
 SERVICE_ROOT = Path(__file__).resolve().parents[1]
 CRM_TABLES = {"crm_integration_configs", "crm_sync_jobs", "crm_entity_links", "crm_outcome_events", "crm_worker_state"}
-HEAD = "0003_phase29_worker"
+HEAD = "0004_phase2_project_ownership"
 EXPECTED_PHASE1 = {
     "users", "organizations", "leads", "projects", "chat_sessions", "chat_messages",
     "knowledge_bases", "knowledge_docs", "knowledge_chunks",
@@ -94,7 +94,23 @@ def test_upgrade_head_from_empty(db_url):
     assert [c for c in link_indexes["uq_crm_link_org_lead_project"]["column_names"]] == [
         "provider", "organization_id", "lead_id", "project_id",
     ]
+    config_indexes = {i["name"]: i for i in insp.get_indexes("crm_integration_configs")}
+    assert config_indexes["uq_crm_config_provider_project"]["unique"]
+    assert config_indexes["uq_crm_config_provider_project"]["column_names"] == ["provider", "project_id"]
     engine.dispose()
+
+
+def test_historical_revisions_ignore_future_orm_tables(db_url):
+    """给运行时 ORM 临时加表，也不能改变已发布的 0001/0002 DDL。"""
+    from alembic import command
+    from database.base import Base
+
+    probe = Table("future_orm_only", Base.metadata, Column("id", Integer, primary_key=True))
+    try:
+        command.upgrade(_cfg(db_url), "head")
+        assert "future_orm_only" not in _tables(db_url)
+    finally:
+        Base.metadata.remove(probe)
 
 
 def test_phase1_database_upgrades_to_phase2_preserving_data(db_url):
@@ -168,10 +184,11 @@ def test_postgresql_offline_sql_generation(db_url):
     assert "CREATE TABLE crm_worker_state" in sql
     assert "ALTER TABLE crm_integration_configs ADD COLUMN outcome_lease_owner" in sql
     assert "uq_crm_link_org_lead_project" in sql             # CRM 实体链接唯一约束
+    assert "uq_crm_config_provider_project" in sql           # 单一项目归属约束
 
 
 def test_ensure_schema_current_stamps_existing_db(db_url):
-    """无 alembic 版本的历史库：create_all 后 stamp head；幂等。"""
+    """无 alembic 版本的 SQLite 开发库：create_all 后 stamp head；幂等。"""
     from database.base import Base
     engine = create_engine(db_url)
     Base.metadata.create_all(bind=engine)
@@ -183,3 +200,17 @@ def test_ensure_schema_current_stamps_existing_db(db_url):
     ensure_schema_current(engine)  # 幂等
     engine.dispose()
     assert _current_rev(db_url) == HEAD
+
+
+def test_unversioned_postgresql_fails_before_schema_mutation(db_url):
+    """生产方言无版本记录时必须人工迁移，启动过程不得静默 stamp。"""
+    from core.migrations import ensure_schema_current
+
+    engine = create_engine(db_url)
+    engine.dialect.name = "postgresql"
+    try:
+        with pytest.raises(RuntimeError, match="拒绝自动 create_all/stamp"):
+            ensure_schema_current(engine)
+    finally:
+        engine.dispose()
+    assert _current_rev(db_url) is None

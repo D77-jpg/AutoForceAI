@@ -14,15 +14,12 @@ Create Date: 2026-09-23
 import sqlalchemy as sa
 from alembic import op
 
-from migrations.helpers import create_tables, drop_tables
+from migrations.helpers import execute_frozen
 
 revision = "0002_phase2_crm"
 down_revision = "0001_phase1_baseline"
 branch_labels = None
 depends_on = None
-
-_HELPER_TABLES = {"crm_sync_jobs", "crm_entity_links", "crm_outcome_events"}
-
 
 def _create_configs() -> None:
     op.create_table(
@@ -54,9 +51,9 @@ def _create_configs() -> None:
 
 def upgrade() -> None:
     _create_configs()
-    create_tables(_HELPER_TABLES, op)
+    execute_frozen("PHASE2_HELPERS", "UP", op)
 
 
 def downgrade() -> None:
-    drop_tables(_HELPER_TABLES, op)
+    execute_frozen("PHASE2_HELPERS", "DOWN", op)
     op.drop_table("crm_integration_configs")

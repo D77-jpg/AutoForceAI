@@ -14,6 +14,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from core.db_manager import get_shared_db
@@ -179,6 +180,17 @@ def save_config(body: ConfigIn, payload: dict = Depends(get_current_user), db: S
 
     # P0-2：绑定保护——有历史同步数据时禁止普通保存切换 project（须走 reset-binding）
     new_project_id = body.project_id.strip()
+    project_owner = (
+        db.query(CrmIntegrationConfig)
+        .filter(
+            CrmIntegrationConfig.provider == "genesis_crm",
+            CrmIntegrationConfig.project_id == new_project_id,
+            CrmIntegrationConfig.organization_id != user.organization_id,
+        )
+        .first()
+    )
+    if project_owner:
+        raise HTTPException(409, "该 Genesis project 已绑定到其他企业组织，不能重复绑定")
     if cfg.project_id and cfg.project_id != new_project_id:
         active_links = (
             db.query(func.count(CrmEntityLink.id))
@@ -235,7 +247,23 @@ def save_config(body: ConfigIn, payload: dict = Depends(get_current_user), db: S
     cfg.last_health_checked_at = None
     cfg.health_fingerprint = None
     cfg.updated_at = datetime.now()
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        # 并发保存时由数据库唯一约束做最终防线。
+        conflict = (
+            db.query(CrmIntegrationConfig)
+            .filter(
+                CrmIntegrationConfig.provider == "genesis_crm",
+                CrmIntegrationConfig.project_id == new_project_id,
+                CrmIntegrationConfig.organization_id != user.organization_id,
+            )
+            .first()
+        )
+        if conflict:
+            raise HTTPException(409, "该 Genesis project 已绑定到其他企业组织，不能重复绑定") from exc
+        raise
     db.refresh(cfg)
     return {"config": _to_public(cfg)}
 

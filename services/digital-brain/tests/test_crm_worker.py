@@ -21,7 +21,7 @@ import database.models  # noqa: E402,F401
 from core.db_manager import SHARED_ENGINE, SharedSessionLocal  # noqa: E402
 from core.crm import dispatcher  # noqa: E402
 from core.crm.contract import OutcomeEvent, OutcomeFeedResponse  # noqa: E402
-from core.crm.outcome_poller import poll_all_outcomes  # noqa: E402
+from core.crm.outcome_poller import poll_all_outcomes, poll_org_outcomes  # noqa: E402
 from core.crm.worker_state import (  # noqa: E402
     claim_outcome_lease,
     get_state,
@@ -128,6 +128,29 @@ def test_lease_expiry_takeover(db, cfg, monkeypatch):
     assert claim_outcome_lease(db, cfg, "instance-B") is True
     db.refresh(cfg)
     assert cfg.outcome_lease_owner == "instance-B"
+
+
+def test_page_is_discarded_when_lease_is_lost_during_request(db, cfg):
+    """HTTP 请求期间 A 租约过期并被 B 接管时，A 不提交事件或游标。"""
+    assert claim_outcome_lease(db, cfg, "instance-A")
+
+    class TakeoverClient:
+        def fetch_outcomes(self, cursor=None, limit=50):
+            db.query(CrmIntegrationConfig).filter_by(id=cfg.id).update(
+                {"outcome_lease_expires_at": datetime.now() - timedelta(seconds=1)},
+                synchronize_session=False,
+            )
+            db.commit()
+            assert claim_outcome_lease(db, cfg, "instance-B")
+            return _feed()
+
+    processed = poll_org_outcomes(db, cfg, client=TakeoverClient(), worker_id="instance-A")
+    assert processed == 0
+    db.expire_all()
+    refreshed = db.query(CrmIntegrationConfig).filter_by(id=cfg.id).one()
+    assert refreshed.outcome_lease_owner == "instance-B"
+    assert refreshed.outcome_cursor is None
+    assert db.query(CrmOutcomeEvent).count() == 0
 
 
 def test_worker_disabled_starts_no_thread(monkeypatch):

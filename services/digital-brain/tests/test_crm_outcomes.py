@@ -17,7 +17,7 @@ import database.models  # noqa: E402,F401
 from core.db_manager import SHARED_ENGINE, SharedSessionLocal  # noqa: E402
 from core.crm.client import CrmApiError  # noqa: E402
 from core.crm.contract import OutcomeEvent, OutcomeFeedResponse  # noqa: E402
-from core.crm.outcome_poller import poll_all_outcomes, poll_org_outcomes  # noqa: E402
+from core.crm.outcome_poller import _apply_event, poll_all_outcomes, poll_org_outcomes  # noqa: E402
 from database.base import Base  # noqa: E402
 from database.shared_models import (  # noqa: E402
     CrmEntityLink,
@@ -138,6 +138,33 @@ def test_event_without_local_link_is_recorded_not_crash(db, setup):
     assert processed == 1
     ev = db.query(CrmOutcomeEvent).filter_by(event_id="ev-4").one()
     assert ev.lead_id is None
+
+
+def test_same_remote_customer_never_crosses_organization_boundary(db, setup):
+    """即使配置异常地指向同一项目/客户，也不能污染另一组织的映射与线索。"""
+    other_org = Organization(name=f"org-other-{datetime.now().timestamp()}")
+    db.add(other_org)
+    db.flush()
+    foreign_cfg = CrmIntegrationConfig(
+        organization_id=other_org.id,
+        base_url="http://crm.local/api",
+        project_id=PROJECT,
+        service_token="gci_test",
+    )
+
+    assert _apply_event(db, foreign_cfg, _event("ev-cross-org", "won")) is True
+    db.commit()
+    db.expire_all()
+
+    lead = db.query(Lead).filter_by(id=setup["lead"].id).one()
+    link = db.query(CrmEntityLink).filter_by(id=setup["link"].id).one()
+    event = db.query(CrmOutcomeEvent).filter_by(
+        organization_id=other_org.id,
+        event_id="ev-cross-org",
+    ).one()
+    assert lead.status == "contacted"
+    assert link.remote_status is None
+    assert event.lead_id is None
 
 
 def test_batch_commit_cursor_not_advanced_on_failure(db, setup):

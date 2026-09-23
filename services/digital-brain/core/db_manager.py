@@ -59,13 +59,16 @@ def _sqlite_add_columns():
 # 初始化主数据库 (Merging Tenant Schemas into Shared DB)
 def init_shared_db():
     print("[DB] Initializing Shared Database Schema...")
-    SharedBase.metadata.create_all(bind=SHARED_ENGINE)
-    # Also create Tenant tables in the Shared DB (Single DB Mode)
-    TenantBase.metadata.create_all(bind=SHARED_ENGINE)
-    _sqlite_add_columns()
-    # 阶段 2.9 P0-4：对齐 alembic 版本（stamp / upgrade / 版本领先时报错）
     from core.migrations import ensure_schema_current
-    ensure_schema_current(SHARED_ENGINE)
+    if SHARED_ENGINE.dialect.name == "sqlite":
+        # 仅本地开发 SQLite 保留 create_all/补列兼容路径。
+        SharedBase.metadata.create_all(bind=SHARED_ENGINE)
+        TenantBase.metadata.create_all(bind=SHARED_ENGINE)
+        _sqlite_add_columns()
+        ensure_schema_current(SHARED_ENGINE)
+    else:
+        # PostgreSQL schema 只能由 Alembic 管理；无版本库会在任何 DDL 前失败。
+        ensure_schema_current(SHARED_ENGINE)
     print("[DB] Schema Sync Complete.")
 
 # 租户数据库引擎缓存

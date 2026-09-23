@@ -67,6 +67,7 @@ def _apply_event(db: Session, cfg: CrmIntegrationConfig, event) -> bool:
         db.query(CrmEntityLink)
         .filter(
             CrmEntityLink.provider == "genesis_crm",
+            CrmEntityLink.organization_id == cfg.organization_id,
             CrmEntityLink.project_id == cfg.project_id,
             CrmEntityLink.remote_customer_id == event.customerId,
             CrmEntityLink.archived_at.is_(None),  # 归档映射不接收回流
@@ -83,7 +84,10 @@ def _apply_event(db: Session, cfg: CrmIntegrationConfig, event) -> bool:
 
         if event.toStatus == "won":
             # 成交归因：本地线索标记 converted；来源字段保持最初获客来源不动
-            lead = db.query(Lead).filter(Lead.id == link.lead_id).first()
+            lead = db.query(Lead).filter(
+                Lead.id == link.lead_id,
+                Lead.organization_id == cfg.organization_id,
+            ).first()
             if lead and lead.status != "converted":
                 lead.status = "converted"
                 lead.updated_at = datetime.now()
@@ -108,7 +112,13 @@ def _apply_event(db: Session, cfg: CrmIntegrationConfig, event) -> bool:
     return True
 
 
-def poll_org_outcomes(db: Session, cfg: CrmIntegrationConfig, client: Optional[GenesisCRMClient] = None) -> int:
+def poll_org_outcomes(
+    db: Session,
+    cfg: CrmIntegrationConfig,
+    client: Optional[GenesisCRMClient] = None,
+    *,
+    worker_id: Optional[str] = None,
+) -> int:
     """
     轮询一个组织的 outcome feed；返回新处理的事件数。
     每批：取一页 → 逐条应用 → 同事务提交批处理与 cursor。
@@ -120,7 +130,14 @@ def poll_org_outcomes(db: Session, cfg: CrmIntegrationConfig, client: Optional[G
     processed = 0
     cursor = cfg.outcome_cursor
     for _ in range(MAX_PAGES_PER_ROUND):
+        # 每页请求前续租，防止多页轮询超过 60s 后被另一实例并发接管。
+        if worker_id and not renew_outcome_lease(db, cfg, worker_id):
+            return processed
         feed = client.fetch_outcomes(cursor=cursor, limit=PAGE_SIZE)
+        # 网络返回后再确认 owner。若请求期间租约过期并被接管，当前 worker 不得应用该页。
+        if worker_id and not renew_outcome_lease(db, cfg, worker_id):
+            db.rollback()
+            return processed
         if not feed.items:
             break
 
@@ -134,6 +151,10 @@ def poll_org_outcomes(db: Session, cfg: CrmIntegrationConfig, client: Optional[G
         # 批处理与 cursor 提交同一事务：任何一步失败整批回滚，cursor 不前进
         cfg.outcome_cursor = last_cursor
         cfg.outcome_polled_at = datetime.now()
+        # 在同一事务内再验证一次 owner，避免事件应用期间租约丢失后覆盖新 cursor。
+        if worker_id and not renew_outcome_lease(db, cfg, worker_id, commit=False):
+            db.rollback()
+            return processed
         db.commit()
         processed += new_in_batch
 
@@ -166,8 +187,7 @@ def poll_all_outcomes(db: Session, worker_id: str = "poller") -> int:
             logger.debug("outcome 租约被其它实例持有，跳过 org=%s", cfg.organization_id)
             continue
         try:
-            total += poll_org_outcomes(db, cfg)
-            renew_outcome_lease(db, cfg, worker_id)
+            total += poll_org_outcomes(db, cfg, worker_id=worker_id)
             record_poller_success(db, worker_id)
             db.commit()
         except CredentialError as exc:

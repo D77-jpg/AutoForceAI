@@ -93,13 +93,27 @@ def claim_outcome_lease(db: Session, cfg: CrmIntegrationConfig, worker_id: str,
 
 
 def renew_outcome_lease(db: Session, cfg: CrmIntegrationConfig, worker_id: str,
-                        lease_seconds: int = POLLER_LEASE_SECONDS) -> None:
-    """轮询成功后续租（保持 owner，便于健康观察；崩溃后到期自然被接管）。"""
-    db.query(CrmIntegrationConfig).filter(
+                        lease_seconds: int = POLLER_LEASE_SECONDS,
+                        *, commit: bool = True) -> bool:
+    """仅当租约仍归当前 worker 且未过期时续租。
+
+    commit=False 用于把租约校验/续租与当前页的 event+cursor 同事务提交。
+    返回 False 表示租约已丢失，调用方必须回滚未提交页并退出。
+    """
+    now = datetime.now()
+    updated = db.query(CrmIntegrationConfig).filter(
         CrmIntegrationConfig.id == cfg.id,
         CrmIntegrationConfig.outcome_lease_owner == worker_id,
+        CrmIntegrationConfig.outcome_lease_expires_at >= now,
     ).update(
-        {CrmIntegrationConfig.outcome_lease_expires_at: datetime.now() + timedelta(seconds=lease_seconds)},
+        {CrmIntegrationConfig.outcome_lease_expires_at: now + timedelta(seconds=lease_seconds)},
         synchronize_session=False,
     )
-    db.commit()
+    if not updated:
+        if commit:
+            db.rollback()
+        return False
+    if commit:
+        db.commit()
+        db.refresh(cfg)
+    return True

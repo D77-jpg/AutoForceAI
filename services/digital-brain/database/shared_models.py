@@ -425,6 +425,17 @@ class CrmIntegrationConfig(SharedBase):
 
     organization = relationship("Organization")
 
+    __table_args__ = (
+        # 首版严格一对一：一个 Genesis project 不得同时绑定到多个 AutoForceAI organization。
+        # NULL 代表 reset-binding 后待重绑，允许多条。
+        Index(
+            "uq_crm_config_provider_project",
+            "provider", "project_id", unique=True,
+            sqlite_where=project_id.isnot(None),
+            postgresql_where=project_id.isnot(None),
+        ),
+    )
+
     @property
     def token_preview(self):
         """脱敏预览只来自单独保存的 token_last4，绝不通过解密密文生成。"""
@@ -450,12 +461,16 @@ class CrmIntegrationConfig(SharedBase):
 
     def migrate_token_if_legacy(self) -> bool:
         """旧明文 → 密文的一次性迁移（调用方负责 commit）。返回是否发生了迁移。"""
-        from core.credentials import is_encrypted
+        from core.credentials import encrypt_secret, is_encrypted
         if not self.service_token or is_encrypted(self.service_token):
             return False
         plain = self.service_token
-        self.service_token = None
-        self.set_service_token(plain)  # 缺密钥时抛 CredentialError，不留半成品
+        # 先在局部变量完成所有可失败工作；只有加密成功后才一次性更新 ORM 状态。
+        # 即使调用方捕获 CredentialError 后又 commit health 状态，
+        # 也不会把原明文 token 误提交为 NULL。
+        encrypted = encrypt_secret(plain)
+        self.service_token = encrypted
+        self.token_last4 = plain[-4:]
         return True
 
 
