@@ -1,0 +1,79 @@
+name: phase2-release-gate
+
+# 阶段 2 发布门禁：CRM 测试、迁移、PG 离线 DDL、Web 构建、敏感信息检查、兼容性记录。
+# 通过本门禁是「允许推送 + 24h 试运行」的前置条件。
+
+on:
+  push:
+    branches: [codex/phase2-release-ready, main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: services/digital-brain
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest alembic
+      - name: CRM 相关及新增测试（全量后端回归）
+        run: python -m pytest tests/ -q
+      - name: Alembic 空库升级 + 阶段1库升级 + downgrade（test_migrations.py 内含）
+        run: python -m pytest tests/test_migrations.py -q
+      - name: PostgreSQL 离线 DDL 生成（--sql，无需真实 PG）
+        run: |
+          python -m alembic upgrade head --sql > "$env:TEMP\\pg_ddl.sql"
+          Select-String -Path "$env:TEMP\\pg_ddl.sql" -Pattern "CREATE TABLE crm_integration_configs" -Quiet
+          if (-not $?) { exit 1 }
+
+  web:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: apps/web-console
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install
+        run: npm install --legacy-peer-deps
+      - name: TypeScript 检查
+        run: node node_modules/typescript/bin/tsc --noEmit
+      - name: Production build
+        run: npm run build
+
+  hygiene:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: 敏感信息检查（全历史不得出现 service token）
+        shell: bash
+        run: |
+          if git grep -nE 'gci_[0-9a-f]{20,}' $(git rev-list origin/main..HEAD 2>/dev/null || git rev-list HEAD) -- . | grep -v 'tests/test_crm_credentials.py'; then
+            echo "::error::发现疑似 service token 进入提交历史"; exit 1
+          fi
+          echo "OK: 历史中无 service token"
+      - name: 禁止提交 .env / 数据库文件 / 日志
+        shell: bash
+        run: |
+          bad=$(git ls-files | grep -E '(^|/)\.env($|\.)|\.db$|\.sqlite|(^|/)logs?/.*\.log$' | grep -v '\.env\.example' || true)
+          if [ -n "$bad" ]; then echo "::error::禁止提交的文件: $bad"; exit 1; fi
+          echo "OK: 无 .env/db/日志入库"
+      - name: 兼容性记录存在性校验
+        shell: bash
+        run: |
+          test -f docs/integration/COMPATIBILITY.md || { echo "::error::缺少 docs/integration/COMPATIBILITY.md"; exit 1; }
+          grep -q "契约 SHA-256" docs/integration/COMPATIBILITY.md || { echo "::error::兼容性记录缺少契约哈希"; exit 1; }
+          echo "OK: 兼容性记录存在且包含契约哈希"
