@@ -27,13 +27,25 @@ jobs:
           pip install pytest alembic
       - name: CRM 相关及新增测试（全量后端回归）
         run: python -m pytest tests/ -q
+      - name: 契约测试（仓库内冻结副本，skip=0 强制）
+        shell: pwsh
+        run: |
+          $out = python -m pytest tests/test_crm_contract.py -q -rs 2>&1 | Out-String
+          $out
+          if ($out -match '\d+ skipped') { Write-Error "契约测试出现 skip，门禁失效"; exit 1 }
       - name: Alembic 空库升级 + 阶段1库升级 + downgrade（test_migrations.py 内含）
         run: python -m pytest tests/test_migrations.py -q
-      - name: PostgreSQL 离线 DDL 生成（--sql，无需真实 PG）
+      - name: PostgreSQL 离线 DDL（显式 PG dialect，断言方言与关键对象）
+        run: python -m pytest tests/test_migrations.py::test_postgresql_offline_sql_generation -q
+      - name: PostgreSQL 离线 DDL 直验（-x url 指定 dialect，不连接数据库）
+        shell: pwsh
         run: |
-          python -m alembic upgrade head --sql > "$env:TEMP\\pg_ddl.sql"
-          Select-String -Path "$env:TEMP\\pg_ddl.sql" -Pattern "CREATE TABLE crm_integration_configs" -Quiet
-          if (-not $?) { exit 1 }
+          python -m alembic -x "url=postgresql+psycopg://gate:gate@127.0.0.1:9/phase2_gate" upgrade head --sql > "$env:TEMP\pg_ddl.sql"
+          $ddl = Get-Content "$env:TEMP\pg_ddl.sql" -Raw
+          foreach ($needle in @("SERIAL NOT NULL", "CREATE EXTENSION IF NOT EXISTS vector", "CREATE TYPE taskstatus", "CREATE TABLE crm_worker_state", "outcome_lease_owner", "uq_crm_link_org_lead_project", "TIMESTAMP WITHOUT TIME ZONE")) {
+            if (-not $ddl.Contains($needle)) { Write-Error "离线 DDL 缺少: $needle"; exit 1 }
+          }
+          if ($ddl.Contains("AUTOINCREMENT")) { Write-Error "生成了 SQLite 方言而非 PostgreSQL"; exit 1 }
 
   web:
     runs-on: windows-latest
@@ -71,9 +83,18 @@ jobs:
           bad=$(git ls-files | grep -E '(^|/)\.env($|\.)|\.db$|\.sqlite|(^|/)logs?/.*\.log$' | grep -v '\.env\.example' || true)
           if [ -n "$bad" ]; then echo "::error::禁止提交的文件: $bad"; exit 1; fi
           echo "OK: 无 .env/db/日志入库"
-      - name: 兼容性记录存在性校验
+      - name: 兼容性记录校验（版本 + 完整契约哈希 + 双方实现基线）
         shell: bash
         run: |
-          test -f docs/integration/COMPATIBILITY.md || { echo "::error::缺少 docs/integration/COMPATIBILITY.md"; exit 1; }
-          grep -q "契约 SHA-256" docs/integration/COMPATIBILITY.md || { echo "::error::兼容性记录缺少契约哈希"; exit 1; }
-          echo "OK: 兼容性记录存在且包含契约哈希"
+          f=docs/integration/COMPATIBILITY.md
+          test -f "$f" || { echo "::error::缺少兼容性记录"; exit 1; }
+          grep -q "契约版本：**1.0**" "$f" || { echo "::error::缺少契约版本 1.0"; exit 1; }
+          grep -q "7798eb621795e8dc405ff56c0fdfb806622ec5a6144d85d6e839ee85d9061679" "$f" || { echo "::error::契约哈希缺失或不匹配"; exit 1; }
+          grep -q "e2e3486" "$f" || { echo "::error::缺少 Genesis 实现基线 commit"; exit 1; }
+          grep -q "491b1d3" "$f" || { echo "::error::缺少 AutoForceAI 实现基线 commit"; exit 1; }
+          grep -q "genesis-integration-v1.0.0" "$f" || { echo "::error::缺少 Genesis 标签名"; exit 1; }
+          grep -q "autoforce-phase2-core-v1.0.0" "$f" || { echo "::error::缺少 AutoForceAI 标签名"; exit 1; }
+          # 仓库内冻结契约副本哈希
+          actual=$(sha256sum docs/integration/integration-v1.openapi.yaml | cut -d' ' -f1)
+          [ "$actual" = "7798eb621795e8dc405ff56c0fdfb806622ec5a6144d85d6e839ee85d9061679" ] || { echo "::error::契约副本哈希漂移: $actual"; exit 1; }
+          echo "OK: 兼容性记录与契约副本校验通过"

@@ -22,19 +22,43 @@ from core.crm.mapping import build_upsert_payload, lead_external_id  # noqa: E40
 import database.models  # noqa: E402,F401  # User.projects 关系需要租户模型注册后才能建 mapper
 from database.shared_models import Lead  # noqa: E402
 
-GENESIS_REPO = Path(os.environ.get(
-    "GENESIS_CRM_REPO",
-    r"D:\Trade\genesis\CRM\Genesis_CRM",
-))
-OPENAPI_PATH = GENESIS_REPO / "docs" / "integration" / "integration-v1.openapi.yaml"
+# 冻结契约副本随本仓库分发（CI 门禁不依赖 Genesis 仓库路径）；
+# 本地双仓库联调可用 GENESIS_CRM_REPO 指向 Genesis 工作副本覆盖。
+REPO_ROOT = Path(__file__).resolve().parents[3]
+GENESIS_REPO = os.environ.get("GENESIS_CRM_REPO")
+OPENAPI_PATH = (
+    Path(GENESIS_REPO) / "docs" / "integration" / "integration-v1.openapi.yaml"
+    if GENESIS_REPO
+    else REPO_ROOT / "docs" / "integration" / "integration-v1.openapi.yaml"
+)
+
+# 冻结契约 SHA-256（Genesis @ e2e3486；改动即视为契约漂移，测试必须失败）
+FROZEN_CONTRACT_SHA256 = "7798eb621795e8dc405ff56c0fdfb806622ec5a6144d85d6e839ee85d9061679"
 
 
 # ---------------------------------------------------------------- contract
 
 def _load_openapi() -> dict:
-    if not OPENAPI_PATH.exists():
-        pytest.skip(f"Genesis 仓库契约文件不存在: {OPENAPI_PATH}")
-    return yaml.safe_load(OPENAPI_PATH.read_text(encoding="utf-8"))
+    # 契约文件缺失/不可解析时必须失败（禁止 skip），否则 CI 门禁形同虚设
+    assert OPENAPI_PATH.exists(), f"冻结契约文件缺失: {OPENAPI_PATH}"
+    spec = yaml.safe_load(OPENAPI_PATH.read_text(encoding="utf-8"))
+    assert isinstance(spec, dict) and spec.get("paths"), f"契约文件无法解析: {OPENAPI_PATH}"
+    return spec
+
+
+def test_contract_file_hash_is_frozen():
+    """仓库内契约副本必须与冻结基线逐字节一致（GENESIS_CRM_REPO 覆盖时跳过哈希校验）。"""
+    if GENESIS_REPO:
+        pytest.skip("本地联调模式：以 Genesis 工作副本为准，哈希校验仅在 CI/默认路径执行")
+    import hashlib
+    digest = hashlib.sha256(OPENAPI_PATH.read_bytes()).hexdigest()
+    assert digest == FROZEN_CONTRACT_SHA256, f"契约哈希漂移: {digest} != {FROZEN_CONTRACT_SHA256}"
+
+
+def test_contract_version_is_1_0():
+    spec = _load_openapi()
+    # OpenAPI 文档版本冻结为 1.0.0；载荷 contractVersion（"1.0"）由示例解析用例覆盖
+    assert str(spec["info"]["version"]) == "1.0.0", f"契约版本漂移: {spec['info'].get('version')}"
 
 
 def test_openapi_freezes_required_endpoints():

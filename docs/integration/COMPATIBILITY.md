@@ -6,16 +6,23 @@
 ## 冻结契约
 
 - 契约文件：`Genesis_CRM/docs/integration/integration-v1.openapi.yaml`
+  （本仓库内置冻结副本：`docs/integration/integration-v1.openapi.yaml`，CI 校验哈希）
 - 契约版本：**1.0**
 - 契约 SHA-256：`7798eb621795e8dc405ff56c0fdfb806622ec5a6144d85d6e839ee85d9061679`
-  （计算时点：Genesis_CRM @ e2e3486）
 
-## 兼容 commit（发布基线）
+## 双方实现基线（不可变 commit，CI 门禁校验）
 
-| 仓库 | 分支 | 兼容 commit | 说明 |
-|---|---|---|---|
-| Genesis_CRM | `codex/genesis-integration-release` | `e2e3486` 起 | Integration API v1 冻结实现（13/13 契约测试）；仅追加 CI 门禁 |
-| AutoForceAI | `codex/phase2-release-ready` | 见分支 HEAD | 阶段 2 全量（Wave A–D + 2.9 五项 P0 + §3.6 worker 保护） |
+| 仓库 | 实现基线 commit | 内容 |
+|---|---|---|
+| Genesis_CRM | `e2e3486` | Integration API v1 冻结实现（13/13 契约测试） |
+| AutoForceAI | `491b1d3` | 阶段 2 核心：Wave A–D + 2.9 五项 P0 + §3.6 worker 租约（发布分支 `codex/phase2-release-ready` 上） |
+
+> CI/文档提交不属于 API 实现基线；基线只记录契约实现 commit，不随门禁提交变化。
+
+## 待创建的正式标签（推送验收通过后由人工创建）
+
+- Genesis_CRM：`genesis-integration-v1.0.0` → 打在 `e2e3486`
+- AutoForceAI：`autoforce-phase2-core-v1.0.0` → 打在 `491b1d3`
 
 ## 链路验收状态
 

@@ -142,22 +142,32 @@ def test_downgrade_path(db_url):
 
 
 def test_postgresql_offline_sql_generation(db_url):
-    """PostgreSQL 升级路径：离线模式生成 DDL（无需真实 PG 服务），验证方言可编译。"""
+    """PostgreSQL 升级路径：离线模式生成 DDL（不连接任何数据库），验证方言可编译。"""
     from alembic import command
-    cfg = _cfg("postgresql://autoforce:***@localhost:5432/autoforce")
+    cfg = _cfg("postgresql+psycopg://gate:gate@127.0.0.1:9/phase2_gate")
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
         command.upgrade(cfg, "head", sql=True)
     sql = buf.getvalue()
+
+    # 方言证明：必须是 PostgreSQL DDL，而不是 SQLite DDL
+    assert " SERIAL " in sql or "\tSERIAL" in sql or "SERIAL NOT NULL" in sql  # PG 自增主键方言
+    assert "AUTOINCREMENT" not in sql                        # SQLite 标记不得出现
+    assert "TIMESTAMP WITHOUT TIME ZONE" in sql              # PG DateTime 方言
+    assert " sqlite" not in sql.lower()
+
+    # 关键对象
     assert "CREATE EXTENSION IF NOT EXISTS vector" in sql
+    assert "VECTOR" in sql.upper()                           # knowledge_chunks.embedding
+    assert "CREATE TYPE taskstatus" in sql                   # PG enum（幂等 DO 块内）
+    assert "CREATE TYPE agentrole" in sql
     assert "CREATE TABLE crm_sync_jobs" in sql
     assert "CREATE TABLE crm_entity_links" in sql
     assert "CREATE TABLE crm_integration_configs" in sql
     assert "CREATE TABLE crm_outcome_events" in sql
     assert "CREATE TABLE crm_worker_state" in sql
     assert "ALTER TABLE crm_integration_configs ADD COLUMN outcome_lease_owner" in sql
-    assert "VECTOR" in sql.upper()              # knowledge_chunks.embedding
-    assert "uq_crm_link_org_lead_project" in sql
+    assert "uq_crm_link_org_lead_project" in sql             # CRM 实体链接唯一约束
 
 
 def test_ensure_schema_current_stamps_existing_db(db_url):
