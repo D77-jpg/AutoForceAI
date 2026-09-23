@@ -212,6 +212,54 @@ h1, h2, h3, h4 {
   color: rgb(var(--ui-text));
 }
 
+/* ── 调度中心：状态点呼吸（运行中绿点光晕） ─────────────────── */
+@keyframes status-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(var(--ui-success) / 0.35); }
+  50% { box-shadow: 0 0 0 5px rgb(var(--ui-success) / 0); }
+}
+.status-dot-breathe {
+  animation: status-breathe 2.4s var(--ui-ease) infinite;
+}
+
+/* ── Apple 分段控件（segmented control） ────────────────────── */
+.segmented-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--ui-radius-md);
+  background: rgb(var(--ui-text) / 0.06);
+}
+.segmented-control__item {
+  height: 26px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: calc(var(--ui-radius-md) - 3px);
+  background: transparent;
+  font-size: 12px;
+  color: rgb(var(--ui-text-secondary));
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: color var(--ui-duration-fast) var(--ui-ease),
+    background-color var(--ui-duration-fast) var(--ui-ease),
+    box-shadow var(--ui-duration-fast) var(--ui-ease);
+}
+.segmented-control__item:hover {
+  color: rgb(var(--ui-text));
+}
+.segmented-control__item[aria-selected='true'] {
+  background: rgb(var(--ui-surface));
+  color: rgb(var(--ui-text));
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgb(var(--ui-overlay) / 0.12);
+}
+.segmented-control__item:focus-visible {
+  outline: 2px solid rgb(var(--ui-accent));
+  outline-offset: 1px;
+}
+
 input, textarea, select, button {
   font-family: inherit;
 }
