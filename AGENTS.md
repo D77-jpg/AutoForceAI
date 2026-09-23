@@ -5,155 +5,150 @@
 
 ---
 
-## 一、唯一铁律
+## 一、唯一规则（记住这一条就够）
 
-> **main 永远是正确的。**
+> **一个改动 = 一个分支 = 一个 PR = 合入 main。**
 
-任何改动，无论来自哪个 agent，都走同一条路：
+- 从**最新 main** 开一条短命分支 → 改 → 推送 → 开 PR → 合入 main → **立刻删分支**
+- **不需要判断改动属于前端 / 后端 / 文档 / 配置**，流程完全一样
+- 不需要判断"这是单端还是跨端"——**跨端改动就放在同一条分支、同一个 PR 里**
+- 不直接 push main（已开分支保护时技术上也不可能），不在 main 之外长期停留
 
-```
-从 main 开短命分支 → 改 → 推送 → 开 PR → 合入 main → 立刻删分支
-```
-
-不在 main 之外长期停留，不直接 push main，不留"半成品分支"。
+branches 命名只为人类可读，不承载规则含义：`<agent>/<主题>`，如 `ui/首页改版`、`codex/crm-portal`、`docs/xxx`。
 
 ---
 
-## 二、工作目录（git worktree）与分工
+## 二、三条铁律（这是真出过事故的地方）
 
-本仓库用 `git worktree` 把**同一个仓库**摊成多份目录，各站一条分支。它们不是三个项目。
+### 1. 未提交 = 不存在
 
-| 目录 | 用途 | 应处的分支 | 服务端口 |
-|---|---|---|---|
-| `D:\Trade\AutoForceAI` | 后端 / CRM / services / db | 临时 `codex/<主题>` | — |
-| `D:\Trade\AutoForceAI\.codex-worktrees\autoforce-main-release` | 前端 UI（`apps/web-console`） | 临时 `ui/<主题>`；空闲时 detached 于最新 main | 3051 |
-| `D:\Trade\afai-release` | **验收站**（只读） | 始终 `main`（验收时可临时切到待验收分支） | **3050** |
-| `D:\Trade\wt\<主题>` | **跨端任务**（临时创建，用完即删） | `task/<主题>` | 按需 |
+改动只要还留在工作区（没 `commit`、没 `push`），它对**其他 agent、其他工作树、验收站、CI 全部不可见**。
+别的 agent 合并代码后"发现少了一块"，根因就是这一条——**不是合并顺序问题，是那份改动从未进入 git**。
+
+> 改完立刻提交并推送；没写完就先推 WIP 分支（`git push -u origin HEAD`），不要留在本地。
+
+### 2. 只用 merge / PR 搬运代码，禁止 cherry-pick
+
+cherry-pick 会在两条分支上生成「内容相同、SHA 不同」的重复提交，让人误判"改了两次 / 漏了什么"，是历史上分支混乱的主因。
+
+### 3. 只看 commit，不看磁盘
+
+"某个目录里有我的改动"**不算数**。只有 `git log origin/main` 里能看到那个 commit，才算真的进了主干。
+验收/发布时，永远先确认**跑的是哪个 commit**。
+
+---
+
+## 三、常驻目录（这是运行便利，不是提交规则）
+
+`git worktree` 把同一个仓库摊成多份目录，各站一条分支——它们不是三个项目。
+
+| 目录 | 这里跑着什么 | 服务端口 |
+|---|---|---|
+| `D:\Trade\AutoForceAI` | 后端 / CRM / db 的日常开发 | — |
+| `D:\Trade\AutoForceAI\.codex-worktrees\autoforce-main-release` | 前端 UI（`apps/web-console`）的日常开发 | 3051 |
+| `D:\Trade\afai-release` | **验收站**：只读，始终跟随 `main` | **3050** |
+| `D:\Trade\wt\<主题>` | 临时任务工作树（可选，用完即删） | 按需 |
+
+这张表只回答"**我想跑起某个服务该去哪个目录**"，**不回答"我该不该开分支"**——那个问题永远只有一个答案：见第一条规则。
 
 **纪律**
 
-1. 一个目录只服务一个用途，**不要跨目录改动**——别的 agent 可能正在那里有未提交的工作。
-2. 验收站 `afai-release` **只允许 `git switch main` / `git pull`，不允许提交任何东西**。
-3. 改动前先 `git fetch origin` 并让工作区干净。
-4. **分支的单位是「任务」，不是「目录」。** 一个任务横跨前后端时不要拆成两个分支/两个 PR——见下方「3.1 跨端改动」。
+1. 一个目录一个用途；**不要跨目录改动**（别的 agent 可能在那里有未提交的工作）。
+2. 验收站 `afai-release` **只允许 `git switch main` / `git merge --ff-only origin/main`**，不允许提交任何东西。
+3. 动手前先 `git fetch origin`，并让工作区干净。
 
 ---
 
-## 三、标准流程（照抄即可）
+## 四、标准流程（照抄即可）
 
 ```powershell
-# 0. 进入你负责的目录（见上表）
+# 0. 进入你要工作的目录（见第三节）
 cd D:\Trade\AutoForceAI\.codex-worktrees\autoforce-main-release
 
-# 1. 同步 main，开短命分支（命名：<agent>/<主题>）
+# 1. 从最新 main 开一条短命分支
 git fetch origin
-git switch --detach origin/main          # 确保从最新 main 起步
-git switch -c ui/首页改版                # 后端用 codex/<主题>，文档用 docs/<主题>
+git switch --detach origin/main
+git switch -c ui/首页改版
 
-# 2. 改代码；随时提交，不要长时间停留在未提交状态
+# 2. 改代码；随即提交并推送（未提交 = 不存在）
 git add -A
 git commit -m "feat(web-console): 首页改版——数字人调度中心信息架构与布局"
-
-# 3. 推送并开 PR
 git push -u origin HEAD
-# 打开 GitHub 提示的链接 → "Compare & pull request" → 合并
 
-# 4. 合并后清理（关键，别省）
-git switch --detach origin/main
+# 3. 到 GitHub 开 PR → 合并
+#    保护开启后，这是进入 main 的唯一通道
+
+# 4. 合并后清理（别省）
 git fetch origin --prune
+git switch --detach origin/main
 git branch -D ui/首页改版
-git push origin --delete ui/首页改版     # 若远端分支还在
+git push origin --delete ui/首页改版     # 若远端还在
 ```
 
----
-
-### 3.1 跨端改动（一个任务同时改前端 + 后端）
-
-**分支的单位是「任务」，不是「目录」。**
-三个工作树是**同一个仓库**的摊开，共用同一份历史——一个分支里同时改 `apps/web-console/` 与 `services/**` 完全正常，git 不关心文件属于哪个子系统。工作树只决定「你从哪个目录打开编辑器、跑哪个 dev server」。
-
-先判断任务形态：
-
-| 任务形态 | 在哪里做 | 分支名 |
-|---|---|---|
-| 只改前端 | 常驻前端工位 `autoforce-main-release` | `ui/<主题>` |
-| 只改后端 | 常驻主工位 `D:\Trade\AutoForceAI` | `codex/<主题>` |
-| **横跨前后端** | ① 该任务由你独占 → 直接在**你的常驻工位**里改两边；② 多 agent 并行 / 想与常驻工位隔离 → 建**临时任务工作树** | `task/<主题>` |
-
-临时任务工作树（跨端推荐，已封装成脚本）：
+多 agent 并行、或想在常驻工位之外隔离地改一个跨端任务时，用脚本开临时工作树：
 
 ```powershell
-# 创建：从最新 origin/main 建分支 + 工作树，并自动复用前端依赖
-.\scripts\wt-new.ps1 -Topic crm-portal        # → D:\Trade\wt\crm-portal
-
-# ...在 D:\Trade\wt\crm-portal 里同时改前端与后端，提交、推送、开 PR...
-
-# 收尾：PR 合并后（脚本会拒绝删除有未提交改动的工作树）
+.\scripts\wt-new.ps1 -Topic crm-portal        # → D:\Trade\wt\crm-portal（仓库外，自动复用前端依赖）
+# ...前后端一起改、提交、推送、开 PR...
 .\scripts\wt-done.ps1 -Topic crm-portal -DeleteBranch
 ```
 
-要点：
-
-- 工作树落在**仓库之外**（`D:\Trade\wt\`），不污染 `git status`
-- 前端依赖用 Junction 复用，无需重新 `npm install`；后端 Python 依赖是系统级的，直接可用
-- **一个跨端任务 = 一个分支 = 一个 PR**：前后端改动在同一份提交里，评审与回滚都是一个整体
-- 脚本以 **UTF-8 BOM** 保存，兼容 Windows PowerShell 5.1 与 PowerShell 7+。
-  **改脚本时务必保留 BOM**：无 BOM 的 UTF-8 `.ps1` 会被 PowerShell 5.1 按 ANSI(GBK) 解析，中文注释直接导致语法错误。
+> 脚本以 **UTF-8 BOM** 保存：无 BOM 的 UTF-8 `.ps1` 会被 Windows PowerShell 5.1 按 ANSI(GBK) 解析，中文注释直接导致语法错误。改脚本时务必保留 BOM。
 
 ---
 
-## 四、禁止事项
+## 五、合并前后自检（防止"少了一块"）
 
-1. **禁止用 `git cherry-pick` 搬运功能代码。**
-   它会在两条分支上生成「内容相同、SHA 不同」的重复提交——这是本仓库历史上分支混乱的主因。跨分支搬运一律用 **merge 或 PR**。
-2. **禁止直接 push `main`**：main 开启分支保护后必须走 PR。
-3. **禁止在别人的工作目录里改文件或提交。**
-4. **禁止长期保留 release / hotfix 分支。** 需要发布快照就打 tag：
+```powershell
+# 1. 现在跑的到底是哪个 commit？（验收站）
+git -C D:\Trade\afai-release rev-parse --short HEAD
+
+# 2. 我关心的那次改动进 main 了吗？（把 <sha> 换成你的提交号；退出码 0 = 已进）
+git -C D:\Trade\AutoForceAI merge-base --is-ancestor <sha> origin/main
+Write-Output $LASTEXITCODE
+
+# 3. main 上最近发生了什么？（每个 agent 的提交都该在这里看到）
+git -C D:\Trade\AutoForceAI log --oneline -15 origin/main
+
+# 4. 我的分支落后 main 吗？落后就先合并 main 再继续
+git -C D:\Trade\AutoForceAI log --oneline HEAD..origin/main
+```
+
+**验收/发布时的判断标准**：`afai-release` 的 HEAD 必须是 main 的最新 commit，且 main 的 log 里能看到所有参与者的提交。任何"我在那个目录里改过"的说法都**不作为依据**。
+
+---
+
+## 六、并行协作的注意事项
+
+- **避免两个 agent 同时改同一个文件**（冲突最贵的来源）；同一文件请串行。
+- **小步快跑**：分支活几分钟到几小时，尽快合并；分支活得越久，冲突越大。
+- 落后 main 时先 `git merge origin/main`（或 rebase）**在你的分支上**解决冲突，**不要强推、不要 `reset --hard` 别人的分支**。
+- 合并顺序无所谓：只要都进了 main 就都在。有冲突时由**后合并的人**负责解决。
+
+---
+
+## 七、禁止事项
+
+1. **禁止 cherry-pick 搬运功能代码**（见铁律 2）。
+2. **禁止直接 push `main`**。
+3. **禁止在别人的工作目录里改文件或提交**。
+4. **禁止让改动长期停留在未提交状态**（见铁律 1）。
+5. **禁止长期保留 release / hotfix 分支**——发布快照用 tag：
    ```powershell
    git tag -a v0.3.0 -m "首页改版 + CRM Phase2" && git push origin v0.3.0
    ```
-5. **禁止 `git reset --hard` / 强推（`--force`）别人的分支。**
-6. **禁止把构建产物与本地目录提交进库**（如 `tsconfig.tsbuildinfo`、`.next/`、`.codex-worktrees/`）。
+6. **禁止强推（`--force`）已共享的分支 / `reset --hard` 别人的分支**。
+7. **禁止把构建产物与本地目录提交进库**（`tsconfig.tsbuildinfo`、`.next/`、`.codex-worktrees/`）。
 
 ---
 
-## 五、验收与发布
-
-- **验收**：浏览器打开 <http://localhost:3050>（内容 = main）
-- **前端预览**：<http://localhost:3051>（UI 工作树自己的 dev server）
-- **端到端验收（跨端改动必用）**：验收站允许**临时切到待验收分支**（只读，绝不提交），验完切回 main：
-  ```powershell
-  git -C D:\Trade\afai-release switch task/crm-portal   # 3050 现在跑该任务的全栈效果
-  git -C D:\Trade\afai-release switch main              # 验完回主线
-  ```
-- **发布**：main 即发布线；快照用 tag，不新建长期分支
-
----
-
-## 六、自检命令（任何时候都可跑）
-
-```powershell
-git -C D:\Trade\AutoForceAI worktree list        # 有哪几份代码、各站在哪条分支
-git -C D:\Trade\AutoForceAI branch -vv           # 本地分支与追踪状态
-git -C D:\Trade\AutoForceAI log --oneline -5 origin/main
-git -C D:\Trade\AutoForceAI status --short       # 当前目录是否有未提交改动
-```
-
-判断"我该不该提交 / 怎么提交"的四个问题：
-
-1. 我在**正确的**目录里吗？（对照第二节的表；跨端任务见 3.1）
-2. 我的分支是**从最新 main** 开的吗？
-3. 这个改动**只做了一件事**吗？（是 → 提交 + PR；不是 → 拆开）
-4. 这个任务**横跨前后端**吗？（是 → **同一个分支、同一个 PR**，不要拆成两个）
-
----
-
-## 七、概念速查
+## 八、概念速查
 
 | 概念 | 含义 |
 |---|---|
-| 分支（branch） | 一条历史线 |
+| 分支（branch） | 一条历史线；本仓库里它的单位是「一次改动」 |
 | 工作树（worktree） | 磁盘上摊开的一份代码，站在某条分支上；同一仓库可同时摊开多份 |
 | `origin/main` | GitHub 上的主线，**唯一权威** |
-| PR | 把短命分支合入 main 的正式通道，也是唯一允许的入 main 方式 |
+| PR | 合入 main 的唯一通道 |
 | tag | 不可变的发布快照，替代"长期 release 分支" |
+| 验收站 | `D:\Trade\afai-release`，只读跟随 main，端口 3050 |
