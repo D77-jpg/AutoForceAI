@@ -26,6 +26,7 @@ from database.shared_models import (
     CrmEntityLink,
     CrmIntegrationConfig,
     CrmSyncJob,
+    CrmWorkerState,
     Lead,
     User,
     UserRole,
@@ -408,6 +409,33 @@ def reset_binding(body: ResetBindingIn, payload: dict = Depends(get_current_user
 
 
 # ---------- /crm 门户概览（Wave D：真实摘要，非伪功能） ----------
+
+@router.get("/worker-health")
+def worker_health(payload: dict = Depends(get_current_user), db: Session = Depends(get_shared_db)):
+    """后台 worker 健康（§3.6）：开关、dispatcher/poller 心跳、租约状态、最近错误。"""
+    from core.crm.worker_state import worker_enabled
+
+    user = _member_user(payload, db)
+    state = db.query(CrmWorkerState).filter(CrmWorkerState.id == 1).first()
+    cfg = _get_config(db, user.organization_id)
+    lease_expires = cfg.outcome_lease_expires_at if cfg else None
+    return {
+        "worker_enabled": worker_enabled(),
+        "dispatcher": {
+            "worker_id": state.dispatcher_worker_id if state else None,
+            "last_success_at": state.dispatcher_last_success_at.isoformat() if state and state.dispatcher_last_success_at else None,
+        },
+        "poller": {
+            "worker_id": state.poller_worker_id if state else None,
+            "last_success_at": state.poller_last_success_at.isoformat() if state and state.poller_last_success_at else None,
+            "lease_owner": cfg.outcome_lease_owner if cfg else None,
+            "lease_expires_at": lease_expires.isoformat() if lease_expires else None,
+            "lease_active": bool(lease_expires and lease_expires > datetime.now()),
+        },
+        "last_error": state.last_error if state else None,
+        "last_error_at": state.last_error_at.isoformat() if state and state.last_error_at else None,
+    }
+
 
 @router.get("/overview")
 def portal_overview(payload: dict = Depends(get_current_user), db: Session = Depends(get_shared_db)):

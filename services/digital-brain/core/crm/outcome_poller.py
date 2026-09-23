@@ -19,6 +19,12 @@ from sqlalchemy.orm import Session
 from core.credentials import CredentialError
 from core.crm import PAUSED_HEALTH_STATUSES
 from core.crm.client import CrmApiError, GenesisCRMClient, client_from_config
+from core.crm.worker_state import (
+    claim_outcome_lease,
+    record_error,
+    record_poller_success,
+    renew_outcome_lease,
+)
 from database.shared_models import (
     CrmEntityLink,
     CrmIntegrationConfig,
@@ -138,8 +144,11 @@ def poll_org_outcomes(db: Session, cfg: CrmIntegrationConfig, client: Optional[G
     return processed
 
 
-def poll_all_outcomes(db: Session) -> int:
-    """对所有「启用且凭证有效」的集成配置执行一轮 outcome 轮询。"""
+def poll_all_outcomes(db: Session, worker_id: str = "poller") -> int:
+    """
+    对所有「启用且凭证有效」的集成配置执行一轮 outcome 轮询。
+    §3.6：每个 org+project 先抢配置行级租约，抢不到（另一实例持有且未过期）则跳过。
+    """
     configs = (
         db.query(CrmIntegrationConfig)
         .filter(
@@ -153,8 +162,14 @@ def poll_all_outcomes(db: Session) -> int:
     for cfg in configs:
         if cfg.last_health_status in PAUSED_HEALTH_STATUSES:
             continue  # 凭证/密钥失效：等管理员修复，轮询与投递一并暂停
+        if not claim_outcome_lease(db, cfg, worker_id):
+            logger.debug("outcome 租约被其它实例持有，跳过 org=%s", cfg.organization_id)
+            continue
         try:
             total += poll_org_outcomes(db, cfg)
+            renew_outcome_lease(db, cfg, worker_id)
+            record_poller_success(db, worker_id)
+            db.commit()
         except CredentialError as exc:
             db.rollback()
             cfg.last_health_status = "credential_error"
@@ -169,8 +184,12 @@ def poll_all_outcomes(db: Session) -> int:
                 cfg.last_health_detail = f"凭证失效（{exc.code}），已暂停投递与回流"
                 cfg.last_health_checked_at = datetime.now()
                 db.commit()
+            record_error(db, f"poller org={cfg.organization_id}: [{exc.code or 'NETWORK'}] HTTP {exc.http_status}")
+            db.commit()
             logger.warning("outcome 轮询失败 org=%s: %s", cfg.organization_id, exc)
-        except Exception:
+        except Exception as exc:
             db.rollback()
+            record_error(db, f"poller org={cfg.organization_id}: {exc.__class__.__name__}")
+            db.commit()
             logger.exception("outcome 轮询异常 org=%s", cfg.organization_id)
     return total

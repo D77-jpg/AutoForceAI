@@ -20,11 +20,13 @@ import database.shared_models  # noqa: F401  register shared tables (users/orgs/
 import database.models  # noqa: F401  register tenant tables
 from database.base import Base
 
+# 不属于阶段 1 基线的表（0001 排除；0002/0003 分别创建）
 PHASE2_TABLES = (
     "crm_integration_configs",
     "crm_sync_jobs",
     "crm_entity_links",
     "crm_outcome_events",
+    "crm_worker_state",
 )
 
 

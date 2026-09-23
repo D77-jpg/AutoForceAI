@@ -26,7 +26,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import database.models  # noqa: E402,F401
 
 SERVICE_ROOT = Path(__file__).resolve().parents[1]
-CRM_TABLES = {"crm_integration_configs", "crm_sync_jobs", "crm_entity_links", "crm_outcome_events"}
+CRM_TABLES = {"crm_integration_configs", "crm_sync_jobs", "crm_entity_links", "crm_outcome_events", "crm_worker_state"}
+HEAD = "0003_phase29_worker"
 EXPECTED_PHASE1 = {
     "users", "organizations", "leads", "projects", "chat_sessions", "chat_messages",
     "knowledge_bases", "knowledge_docs", "knowledge_chunks",
@@ -77,13 +78,14 @@ def test_upgrade_head_from_empty(db_url):
     assert EXPECTED_PHASE1 <= names
     from database.base import Base
     assert names - {"alembic_version"} == set(Base.metadata.tables)  # 与元数据完全一致
-    assert _current_rev(db_url) == "0002_phase2_crm"
+    assert _current_rev(db_url) == HEAD
 
     # 关键列与约束存在
     engine = create_engine(db_url)
     insp = inspect(engine)
     cfg_cols = {c["name"] for c in insp.get_columns("crm_integration_configs")}
-    assert {"token_last4", "outcome_cursor", "last_reset_at", "web_base_url", "health_fingerprint"} <= cfg_cols
+    assert {"token_last4", "outcome_cursor", "last_reset_at", "web_base_url", "health_fingerprint",
+            "outcome_lease_owner", "outcome_lease_expires_at"} <= cfg_cols
     job_cols = {c["name"] for c in insp.get_columns("crm_sync_jobs")}
     assert {"project_id", "lease_owner", "idempotency_key"} <= job_cols
     link_indexes = {i["name"]: i for i in insp.get_indexes("crm_entity_links")}
@@ -115,7 +117,7 @@ def test_phase1_database_upgrades_to_phase2_preserving_data(db_url):
     command.upgrade(cfg, "head")
     names = _tables(db_url)
     assert CRM_TABLES <= names
-    assert _current_rev(db_url) == "0002_phase2_crm"
+    assert _current_rev(db_url) == HEAD
 
     engine = create_engine(db_url)
     with engine.connect() as conn:
@@ -152,6 +154,8 @@ def test_postgresql_offline_sql_generation(db_url):
     assert "CREATE TABLE crm_entity_links" in sql
     assert "CREATE TABLE crm_integration_configs" in sql
     assert "CREATE TABLE crm_outcome_events" in sql
+    assert "CREATE TABLE crm_worker_state" in sql
+    assert "ALTER TABLE crm_integration_configs ADD COLUMN outcome_lease_owner" in sql
     assert "VECTOR" in sql.upper()              # knowledge_chunks.embedding
     assert "uq_crm_link_org_lead_project" in sql
 
@@ -168,4 +172,4 @@ def test_ensure_schema_current_stamps_existing_db(db_url):
     ensure_schema_current(engine)
     ensure_schema_current(engine)  # 幂等
     engine.dispose()
-    assert _current_rev(db_url) == "0002_phase2_crm"
+    assert _current_rev(db_url) == HEAD

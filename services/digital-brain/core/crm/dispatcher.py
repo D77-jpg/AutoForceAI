@@ -265,6 +265,7 @@ def dispatch_once(db: Session, worker_id: str, batch_size: int = 20) -> int:
 def _loop(interval: float, batch_size: int, worker_id: str) -> None:
     from core.db_manager import SharedSessionLocal
     from core.crm.outcome_poller import poll_all_outcomes
+    from core.crm.worker_state import record_dispatcher_success, record_error
 
     outcome_interval = float(os.getenv("CRM_OUTCOME_POLL_INTERVAL", "60"))
     last_outcome_poll = 0.0
@@ -276,21 +277,40 @@ def _loop(interval: float, batch_size: int, worker_id: str) -> None:
             db = SharedSessionLocal()
             try:
                 dispatch_once(db, worker_id, batch_size)
-                # 成交/流失回流：按自身节奏轮询（默认 60s）
+                record_dispatcher_success(db, worker_id)
+                db.commit()
+                # 成交/流失回流：按自身节奏轮询（默认 60s），行级租约保证单实例推进
                 if time.monotonic() - last_outcome_poll >= outcome_interval:
                     last_outcome_poll = time.monotonic()
-                    poll_all_outcomes(db)
+                    poll_all_outcomes(db, worker_id=worker_id)
             finally:
                 db.close()
-        except Exception:
+        except Exception as exc:
             logger.exception("CRM dispatcher 轮询异常")
+            try:
+                err_db = SharedSessionLocal()
+                try:
+                    record_error(err_db, f"dispatcher {exc.__class__.__name__}")
+                    err_db.commit()
+                finally:
+                    err_db.close()
+            except Exception:
+                pass
         _stop_event.wait(interval)
     logger.info("CRM dispatcher 停止")
 
 
 def start_dispatcher(interval: Optional[float] = None, batch_size: int = 20) -> None:
-    """在服务生命周期内启动后台投递线程（幂等）。"""
+    """
+    在服务生命周期内启动后台投递线程（幂等）。
+    §3.6：CRM_BACKGROUND_WORKER_ENABLED=0/false/off 时不启动——
+    API 与 /crm 只读门户照常工作，投递与回流由另一个启用 worker 的实例承担。
+    """
     global _dispatcher_thread
+    from core.crm.worker_state import worker_enabled
+    if not worker_enabled():
+        logger.info("CRM_BACKGROUND_WORKER_ENABLED=off：本实例不启动 CRM 后台 worker（API/门户不受影响）")
+        return
     if _dispatcher_thread and _dispatcher_thread.is_alive():
         return
     if interval is None:

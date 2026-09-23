@@ -416,6 +416,10 @@ class CrmIntegrationConfig(SharedBase):
     last_reset_at = Column(DateTime, nullable=True)
     last_reset_by = Column(Integer, nullable=True)             # 执行重置的管理员用户 ID
 
+    # outcome poller 分布式租约（§3.6：多实例下同 org+project 只有一个推进 cursor）
+    outcome_lease_owner = Column(String, nullable=True)
+    outcome_lease_expires_at = Column(DateTime, nullable=True)
+
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
@@ -526,6 +530,23 @@ class CrmEntityLink(SharedBase):
         Index("uq_crm_link_org_lead_project", "provider", "organization_id", "lead_id", "project_id", unique=True),
         Index("uq_crm_link_remote", "provider", "project_id", "remote_customer_id", unique=True),
     )
+
+
+class CrmWorkerState(SharedBase):
+    """
+    CRM 后台 worker 全局健康状态（阶段 2.9 §3.6，单行表 id=1）。
+    供 /crm 门户与运维观察：worker 开关、dispatcher/poller 心跳、最近错误。
+    """
+    __tablename__ = "crm_worker_state"
+
+    id = Column(Integer, primary_key=True)
+    dispatcher_worker_id = Column(String, nullable=True)
+    dispatcher_last_success_at = Column(DateTime, nullable=True)
+    poller_worker_id = Column(String, nullable=True)
+    poller_last_success_at = Column(DateTime, nullable=True)
+    last_error = Column(Text, nullable=True)                   # 脱敏错误摘要
+    last_error_at = Column(DateTime, nullable=True)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
 
 class CrmOutcomeEvent(SharedBase):
