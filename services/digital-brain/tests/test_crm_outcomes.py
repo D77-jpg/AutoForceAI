@@ -166,12 +166,12 @@ def test_auth_invalid_pauses_polling(db, setup):
     )
 
     import core.crm.outcome_poller as poller
-    original = poller.GenesisCRMClient
-    poller.GenesisCRMClient = lambda *a, **k: poll_all_outcomes_client
+    original = poller.client_from_config
+    poller.client_from_config = lambda *a, **k: poll_all_outcomes_client
     try:
         poll_all_outcomes(db)
     finally:
-        poller.GenesisCRMClient = original
+        poller.client_from_config = original
 
     db.expire_all()
     assert cfg.last_health_status == "auth_invalid"

@@ -49,7 +49,6 @@ class CrmApiError(Exception):
 
 class GenesisCRMClient:
     """契约版本固定 v1.0；base_url 例如 http://localhost:5000/api"""
-
     def __init__(
         self,
         base_url: str,
@@ -162,3 +161,20 @@ class GenesisCRMClient:
         return CustomerQuotationsResponse.model_validate(
             self._request("GET", f"/customers/{requests.utils.quote(external_ref, safe='')}/quotations")
         )
+
+
+def client_from_config(cfg, *, session: Optional[requests.Session] = None,
+                       db=None) -> GenesisCRMClient:
+    """
+    从集成配置构建客户端（唯一入口）：解密 token，必要时把旧明文迁移为密文。
+    - 缺密钥 / 错密钥 / 损坏密文 → 抛 core.credentials.CredentialError；
+    - 传入 db 时，旧明文会在本次事务中迁移为密文（由调用方 commit）。
+    """
+    from core.credentials import ERR_TOKEN_NOT_SET, CredentialError
+
+    if db is not None:
+        cfg.migrate_token_if_legacy()
+    token = cfg.get_service_token()
+    if not token:
+        raise CredentialError(ERR_TOKEN_NOT_SET, "尚未配置服务凭证")
+    return GenesisCRMClient(cfg.base_url, token, cfg.project_id, session=session)

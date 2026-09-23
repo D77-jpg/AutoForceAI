@@ -32,6 +32,8 @@ def _sqlite_add_columns():
         "ALTER TABLE crm_integration_configs ADD COLUMN outcome_cursor VARCHAR",
         "ALTER TABLE crm_integration_configs ADD COLUMN outcome_polled_at DATETIME",
         "ALTER TABLE crm_integration_configs ADD COLUMN web_base_url VARCHAR",
+        # 阶段 2.9 P0-1：token 脱敏预览（与密文分离）
+        "ALTER TABLE crm_integration_configs ADD COLUMN token_last4 VARCHAR",
     ]
     with SHARED_ENGINE.begin() as conn:
         for sql in statements:

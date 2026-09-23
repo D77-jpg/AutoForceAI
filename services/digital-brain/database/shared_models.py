@@ -397,7 +397,8 @@ class CrmIntegrationConfig(SharedBase):
     project_id = Column(String)                                # Genesis ObjectId，必填
     project_name = Column(String, nullable=True)               # 最近一次连接测试返回的显示名
 
-    service_token = Column(String, nullable=True)              # 服务端机密，禁止回传前端
+    service_token = Column(String, nullable=True)              # enc:v1: 密文（旧记录可能为明文，读取时迁移）
+    token_last4 = Column(String, nullable=True)                # 明文末 4 位，仅用于脱敏预览
     contract_version = Column(String, default="1.0")
 
     enabled = Column(Boolean, default=False)                   # 是否允许新任务投递
@@ -416,9 +417,36 @@ class CrmIntegrationConfig(SharedBase):
 
     @property
     def token_preview(self):
-        if not self.service_token:
+        """脱敏预览只来自单独保存的 token_last4，绝不通过解密密文生成。"""
+        if not self.token_last4:
             return None
-        return f"****{self.service_token[-4:]}"
+        return f"****{self.token_last4}"
+
+    def set_service_token(self, plain: str) -> None:
+        """写入 token：加密落库 + 单独保存 last4。"""
+        from core.credentials import encrypt_secret
+        self.service_token = encrypt_secret(plain)
+        self.token_last4 = plain[-4:]
+
+    def get_service_token(self) -> str | None:
+        """
+        读取 token 明文（仅服务端内部使用）。
+        密文 → 解密；旧明文 → 返回明文（调用方负责迁移写回，见 migrate_token_if_legacy）。
+        失败抛 core.credentials.CredentialError。
+        """
+        from core.credentials import resolve_secret
+        plain, _needs_migration = resolve_secret(self.service_token)
+        return plain
+
+    def migrate_token_if_legacy(self) -> bool:
+        """旧明文 → 密文的一次性迁移（调用方负责 commit）。返回是否发生了迁移。"""
+        from core.credentials import is_encrypted
+        if not self.service_token or is_encrypted(self.service_token):
+            return False
+        plain = self.service_token
+        self.service_token = None
+        self.set_service_token(plain)  # 缺密钥时抛 CredentialError，不留半成品
+        return True
 
 
 class CrmSyncJob(SharedBase):

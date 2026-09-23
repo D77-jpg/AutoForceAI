@@ -17,7 +17,8 @@ from sqlalchemy.orm import Session
 
 from core.db_manager import get_shared_db
 from core.dependencies import get_current_user
-from core.crm.client import CrmApiError, GenesisCRMClient
+from core.credentials import CredentialError
+from core.crm.client import CrmApiError, GenesisCRMClient, client_from_config
 from core.crm.contract import REQUIRED_SCOPES
 from core.crm.outbox import enqueue_lead_sync
 from database.shared_models import (
@@ -143,7 +144,16 @@ def save_config(body: ConfigIn, payload: dict = Depends(get_current_user), db: S
     if body.web_base_url is not None:
         cfg.web_base_url = body.web_base_url.strip().rstrip("/") or None
     if body.service_token:  # 不传 = 保留原 token
-        cfg.service_token = body.service_token.strip()
+        try:
+            cfg.set_service_token(body.service_token.strip())
+        except CredentialError as exc:
+            raise HTTPException(400, f"token 加密失败（{exc.code}）：请配置 CRM_CREDENTIAL_ENCRYPTION_KEY")
+    else:
+        # 旧明文记录借保存时机迁移为密文
+        try:
+            cfg.migrate_token_if_legacy()
+        except CredentialError as exc:
+            raise HTTPException(400, f"旧明文凭证迁移失败（{exc.code}）：请配置 CRM_CREDENTIAL_ENCRYPTION_KEY")
     cfg.enabled = body.enabled
     cfg.updated_at = datetime.now()
     # 配置变化后旧的健康结论失效
@@ -153,11 +163,12 @@ def save_config(body: ConfigIn, payload: dict = Depends(get_current_user), db: S
     return {"config": _to_public(cfg)}
 
 
-def run_connection_test(cfg: CrmIntegrationConfig) -> TestResult:
+def run_connection_test(cfg: CrmIntegrationConfig, db: Session | None = None) -> TestResult:
     """真实调用 health：校验凭证 / 项目绑定 / 契约版本 / 必需 scope。"""
-    if not cfg.service_token:
-        return TestResult(ok=False, detail="尚未配置 service token")
-    client = GenesisCRMClient(cfg.base_url, cfg.service_token, cfg.project_id)
+    try:
+        client = client_from_config(cfg, db=db)
+    except CredentialError as exc:
+        return TestResult(ok=False, detail=f"[{exc.code}] {exc}")
     try:
         health = client.health()
     except CrmApiError as exc:
@@ -189,7 +200,7 @@ def test_connection(payload: dict = Depends(get_current_user), db: Session = Dep
     if not cfg:
         raise HTTPException(404, "尚未保存 CRM 集成配置")
 
-    result = run_connection_test(cfg)
+    result = run_connection_test(cfg, db=db)
     cfg.last_health_status = "ok" if result.ok else "error"
     cfg.last_health_detail = result.detail
     cfg.last_health_checked_at = datetime.now()
@@ -253,11 +264,13 @@ def portal_overview(payload: dict = Depends(get_current_user), db: Session = Dep
     # Genesis 实时漏斗（best-effort）
     genesis_stats = None
     genesis_error = None
-    if cfg and cfg.service_token and cfg.last_health_status != "auth_invalid":
+    if cfg and cfg.service_token and cfg.last_health_status not in ("auth_invalid", "credential_error"):
         try:
-            client = GenesisCRMClient(cfg.base_url, cfg.service_token, cfg.project_id)
+            client = client_from_config(cfg, db=db)
             overview = client.stats_overview()
             genesis_stats = overview.model_dump(mode="json")
+        except CredentialError as exc:
+            genesis_error = f"[{exc.code}] {exc}"
         except CrmApiError as exc:
             genesis_error = f"[{exc.code}] {exc}" if exc.code else str(exc)
 

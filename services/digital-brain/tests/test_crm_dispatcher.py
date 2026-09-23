@@ -101,7 +101,7 @@ class FakeClient:
 def fake_factory(monkeypatch):
     holder: dict = {"client": None}
     monkeypatch.setattr(
-        dispatcher, "client_factory", lambda cfg: holder["client"] or FakeClient(_resp())
+        dispatcher, "client_factory", lambda cfg, db=None: holder["client"] or FakeClient(_resp())
     )
     return holder
 

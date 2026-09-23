@@ -16,7 +16,9 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from core.crm.client import CrmApiError, GenesisCRMClient
+from core.credentials import CredentialError
+from core.crm import PAUSED_HEALTH_STATUSES
+from core.crm.client import CrmApiError, GenesisCRMClient, client_from_config
 from database.shared_models import (
     CrmEntityLink,
     CrmIntegrationConfig,
@@ -106,7 +108,7 @@ def poll_org_outcomes(db: Session, cfg: CrmIntegrationConfig, client: Optional[G
     """
     if not cfg.service_token:
         return 0
-    client = client or GenesisCRMClient(cfg.base_url, cfg.service_token, cfg.project_id)
+    client = client or client_from_config(cfg, db=db)  # CredentialError 向上抛，由 poll_all_outcomes 统一处理
 
     processed = 0
     cursor = cfg.outcome_cursor
@@ -147,10 +149,17 @@ def poll_all_outcomes(db: Session) -> int:
     )
     total = 0
     for cfg in configs:
-        if cfg.last_health_status == "auth_invalid":
-            continue  # 凭证失效：等管理员修复，轮询与投递一并暂停
+        if cfg.last_health_status in PAUSED_HEALTH_STATUSES:
+            continue  # 凭证/密钥失效：等管理员修复，轮询与投递一并暂停
         try:
             total += poll_org_outcomes(db, cfg)
+        except CredentialError as exc:
+            db.rollback()
+            cfg.last_health_status = "credential_error"
+            cfg.last_health_detail = f"凭证不可用（{exc.code}）：请检查 CRM_CREDENTIAL_ENCRYPTION_KEY 或重设 token"
+            cfg.last_health_checked_at = datetime.now()
+            db.commit()
+            logger.warning("outcome 轮询因凭证不可用暂停 org=%s: %s", cfg.organization_id, exc.code)
         except CrmApiError as exc:
             db.rollback()
             if exc.auth_invalid:

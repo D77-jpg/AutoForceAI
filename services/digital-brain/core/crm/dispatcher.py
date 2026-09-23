@@ -23,7 +23,9 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from core.crm.client import CrmApiError, GenesisCRMClient
+from core.credentials import CredentialError
+from core.crm import PAUSED_HEALTH_STATUSES
+from core.crm.client import CrmApiError, GenesisCRMClient, client_from_config
 from core.crm.contract import CustomerUpsertRequest
 from database.shared_models import (
     CrmEntityLink,
@@ -47,8 +49,8 @@ _stop_event = threading.Event()
 class _ClientFactory:
     """可替换的 client 工厂（测试注入用）。"""
 
-    def __call__(self, cfg: CrmIntegrationConfig) -> GenesisCRMClient:
-        return GenesisCRMClient(cfg.base_url, cfg.service_token, cfg.project_id)
+    def __call__(self, cfg: CrmIntegrationConfig, db: Session | None = None) -> GenesisCRMClient:
+        return client_from_config(cfg, db=db)
 
 
 client_factory = _ClientFactory()
@@ -131,18 +133,18 @@ def _deliver(db: Session, job: CrmSyncJob) -> None:
         .filter(CrmIntegrationConfig.organization_id == job.organization_id)
         .first()
     )
-    # 配置缺失/停用/凭证失效：不占尝试次数的退避，等待管理员处理
+    # 配置缺失/停用/凭证失效/解密失败：不占尝试次数的退避，等待管理员处理
     if cfg is None or not cfg.enabled or not cfg.service_token:
         job.status = "pending"
         job.next_attempt_at = now + timedelta(seconds=600)
         job.last_error_code = "CONFIG_DISABLED"
         job.last_error_summary = "集成配置缺失或未启用"
         return
-    if cfg.last_health_status == "auth_invalid":
+    if cfg.last_health_status in PAUSED_HEALTH_STATUSES:
         job.status = "retrying"
         job.next_attempt_at = now + timedelta(seconds=AUTH_INVALID_RETRY_SECONDS)
-        job.last_error_code = "AUTH_INVALID"
-        job.last_error_summary = "服务凭证已失效，等待管理员更新配置"
+        job.last_error_code = cfg.last_health_status.upper()
+        job.last_error_summary = "凭证或密钥失效，等待管理员更新配置"
         return
 
     try:
@@ -155,8 +157,18 @@ def _deliver(db: Session, job: CrmSyncJob) -> None:
         return
 
     try:
-        client = client_factory(cfg)
+        client = client_factory(cfg, db)
         resp = client.upsert_customer(request, idempotency_key=job.idempotency_key)
+    except CredentialError as exc:
+        # 密钥缺失/错误、密文损坏：与凭证失效同语义——标记配置并暂停该组织投递
+        cfg.last_health_status = "credential_error"
+        cfg.last_health_detail = f"凭证不可用（{exc.code}）：请检查 CRM_CREDENTIAL_ENCRYPTION_KEY 或重设 token"
+        cfg.last_health_checked_at = now
+        job.status = "retrying"
+        job.next_attempt_at = now + timedelta(seconds=AUTH_INVALID_RETRY_SECONDS)
+        job.last_error_code = exc.code
+        job.last_error_summary = "凭证解密失败，已暂停投递"
+        return
     except CrmApiError as exc:
         job.last_error_code = exc.code
         job.last_error_summary = str(exc)[:500]
