@@ -58,6 +58,9 @@ def init_shared_db():
     # Also create Tenant tables in the Shared DB (Single DB Mode)
     TenantBase.metadata.create_all(bind=SHARED_ENGINE)
     _sqlite_add_columns()
+    # 阶段 2.9 P0-4：对齐 alembic 版本（stamp / upgrade / 版本领先时报错）
+    from core.migrations import ensure_schema_current
+    ensure_schema_current(SHARED_ENGINE)
     print("[DB] Schema Sync Complete.")
 
 # 租户数据库引擎缓存
