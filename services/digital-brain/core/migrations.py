@@ -21,11 +21,19 @@ SERVICE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ALEMBIC_INI = os.path.join(SERVICE_ROOT, "alembic.ini")
 
 
+def get_current_revision(engine) -> str | None:
+    """读取数据库当前 Alembic 版本，不执行任何 schema 变更。"""
+    from alembic.migration import MigrationContext
+
+    with engine.connect() as conn:
+        return MigrationContext.configure(conn).get_current_revision()
+
+
 def ensure_schema_current(engine) -> None:
     from alembic import command
     from alembic.config import Config
-    from alembic.migration import MigrationContext
     from alembic.script import ScriptDirectory
+    from alembic.script.revision import ResolutionError
 
     cfg = Config(ALEMBIC_INI)
     # 以运行中的 engine 为准（避免测试/多环境下 env 串错库）
@@ -33,8 +41,7 @@ def ensure_schema_current(engine) -> None:
     script = ScriptDirectory.from_config(cfg)
     head = script.get_current_head()
 
-    with engine.connect() as conn:
-        current = MigrationContext.configure(conn).get_current_revision()
+    current = get_current_revision(engine)
 
     if current == head:
         return
@@ -49,7 +56,14 @@ def ensure_schema_current(engine) -> None:
         logger.info("SQLite 开发库无 alembic 版本记录，已按现有 schema 标记为 head（%s）", head)
         return
     heads = script.get_heads()
-    if current in script._revision_map and current not in heads:
+    try:
+        script.get_revision(current)
+    except ResolutionError as exc:
+        raise RuntimeError(
+            f"数据库 schema 版本（{current}）不在当前代码迁移链中："
+            "代码可能已回滚或数据库来自不兼容分支，请先恢复匹配的代码或显式降级数据库"
+        ) from exc
+    if current not in heads:
         command.upgrade(cfg, head)
         logger.warning("数据库 schema 已从 %s 自动升级到 %s", current, head)
         return

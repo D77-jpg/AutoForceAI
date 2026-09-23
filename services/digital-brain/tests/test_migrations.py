@@ -202,6 +202,43 @@ def test_ensure_schema_current_stamps_existing_db(db_url):
     assert _current_rev(db_url) == HEAD
 
 
+def test_ensure_schema_current_upgrades_versioned_database(db_url):
+    """已记录旧版本的数据库：启动检查使用 Alembic 公共 API 自动升级到 head。"""
+    from alembic import command
+    from core.migrations import ensure_schema_current
+
+    cfg = _cfg(db_url)
+    command.upgrade(cfg, "0001_phase1_baseline")
+    assert _current_rev(db_url) == "0001_phase1_baseline"
+
+    engine = create_engine(db_url)
+    try:
+        ensure_schema_current(engine)
+    finally:
+        engine.dispose()
+
+    assert _current_rev(db_url) == HEAD
+    assert CRM_TABLES <= _tables(db_url)
+
+
+def test_init_shared_db_migrates_before_create_all(db_url, monkeypatch):
+    """真实启动路径：版本化旧库必须先迁移，避免 create_all 预建未来列后重复 DDL。"""
+    from alembic import command
+    from core import db_manager
+
+    command.upgrade(_cfg(db_url), "0001_phase1_baseline")
+    engine = create_engine(db_url, connect_args={"check_same_thread": False})
+    monkeypatch.setattr(db_manager, "SHARED_DB_URL", db_url)
+    monkeypatch.setattr(db_manager, "SHARED_ENGINE", engine)
+    try:
+        db_manager.init_shared_db()
+    finally:
+        engine.dispose()
+
+    assert _current_rev(db_url) == HEAD
+    assert CRM_TABLES <= _tables(db_url)
+
+
 def test_unversioned_postgresql_fails_before_schema_mutation(db_url):
     """生产方言无版本记录时必须人工迁移，启动过程不得静默 stamp。"""
     from core.migrations import ensure_schema_current

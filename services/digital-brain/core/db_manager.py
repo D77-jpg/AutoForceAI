@@ -59,13 +59,19 @@ def _sqlite_add_columns():
 # 初始化主数据库 (Merging Tenant Schemas into Shared DB)
 def init_shared_db():
     print("[DB] Initializing Shared Database Schema...")
-    from core.migrations import ensure_schema_current
+    from core.migrations import ensure_schema_current, get_current_revision
     if SHARED_ENGINE.dialect.name == "sqlite":
-        # 仅本地开发 SQLite 保留 create_all/补列兼容路径。
+        # 已纳入 Alembic 管理的 SQLite 必须先跑 migration，再做历史兼容补列。
+        # 否则 create_all 会提前创建未来版本的表/列，随后 upgrade 会因重复 DDL 失败。
+        is_versioned = get_current_revision(SHARED_ENGINE) is not None
+        if is_versioned:
+            ensure_schema_current(SHARED_ENGINE)
         SharedBase.metadata.create_all(bind=SHARED_ENGINE)
         TenantBase.metadata.create_all(bind=SHARED_ENGINE)
         _sqlite_add_columns()
-        ensure_schema_current(SHARED_ENGINE)
+        if not is_versioned:
+            # 仅无版本记录的本地开发旧库在兼容建表/补列后 stamp。
+            ensure_schema_current(SHARED_ENGINE)
     else:
         # PostgreSQL schema 只能由 Alembic 管理；无版本库会在任何 DDL 前失败。
         ensure_schema_current(SHARED_ENGINE)
