@@ -107,37 +107,6 @@ export default function Sidebar() {
                 }
             ]
         };
-    } else if (pathname?.startsWith('/ecommerce')) {
-        return {
-          appName: 'AI 电商',
-          appEnName: '高定时尚品牌智能经营系统',
-          homeLink: '/ecommerce',
-          groups: [
-            {
-              title: '店铺运营',
-              items: [
-                { href: '/ecommerce', icon: LayoutDashboard, label: '运营数据', exact: true, badge: '开发中' },
-                { href: '/ecommerce/products', icon: Sparkles, label: '商品管理', exact: true, badge: '开发中' },
-                { href: '/ecommerce/products/create', icon: Plus, label: '发布商品', badge: '开发中' },
-                { href: '/ecommerce/categories', icon: LayoutGrid, label: '商品分类', badge: '开发中' },
-                { href: '/ecommerce/attributes', icon:  SlidersHorizontal, label: '商品属性', badge: '开发中' },
-                { href: '/ecommerce/orders', icon: FileText, label: '订单管理', badge: '开发中' },
-              ]
-            },
-            {
-              title: '客户',
-              items: [
-                 { href: '/ecommerce/customers', icon: Users, label: '客户与会员', badge: '开发中' }
-              ]
-            },
-            {
-              title: '营销',
-              items: [
-                 { href: '/ecommerce/marketing', icon: RadioTower, label: 'AI 营销', badge: '开发中' }
-              ]
-            }
-          ]
-        };
     } else if (pathname?.startsWith('/knowledge')) {
       return {
         appName: '企业知识库',
@@ -202,8 +171,7 @@ export default function Sidebar() {
             {
               title: '监控中心',
               items: [
-                { href: '/monitor', icon: ShieldCheck, label: '实时大屏' },
-                { href: '/monitor/alerts', icon: RadioTower, label: '告警记录', badge: '开发中' }
+                { href: '/monitor', icon: ShieldCheck, label: '实时大屏' }
               ]
             }
           ]
@@ -217,8 +185,7 @@ export default function Sidebar() {
             {
               title: '组织架构',
               items: [
-                { href: '/organization', icon: Network, label: '组织编排' },
-                { href: '/organization/agents', icon: Users, label: '员工管理', badge: '开发中' }
+                { href: '/organization', icon: Network, label: '组织编排' }
               ]
             }
           ]
@@ -251,8 +218,7 @@ export default function Sidebar() {
             {
               title: '内容制作',
               items: [
-                { href: '/digital-human', icon: Video, label: '数字人直播' },
-                { href: '/digital-human/assets', icon: Users, label: '形象资产', badge: '开发中' }
+                { href: '/digital-human', icon: Video, label: '数字人规划' }
               ]
             }
           ]
