@@ -7,6 +7,7 @@ GenesisCRMClient —— Genesis Integration API v1 客户端（阶段 2 Wave B�
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Optional
 
 import requests
@@ -16,10 +17,12 @@ from core.crm.contract import (
     ApiErrorResponse,
     CustomerQuotationsResponse,
     CustomerStatusResponse,
+    CreateQuotationDraftRequest,
     CustomerUpsertRequest,
     CustomerUpsertResponse,
     HealthResponse,
     OutcomeFeedResponse,
+    QuotationResponse,
     StatsOverviewResponse,
 )
 from core.crm.url_guard import UrlGuardError, validate_crm_url, validate_redirect_location
@@ -27,7 +30,17 @@ from core.crm.url_guard import UrlGuardError, validate_crm_url, validate_redirec
 DEFAULT_TIMEOUT = (5, 15)  # (connect, read) 秒
 MAX_REDIRECTS = 5
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024  # 2MB 响应体上限（防内存耗尽）
+MAX_PDF_BYTES = 10 * 1024 * 1024
 _REDIRECT_STATUSES = {301, 302, 303, 307, 308}
+
+
+@dataclass(frozen=True)
+class QuotationPdfDownload:
+    content: bytes
+    etag: Optional[str]
+    version: Optional[str]
+    content_disposition: Optional[str]
+    not_modified: bool = False
 
 
 class CrmApiError(Exception):
@@ -83,12 +96,12 @@ class GenesisCRMClient:
             headers=headers, timeout=self.timeout, allow_redirects=False, stream=True,
         )
 
-    def _read_limited(self, resp: requests.Response) -> bytes:
+    def _read_limited(self, resp: requests.Response, max_bytes: int = MAX_RESPONSE_BYTES) -> bytes:
         """限制响应体大小，防止异常对端耗尽内存。"""
         chunks, size = [], 0
         for chunk in resp.iter_content(chunk_size=65536):
             size += len(chunk)
-            if size > MAX_RESPONSE_BYTES:
+            if size > max_bytes:
                 resp.close()
                 raise CrmApiError(
                     "CRM 响应体超过大小上限",
@@ -205,6 +218,85 @@ class GenesisCRMClient:
         return CustomerQuotationsResponse.model_validate(
             self._request("GET", f"/customers/{requests.utils.quote(external_ref, safe='')}/quotations")
         )
+
+    # ---------- quotation-draft.v1 ----------
+
+    def create_quotation_draft(
+        self,
+        external_ref: str,
+        body: CreateQuotationDraftRequest,
+        idempotency_key: str,
+    ) -> QuotationResponse:
+        data = self._request(
+            "POST",
+            f"/customers/{requests.utils.quote(external_ref, safe='')}/quotation-drafts",
+            json_body=body.model_dump(mode="json", exclude_none=True),
+            headers={"Idempotency-Key": idempotency_key},
+        )
+        return QuotationResponse.model_validate(data)
+
+    def get_quotation(self, quotation_id: str) -> QuotationResponse:
+        return QuotationResponse.model_validate(
+            self._request("GET", f"/quotations/{requests.utils.quote(quotation_id, safe='')}")
+        )
+
+    def download_quotation_pdf(
+        self,
+        quotation_id: str,
+        if_none_match: Optional[str] = None,
+    ) -> QuotationPdfDownload:
+        """下载 PDF 二进制；仍逐跳执行 SSRF 校验，并限制为 10MB。"""
+        method = "GET"
+        url = f"{self.base_url}/quotations/{requests.utils.quote(quotation_id, safe='')}/pdf"
+        headers = {"If-None-Match": if_none_match} if if_none_match else None
+        for _ in range(MAX_REDIRECTS + 1):
+            try:
+                resp = self._send_once(method, url, params=None, json_body=None, headers=headers)
+            except (requests.ConnectionError, requests.Timeout) as exc:
+                raise CrmApiError(f"CRM 不可达: {exc.__class__.__name__}", retryable=True) from exc
+            if resp.status_code not in _REDIRECT_STATUSES:
+                break
+            try:
+                url = validate_redirect_location(url, resp.headers.get("Location") or "")
+            except UrlGuardError as exc:
+                raise CrmApiError(str(exc), code=exc.code, retryable=False) from exc
+            finally:
+                resp.close()
+        else:
+            raise CrmApiError("CRM 重定向次数过多", code="TOO_MANY_REDIRECTS", retryable=False)
+
+        request_id = resp.headers.get("X-Request-Id")
+        try:
+            if resp.status_code == 304:
+                return QuotationPdfDownload(
+                    content=b"", etag=resp.headers.get("ETag"),
+                    version=resp.headers.get("X-Quotation-Version"),
+                    content_disposition=None, not_modified=True,
+                )
+            content = self._read_limited(resp, MAX_PDF_BYTES)
+            if resp.status_code >= 400:
+                try:
+                    import json as _json
+                    payload = _json.loads(content)
+                    parsed = ApiErrorResponse.model_validate(payload)
+                    code, message = parsed.error.code, parsed.error.message
+                except Exception:
+                    code, message = None, f"HTTP {resp.status_code}"
+                raise CrmApiError(
+                    message, code=code, http_status=resp.status_code,
+                    retryable=resp.status_code in (408, 429) or resp.status_code >= 500,
+                    auth_invalid=resp.status_code in (401, 403), request_id=request_id,
+                )
+            if not (resp.headers.get("Content-Type") or "").lower().startswith("application/pdf"):
+                raise CrmApiError("CRM 返回的报价文件不是 PDF", code="INVALID_PDF_RESPONSE")
+            return QuotationPdfDownload(
+                content=content,
+                etag=resp.headers.get("ETag"),
+                version=resp.headers.get("X-Quotation-Version"),
+                content_disposition=resp.headers.get("Content-Disposition"),
+            )
+        finally:
+            resp.close()
 
 
 def client_from_config(cfg, *, session: Optional[requests.Session] = None,

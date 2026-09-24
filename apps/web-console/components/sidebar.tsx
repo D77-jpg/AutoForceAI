@@ -323,8 +323,9 @@ export default function Sidebar() {
             {
               title: '集成门户',
               items: [
-                { href: '/crm', icon: LayoutDashboard, label: '概览' },
+                { href: '/crm', icon: LayoutDashboard, label: '概览', exact: true },
                 { href: '/leads', icon: Users, label: '本地线索池' },
+                { href: '/crm/quotations/new', icon: Sparkles, label: 'AI 报价' },
                 { href: '/crm/settings', icon: SlidersHorizontal, label: '集成设置' }
               ]
             }

@@ -20,6 +20,7 @@ SCOPE_CUSTOMERS_UPSERT = "customers:upsert"
 SCOPE_OUTCOMES_READ = "outcomes:read"
 SCOPE_STATS_READ = "stats:read"
 SCOPE_QUOTATIONS_READ = "quotations:read"
+SCOPE_QUOTATIONS_DRAFT = "quotations:draft"
 REQUIRED_SCOPES = {
     SCOPE_CUSTOMERS_UPSERT,
     SCOPE_OUTCOMES_READ,
@@ -70,6 +71,7 @@ class HealthResponse(BaseModel):
     projectName: Optional[str] = None
     scopes: List[str]
     credentialId: Optional[str] = None
+    capabilities: List[str] = Field(default_factory=list)
 
 
 # ---------- customers/upsert ----------
@@ -182,3 +184,77 @@ class QuotationSummary(BaseModel):
 class CustomerQuotationsResponse(BaseModel):
     customerId: str
     items: List[QuotationSummary]
+
+
+# ---------- quotation-draft.v1 ----------
+
+QuotationCurrency = Literal[
+    "USD", "EUR", "GBP", "CNY", "JPY", "HKD",
+    "AUD", "CAD", "CHF", "SGD", "AED", "NZD",
+]
+QuotationStatus = Literal["draft", "sent", "negotiating", "accepted", "rejected", "expired"]
+ProposalSourceKind = Literal["lead", "knowledge", "customer", "quotation"]
+
+
+class ProposalSource(BaseModel):
+    kind: ProposalSourceKind
+    referenceId: str = Field(min_length=1, max_length=200)
+    title: Optional[str] = Field(default=None, max_length=300)
+
+
+class ProposalTrace(BaseModel):
+    proposalId: str = Field(min_length=1, max_length=128)
+    generatedBy: Literal["autoforce_ai"] = "autoforce_ai"
+    model: Optional[str] = Field(default=None, max_length=120)
+    sources: List[ProposalSource] = Field(min_length=1, max_length=50)
+
+
+class CreateQuotationItem(BaseModel):
+    productName: str = Field(min_length=1, max_length=200)
+    model: Optional[str] = Field(default=None, max_length=200)
+    quantity: float = Field(gt=0, le=1_000_000_000)
+    unitPrice: float = Field(ge=0, le=1_000_000_000)
+
+
+class CreateQuotationDraftRequest(BaseModel):
+    schemaVersion: Literal["1.0"] = CONTRACT_VERSION
+    sourceSystem: Literal["autoforce"] = SOURCE_SYSTEM
+    title: str = Field(min_length=1, max_length=200)
+    items: List[CreateQuotationItem] = Field(min_length=1, max_length=200)
+    currency: QuotationCurrency
+    validityDate: Optional[datetime] = None
+    paymentTerms: Optional[str] = Field(default=None, max_length=300)
+    leadTime: Optional[str] = Field(default=None, max_length=200)
+    moq: Optional[str] = Field(default=None, max_length=120)
+    notes: Optional[str] = Field(default=None, max_length=5000)
+    markCustomerAsQuoting: bool = False
+    proposalTrace: ProposalTrace
+
+
+class QuotationItem(BaseModel):
+    productName: str
+    model: Optional[str] = None
+    quantity: float
+    unitPrice: float
+    amount: float
+
+
+class QuotationResponse(BaseModel):
+    quotationId: str
+    quotationNo: str
+    customerId: str
+    externalRef: str
+    title: str
+    items: List[QuotationItem]
+    currency: QuotationCurrency
+    totalAmount: float
+    validityDate: Optional[datetime] = None
+    paymentTerms: Optional[str] = None
+    leadTime: Optional[str] = None
+    moq: Optional[str] = None
+    notes: Optional[str] = None
+    status: QuotationStatus
+    version: int = Field(ge=1)
+    proposalTrace: Optional[ProposalTrace] = None
+    createdAt: datetime
+    updatedAt: datetime
