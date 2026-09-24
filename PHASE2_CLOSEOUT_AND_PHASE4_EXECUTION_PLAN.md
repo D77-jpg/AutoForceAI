@@ -476,10 +476,10 @@ GET  /quotations/{quotationId}/pdf
 | 批次 | 内容 | 预估 |
 |---|---|---:|
 | A | 阶段 2 工程核心与发布收口 | ✅ 已完成 |
-| B | 阶段 4.0 能力验收与 4.3 契约冻结 | 当前批次 |
-| C | Genesis 报价草稿集成端点、PDF 与测试 | 后续开发批次 |
-| D | AutoForceAI AI 报价建议、人工确认与写入 | 后续开发批次 |
-| E | 双仓库 E2E、远程 CI 与产品验收 | 后续验收批次 |
+| B | 阶段 4.0 能力验收与 4.3 契约冻结 | ✅ 已完成 |
+| C | Genesis 报价草稿集成端点、PDF 与测试 | ✅ 已完成（`main@e9b7c64`） |
+| D | AutoForceAI AI 报价建议、人工确认与写入 | ✅ 已完成（实现基线 `2fc31d1`） |
+| E | 双仓库 E2E、远程 CI 与产品验收 | 🟡 当前批次 |
 | F | 24 小时连续运行 | 阶段 5 生产发布前 |
 
 以上是工作量估算，不包含阶段 5 的正式部署与运维设施。
@@ -507,7 +507,7 @@ Wave E 与 24 小时运行验收均为独立 backlog，不影响阶段 4 开发�
 
 1. [x] 核对 Genesis 报价 CRUD、金额计算、项目权限、Agent 与 Timeline 能力。
 2. [x] 冻结 `quotation-draft.v1` 扩展契约与验收清单。
-3. [ ] Genesis 实现 `quotations:draft` scope、幂等创建草稿和报价详情端点。
-4. [ ] Genesis 实现服务端 PDF 与稳定版本/缓存语义。
-5. [ ] AutoForceAI 实现结构化报价建议、来源依据、缺失信息与人工确认。
+3. [x] Genesis 实现 `quotations:draft` scope、幂等创建草稿和报价详情端点。
+4. [x] Genesis 实现服务端 PDF 与稳定版本/缓存语义。
+5. [x] AutoForceAI 实现结构化报价建议、来源依据、缺失信息与人工确认。
 6. [ ] 双仓库契约测试、E2E、远程 CI 与产品验收。

@@ -32,3 +32,15 @@
 - 本地端到端（真实 Genesis 开发库）：保存→测试→启用、线索交付、成交回流均已验证；
   试运行凭证（最小 scope、单 project）已签发并完成冒烟投递。
 - 稳定错误码表见 `PHASE2_GENESIS_CRM_INTEGRATION_PLAN.md` §契约一致性清单。
+
+## 阶段 4.3 报价草稿扩展
+
+- 扩展契约：`docs/integration/quotation-draft-v1.1.openapi.yaml`
+- 扩展版本：**1.1.0**；基础 `contractVersion` 仍为 **1.0**
+- 能力标识：`quotation-draft.v1`
+- 扩展契约 SHA-256：`c2b7921dfe076dd1748ca220a2435de26eabc05161264f01514c4a5def397e33`
+- Genesis_CRM：`main@e9b7c64`；写入实现 `4dd935b`，PDF 实现 `fd64bbe`
+- AutoForceAI 实现基线：`2fc31d1`（AI 建议、来源校验、人工确认、客户端、PDF 代理与 UI）
+
+本地验收：AutoForceAI 后端 `100 passed`，扩展契约测试 `skip=0`，前端 typecheck 与
+production build 通过。远程 CI、真实已同步客户 E2E 与产品验收在 AutoForceAI PR 合并前执行。
