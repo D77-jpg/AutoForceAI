@@ -13,7 +13,7 @@ function getApiBase(): string {
     if (envApiUrl) return envApiUrl;
     const protocol = window.location.protocol;
     const hostname = window.location.hostname;
-    return `${protocol}//${hostname}:8000`;
+    return `${protocol}//${hostname}:8010`;
 }
 
 export default function LoginPage() {
