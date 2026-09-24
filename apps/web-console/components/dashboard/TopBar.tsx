@@ -165,8 +165,7 @@ export default function TopBar({
             </span>
           </div>
 
-          {/* 产品矩阵：保留为下拉面板（理由：侧边栏仅覆盖 14 个业务模块，
-              AI 电商 / CRM / 中台等产品级入口仍需可达） */}
+          {/* 产品矩阵：保留 CRM、中台等有真实页面的产品级入口。 */}
           <div className="relative">
             <button
               type="button"
@@ -209,11 +208,11 @@ export default function TopBar({
                 <div className="mt-3 pt-3 border-t border-separator flex justify-between items-center px-1">
                   <span className="text-xs text-text-tertiary">GlobalPilot AI © 2026</span>
                   <Link
-                    href="/solution"
+                    href="/"
                     onClick={() => setShowProductMenu(false)}
                     className="text-xs text-accent hover:text-accent-hover flex items-center gap-1 group/link"
                   >
-                    查看全景图
+                    返回调度中心
                     <ArrowUpRight
                       size={12}
                       className="group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform"
