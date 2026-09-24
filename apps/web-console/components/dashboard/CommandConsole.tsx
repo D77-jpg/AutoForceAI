@@ -3,9 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Brain, ChevronDown, User } from 'lucide-react';
-import { toast } from 'sonner';
 import type { QuickCommand } from '@/lib/dashboard-types';
-import { dispatchTask } from '@/lib/dashboard-api';
 
 /**
  * 指挥台：页面视觉重心。
@@ -15,24 +13,6 @@ export default function CommandConsole({ quickCommands }: { quickCommands: Quick
   const [prompt, setPrompt] = useState('');
   const [assignee, setAssignee] = useState('自动分配');
   const [showAssignee, setShowAssignee] = useState(false);
-  const [useKnowledge, setUseKnowledge] = useState(false);
-  const [sending, setSending] = useState(false);
-
-  const handleDispatch = async () => {
-    if (!prompt.trim()) {
-      toast.info('先描述要派发的任务');
-      return;
-    }
-    setSending(true);
-    try {
-      // TODO: 接真实派发接口（见 lib/dashboard-api.ts）
-      await dispatchTask({ prompt: prompt.trim(), assignee, useKnowledge });
-      toast.success('任务已派发', { description: `指派：${assignee}` });
-      setPrompt('');
-    } finally {
-      setSending(false);
-    }
-  };
 
   return (
     <section
@@ -100,12 +80,7 @@ export default function CommandConsole({ quickCommands }: { quickCommands: Quick
           {/* 引用知识大脑 */}
           <Link
             href="/knowledge/brain"
-            onClick={() => setUseKnowledge(true)}
-            className={`h-[30px] px-2.5 rounded-md border text-xs flex items-center gap-1.5 transition-colors ${
-              useKnowledge
-                ? 'border-accent/40 bg-accent/10 text-accent'
-                : 'border-separator bg-surface hover:bg-surface-2 text-text'
-            }`}
+            className="h-[30px] px-2.5 rounded-md border border-separator bg-surface hover:bg-surface-2 text-xs text-text flex items-center gap-1.5 transition-colors"
           >
             <Brain size={12} />
             引用知识大脑
@@ -114,14 +89,18 @@ export default function CommandConsole({ quickCommands }: { quickCommands: Quick
           {/* 派发主按钮 */}
           <button
             type="button"
-            onClick={handleDispatch}
-            disabled={sending}
-            className="ml-auto h-[34px] px-4 rounded-pill bg-accent hover:bg-accent-hover text-on-accent text-[13px] font-medium flex items-center gap-1.5 transition-colors disabled:opacity-60"
+            disabled
+            aria-describedby="dispatch-helper"
+            title="任务派发接口尚未接入"
+            className="ml-auto h-[34px] px-4 rounded-pill bg-accent text-on-accent text-[13px] font-medium flex items-center gap-1.5 opacity-50 cursor-not-allowed"
           >
-            {sending ? '派发中…' : '派发任务'}
+            派发接口待接入
             <ArrowRight size={13} />
           </button>
         </div>
+        <p id="dispatch-helper" className="text-[11px] text-text-tertiary">
+          当前可先整理任务草稿；此处不会创建或派发真实任务。
+        </p>
       </div>
 
       {/* 快捷指令胶囊 */}

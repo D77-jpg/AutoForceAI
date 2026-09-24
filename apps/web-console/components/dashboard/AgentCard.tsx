@@ -1,7 +1,7 @@
 "use client";
 
 import { MoreHorizontal, Play } from 'lucide-react';
-import { toast } from 'sonner';
+import Link from 'next/link';
 import type { Agent } from '@/lib/dashboard-types';
 import Sparkline from './Sparkline';
 import { TINT_SOFT_BG, TINT_TEXT } from './tints';
@@ -58,8 +58,9 @@ export default function AgentCard({ agent }: { agent: Agent }) {
         <button
           type="button"
           aria-label={`${agent.name} 更多操作`}
-          className="ml-auto w-[30px] h-[30px] rounded-md flex items-center justify-center text-text-tertiary hover:text-text hover:bg-text/5 transition-colors"
-          onClick={() => toast.info('更多操作：待接入（TODO）')}
+          title="功能预览，更多操作尚未接入"
+          disabled
+          className="ml-auto w-[30px] h-[30px] rounded-md flex items-center justify-center text-text-tertiary opacity-50 cursor-not-allowed"
         >
           <MoreHorizontal size={16} />
         </button>
@@ -117,8 +118,9 @@ export default function AgentCard({ agent }: { agent: Agent }) {
                 <button
                   key={s}
                   type="button"
-                  onClick={() => toast.success(`已派发：${s}`, { description: agent.name })}
-                  className="h-7 px-2.5 rounded-pill border border-separator bg-surface hover:bg-surface-2 text-xs text-text-secondary hover:text-text transition-colors"
+                  disabled
+                  title="任务派发接口尚未接入"
+                  className="h-7 px-2.5 rounded-pill border border-separator bg-surface text-xs text-text-secondary opacity-55 cursor-not-allowed"
                 >
                   {s}
                 </button>
@@ -156,19 +158,19 @@ export default function AgentCard({ agent }: { agent: Agent }) {
       {/* 操作按钮 */}
       {status === 'running' && (
         <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => toast.info('日志面板：待接入（TODO）')}
+          <Link
+            href="/workforce/mission"
             className="flex-1 h-[34px] rounded-md border border-separator bg-surface hover:bg-surface-2 text-xs text-text transition-colors"
           >
-            查看日志
-          </button>
+            <span className="h-full flex items-center justify-center">查看任务</span>
+          </Link>
           <button
             type="button"
-            onClick={() => toast.success('已打开追加任务（TODO）', { description: agent.name })}
-            className="flex-1 h-[34px] rounded-md bg-text text-bg hover:opacity-90 text-xs font-medium transition-opacity"
+            disabled
+            title="追加任务接口尚未接入"
+            className="flex-1 h-[34px] rounded-md bg-text text-bg text-xs font-medium opacity-40 cursor-not-allowed"
           >
-            追加任务
+            追加任务待接入
           </button>
         </div>
       )}
@@ -176,29 +178,28 @@ export default function AgentCard({ agent }: { agent: Agent }) {
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => toast.success('已全部通过', { description: agent.pending?.title })}
-            className="flex-1 h-[34px] rounded-md border border-separator bg-surface hover:bg-surface-2 text-xs text-text transition-colors"
+            disabled
+            title="批量审批接口尚未接入"
+            className="flex-1 h-[34px] rounded-md border border-separator bg-surface text-xs text-text opacity-50 cursor-not-allowed"
           >
-            全部通过
+            批量审批待接入
           </button>
-          <button
-            type="button"
-            onClick={() => toast.info('审核页：待接入（TODO）')}
+          <Link
+            href="/workforce/mission"
             className="flex-1 h-[34px] rounded-md bg-accent hover:bg-accent-hover text-on-accent text-xs font-medium transition-colors"
           >
-            去审核
-          </button>
+            <span className="h-full flex items-center justify-center">去审核</span>
+          </Link>
         </div>
       )}
       {status === 'idle' && (
-        <button
-          type="button"
-          onClick={() => toast.success(`已唤醒 ${agent.name}`)}
+        <Link
+          href="/workforce"
           className="h-[34px] rounded-md border border-separator bg-surface hover:bg-surface-2 text-xs text-text flex items-center justify-center gap-1.5 transition-colors"
         >
           <Play size={13} />
-          唤醒
-        </button>
+          去编排
+        </Link>
       )}
     </article>
   );

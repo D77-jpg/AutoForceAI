@@ -1,21 +1,15 @@
 /**
- * 数字人调度中心 — Mock 数据（集中管理）
- * TODO: 以下数据全部待真实接口替换。替换时仅需修改 lib/dashboard-api.ts，
- *       组件层不需要改动。徽标、健康度、动态、流水线、KPI 均无现成接口。
+ * 数字人调度中心 — 静态导航、快捷指令与数字员工功能预览数据。
+ * 实时系统、线索与 CRM 数据统一由 lib/dashboard-api.ts 读取。
  */
 import type {
   Agent,
-  ActivityEvent,
   DepartmentNav,
-  InboxItem,
-  KpiMetric,
-  PipelineTask,
   QuickCommand,
-  SystemStatus,
 } from './dashboard-types';
 
 /* ── 侧边栏：4 组 14 模块（路由与现有 app/ 目录一一对应） ─────────── */
-export const MOCK_DEPARTMENTS: DepartmentNav[] = [
+export const DASHBOARD_DEPARTMENTS: DepartmentNav[] = [
   {
     key: 'growth',
     title: '增长中心',
@@ -29,11 +23,9 @@ export const MOCK_DEPARTMENTS: DepartmentNav[] = [
     key: 'revenue',
     title: '营收中心',
     modules: [
-      // TODO: badge 待接口（数字人直播违规/中断提醒）
-      { id: 'digital-human', label: '数字人直播', href: '/digital-human', iconKey: 'mic', tint: 'revenue', badge: 'dot' },
+      { id: 'digital-human', label: '数字人直播', href: '/digital-human', iconKey: 'mic', tint: 'revenue' },
       { id: 'service', label: '智能接待', href: '/service/sessions', iconKey: 'message', tint: 'revenue' },
-      // TODO: badge 待接口（新增询盘数）
-      { id: 'leads', label: '本地线索池', href: '/leads', iconKey: 'briefcase', tint: 'revenue', badge: 8 },
+      { id: 'leads', label: '本地线索池', href: '/leads', iconKey: 'briefcase', tint: 'revenue' },
       { id: 'service-stats', label: '服务质检', href: '/service/stats', iconKey: 'activity', tint: 'revenue' },
       { id: 'service-rules', label: '质检规则', href: '/service/rules', iconKey: 'shield', tint: 'revenue' },
     ],
@@ -58,82 +50,16 @@ export const MOCK_DEPARTMENTS: DepartmentNav[] = [
   },
 ];
 
-/* ── 顶栏系统状态（TODO: 待健康度接口） ────────────────────────────── */
-export const MOCK_SYSTEM_STATUS: SystemStatus = {
-  healthPercent: 98.2,
-  onlineAgents: 14,
-  totalAgents: 17,
-};
-
 /* ── 指挥台快捷指令 ───────────────────────────────────────────────── */
-export const MOCK_QUICK_COMMANDS: QuickCommand[] = [
+export const DASHBOARD_QUICK_COMMANDS: QuickCommand[] = [
   { id: 'qc1', label: '盘点本周新询盘', prompt: '盘点本周新入库询盘，按意向度分组并给出跟进建议' },
   { id: 'qc2', label: '为新品写 10 条小红书文案', prompt: '为下周上市的新品写 10 条小红书文案，风格贴近爆款笔记' },
   { id: 'qc3', label: '生成竞品红黑榜', prompt: '生成本周竞品红黑榜，重点对比价格策略与内容投放' },
   { id: 'qc4', label: '复盘昨日直播数据', prompt: '复盘昨日数字人直播数据，输出转化率与改进点' },
 ];
 
-/* ── 待我处理（TODO: 待审批/待办接口） ────────────────────────────── */
-export const MOCK_INBOX: InboxItem[] = [
-  { id: 'in1', tone: 'warning', title: '12 条小红书文案待审核', agentName: 'Beta', moduleLabel: '创作者', timeAgo: '8 分钟前', actionLabel: '审核', href: '/marketing/text-gen' },
-  { id: 'in2', tone: 'accent', title: '8 条疑似重复询盘，建议合并', agentName: 'Outbox', moduleLabel: '线索池', timeAgo: '21 分钟前', actionLabel: '处理', href: '/leads' },
-  { id: 'in3', tone: 'danger', title: '2 通接待评分低于 60', agentName: 'AI Judge', moduleLabel: '服务质检', timeAgo: '1 小时前', actionLabel: '查看', href: '/service/stats' },
-];
-
-/* ── 核心指标（TODO: 待统计接口） ─────────────────────────────────── */
-export const MOCK_KPIS: KpiMetric[] = [
-  {
-    id: 'mindshare',
-    label: '品牌心智份额',
-    value: '32.4%',
-    delta: { value: '▲ 2.1', direction: 'up' },
-    spark: [20, 28, 23, 35, 31, 43, 37, 50, 45, 58, 52, 70],
-    caption: '近 12 天',
-  },
-  {
-    id: 'tasks-done',
-    label: '今日完成任务',
-    value: '128',
-    delta: { value: '▲ 14', direction: 'up' },
-    spark: [26, 20, 34, 28, 42, 36, 50, 44, 56, 52, 62, 60],
-    caption: '较昨日同时段',
-  },
-  {
-    id: 'new-leads',
-    label: '新入库询盘',
-    value: '46',
-    delta: { value: '▼ 3', direction: 'down' },
-    spark: [44, 55, 38, 48, 30, 52, 40, 58, 32, 46, 38, 42],
-    caption: '去重后 · 高意向 11',
-  },
-  {
-    id: 'agents-online',
-    label: '在线数字员工',
-    value: '14',
-    suffix: '/17',
-    segments: { running: 11, needsAction: 3, idle: 3 },
-    caption: '运行 11 · 待审批 3 · 待机 3',
-  },
-];
-
-/* ── 实时动态（TODO: 待事件流接口；新事件从顶部淡入） ─────────────── */
-export const MOCK_ACTIVITIES: ActivityEvent[] = [
-  { id: 'ev1', time: '17:52', agentName: 'Alpha', agentInitial: 'A', tint: 'decision', description: '完成 Google Search 抓取，入库 214 条来源' },
-  { id: 'ev2', time: '17:48', agentName: 'Emma', agentInitial: 'E', tint: 'revenue', description: '直播间在线人数突破 1,200，已自动加推爆款 SKU' },
-  { id: 'ev3', time: '17:41', agentName: 'Ray', agentInitial: 'R', tint: 'revenue', description: '将 3 位海外买家标记为高意向，已同步线索池' },
-  { id: 'ev4', time: '17:30', agentName: 'Leo', agentInitial: 'L', tint: 'growth', description: '发布 6 篇 LinkedIn 内容，平均预测互动率 4.8%' },
-  { id: 'ev5', time: '17:12', agentName: 'Gamma', agentInitial: 'G', tint: 'ops', description: '巡检完成，未发现异常，进入待机' },
-];
-
-/* ── 任务流水线（TODO: 待任务接口） ───────────────────────────────── */
-export const MOCK_PIPELINE: PipelineTask[] = [
-  { id: 'pt1', name: 'Q3 行业趋势分析报告', status: 'running', statusLabel: '生成中', progress: 86, agentName: 'Alpha', detail: '正在整合 214 条来源' },
-  { id: 'pt2', name: '新品上市社媒文案矩阵', status: 'review', statusLabel: '待审核', progress: 60, agentName: 'Beta', detail: '12/20 条已产出' },
-  { id: 'pt3', name: '竞品红黑榜周报', status: 'queued', statusLabel: '排队中', progress: 0, agentName: 'Arthur', detail: '预计 18:30 开始' },
-];
-
-/* ── 数字员工花名册（14 名，TODO: 待 workforce 花名册接口） ────────── */
-export const MOCK_AGENTS: Agent[] = [
+/* ── 数字员工花名册（14 名，等待 workforce 聚合接口） ─────────────── */
+export const PREVIEW_AGENTS: Agent[] = [
   {
     id: 'alpha', name: 'Alpha', initial: 'A', role: '行业分析师', moduleLabel: '深度调研', tint: 'decision',
     status: 'running',

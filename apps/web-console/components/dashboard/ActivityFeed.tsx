@@ -3,20 +3,20 @@ import type { ActivityEvent } from '@/lib/dashboard-types';
 import { TINT_SOFT_BG, TINT_TEXT } from './tints';
 
 /**
- * 实时动态：新事件从顶部淡入（animate-fade-in-up + key 变化触发）。
+ * CRM 同步动态：新事件从顶部淡入（animate-fade-in-up + key 变化触发）。
  * aria-live="polite" 供屏幕阅读器感知新事件。
  */
 export default function ActivityFeed({ events }: { events: ActivityEvent[] }) {
   return (
-    <section aria-label="实时动态" className="bg-surface border border-separator rounded-xl p-5 shadow-card flex flex-col gap-2">
+    <section aria-label="CRM 同步动态" className="bg-surface border border-separator rounded-xl p-5 shadow-card flex flex-col gap-2">
       <div className="flex items-center gap-2 pb-1">
-        <h2 className="text-sm font-semibold text-text tracking-tight">实时动态</h2>
+        <h2 className="text-sm font-semibold text-text tracking-tight">CRM 同步动态</h2>
         <span className="flex items-center gap-1.5 text-[11px] font-medium text-success">
           <span className="w-1.5 h-1.5 rounded-full bg-success status-dot-breathe" />
           实时
         </span>
-        <Link href="/ops" className="ml-auto text-xs text-accent hover:text-accent-hover transition-colors">
-          完整日志
+        <Link href="/crm" className="ml-auto text-xs text-accent hover:text-accent-hover transition-colors">
+          集成门户
         </Link>
       </div>
 
@@ -42,6 +42,9 @@ export default function ActivityFeed({ events }: { events: ActivityEvent[] }) {
           </li>
         ))}
       </ul>
+      {events.length === 0 && (
+        <p className="py-6 text-center text-sm text-text-tertiary">暂无最近同步记录</p>
+      )}
     </section>
   );
 }

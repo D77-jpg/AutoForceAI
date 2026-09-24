@@ -19,7 +19,7 @@ const STATUS_META: Record<AgentStatus, { label: string; dot: string }> = {
 const ACTION_LABEL: Record<AgentStatus, string> = {
   running: '日志',
   needs_action: '审核',
-  idle: '唤醒',
+  idle: '编排',
 };
 
 /** 数字员工花名册：语义化 table + 分段控件筛选 */
@@ -35,6 +35,9 @@ export default function AgentRoster({ agents }: { agents: Agent[] }) {
     <section aria-label="数字员工花名册" className="bg-surface border border-separator rounded-xl shadow-card p-5 pb-2 flex flex-col">
       <div className="flex items-center gap-3 flex-wrap pb-3">
         <h2 className="text-sm font-semibold text-text tracking-tight">数字员工</h2>
+        <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent">
+          示例数据
+        </span>
         <SegmentedControl<Filter>
           ariaLabel="按状态筛选数字员工"
           value={filter}

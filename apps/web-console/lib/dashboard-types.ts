@@ -27,11 +27,32 @@ export interface DepartmentNav {
   modules: ModuleNav[];
 }
 
-/** 顶栏系统状态 */
+/** 顶栏系统状态：只展示可由监控接口直接证明的指标 */
 export interface SystemStatus {
-  healthPercent: number; // 98.2
-  onlineAgents: number;
-  totalAgents: number;
+  state: 'loading' | 'online' | 'degraded' | 'unavailable';
+  label: string;
+  cpuUsage: number | null;
+  memoryUsage: number | null;
+}
+
+/** 首页数据来源状态，避免把预览数据误认为实时生产数据 */
+export interface DashboardSourceState {
+  loading: boolean;
+  liveSections: string[];
+  unavailableSections: string[];
+  previewSections: string[];
+}
+
+/** 首页一次加载得到的完整视图模型 */
+export interface DashboardData {
+  status: SystemStatus;
+  inbox: InboxItem[];
+  kpis: KpiMetric[];
+  activities: ActivityEvent[];
+  pipeline: PipelineTask[];
+  agents: Agent[];
+  newLeadCount: number;
+  sources: DashboardSourceState;
 }
 
 /** 指挥台快捷指令 */
@@ -82,7 +103,7 @@ export interface ActivityEvent {
 }
 
 /** 任务流水线条目 */
-export type PipelineStatus = 'running' | 'review' | 'queued';
+export type PipelineStatus = 'running' | 'review' | 'queued' | 'complete';
 
 export interface PipelineTask {
   id: string;
