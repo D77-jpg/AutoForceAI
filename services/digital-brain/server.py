@@ -17,7 +17,7 @@ from database.shared_models import SharedBase, RPAJobStatus
 from database.models import RPAJob
 from core.db_manager import SHARED_ENGINE, get_shared_db, init_shared_db
 from routers import auth_router, monitor_router, bot_router, branding_router, content_router, agent_router, platform_router, storage_router, brain_router, export_router, admin_router
-from routers import kb_router, service_chat_router, lead_router, marketing_router, crm_integration_router
+from routers import kb_router, service_chat_router, lead_router, marketing_router, crm_integration_router, quotation_router
 from core.dependencies import get_db, get_current_user_id
 from core.config import settings
 from fastapi.staticfiles import StaticFiles
@@ -122,6 +122,7 @@ app.include_router(export_router.router)
 app.include_router(service_chat_router.router)
 app.include_router(lead_router.router)
 app.include_router(crm_integration_router.router)
+app.include_router(quotation_router.router)
 app.include_router(marketing_router.router)
 app.include_router(solution_router.router)
 app.include_router(admin_router.router)
