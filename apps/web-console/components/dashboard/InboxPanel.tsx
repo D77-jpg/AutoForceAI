@@ -18,7 +18,7 @@ export default function InboxPanel({ items }: { items: InboxItem[] }) {
             {items.length}
           </span>
         )}
-        <Link href="/workforce/mission" className="ml-auto text-xs text-accent hover:text-accent-hover transition-colors">
+        <Link href="/crm" className="ml-auto text-xs text-accent hover:text-accent-hover transition-colors">
           全部
         </Link>
       </div>
@@ -45,6 +45,9 @@ export default function InboxPanel({ items }: { items: InboxItem[] }) {
           </li>
         ))}
       </ul>
+      {items.length === 0 && (
+        <p className="py-6 text-center text-sm text-text-tertiary">当前没有需要处理的集成异常</p>
+      )}
     </section>
   );
 }

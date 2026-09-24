@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DepartmentNav } from '@/lib/dashboard-types';
-import { MOCK_DEPARTMENTS } from '@/lib/dashboard-mock';
+import { DASHBOARD_DEPARTMENTS } from '@/lib/dashboard-mock';
 import { TINT_BG } from './tints';
 
 /** 模块图标映射（复用现有 lucide 图标） */
@@ -59,15 +59,17 @@ function ModuleBadge({ badge }: { badge: number | 'dot' }) {
 
 export default function AppSidebar({
   agentCount,
+  leadCount,
   mobileOpen,
   onClose,
 }: {
   agentCount: number;
+  leadCount: number;
   mobileOpen: boolean;
   onClose: () => void;
 }) {
   const pathname = usePathname();
-  const departments: DepartmentNav[] = MOCK_DEPARTMENTS;
+  const departments: DepartmentNav[] = DASHBOARD_DEPARTMENTS;
 
   const body = (
     <nav aria-label="主导航" className="flex flex-col h-full gap-5 px-3 py-4 overflow-y-auto">
@@ -126,6 +128,7 @@ export default function AppSidebar({
             {dept.modules.map((mod) => {
               const Icon = MODULE_ICONS[mod.iconKey] || Activity;
               const active = pathname === mod.href && mod.id !== 'scan' && mod.id !== 'research';
+              const badge = mod.id === 'leads' && leadCount > 0 ? leadCount : mod.badge;
               return (
                 <Link
                   key={mod.id}
@@ -143,7 +146,7 @@ export default function AppSidebar({
                     <Icon size={12} />
                   </span>
                   <span className="truncate">{mod.label}</span>
-                  {mod.badge !== undefined && <ModuleBadge badge={mod.badge} />}
+                  {badge !== undefined && <ModuleBadge badge={badge} />}
                 </Link>
               );
             })}

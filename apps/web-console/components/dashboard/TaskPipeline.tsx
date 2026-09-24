@@ -5,16 +5,17 @@ const STATUS_STYLE: Record<PipelineTask['status'], { tag: string; bar: string }>
   running: { tag: 'bg-accent/10 text-accent', bar: 'bg-accent' },
   review: { tag: 'bg-warning/12 text-warning', bar: 'bg-warning' },
   queued: { tag: 'bg-surface-2 text-text-secondary', bar: 'bg-text-tertiary/50' },
+  complete: { tag: 'bg-success/10 text-success', bar: 'bg-success' },
 };
 
-/** 任务流水线 */
+/** CRM 集成流水线 */
 export default function TaskPipeline({ tasks }: { tasks: PipelineTask[] }) {
   return (
-    <section aria-label="任务流水线" className="bg-surface border border-separator rounded-xl p-5 shadow-card flex flex-col gap-4">
+    <section aria-label="CRM 集成流水线" className="bg-surface border border-separator rounded-xl p-5 shadow-card flex flex-col gap-4">
       <div className="flex items-center gap-2">
-        <h2 className="text-sm font-semibold text-text tracking-tight">任务流水线</h2>
-        <Link href="/ops" className="ml-auto text-xs text-accent hover:text-accent-hover transition-colors">
-          看板视图
+        <h2 className="text-sm font-semibold text-text tracking-tight">CRM 集成流水线</h2>
+        <Link href="/crm" className="ml-auto text-xs text-accent hover:text-accent-hover transition-colors">
+          集成门户
         </Link>
       </div>
 
@@ -52,6 +53,9 @@ export default function TaskPipeline({ tasks }: { tasks: PipelineTask[] }) {
           </div>
         );
       })}
+      {tasks.length === 0 && (
+        <p className="py-6 text-center text-sm text-text-tertiary">CRM 队列暂不可用</p>
+      )}
     </section>
   );
 }

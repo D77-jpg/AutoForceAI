@@ -9,6 +9,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from core.db_manager import get_shared_db
@@ -175,6 +176,36 @@ def list_leads(
         d["crm"] = crm_map.get(r.id)
         items.append(d)
     return {"items": items, "total": len(rows)}
+
+
+@router.get("/summary")
+def lead_summary(payload: dict = Depends(get_current_user), db: Session = Depends(get_shared_db)):
+    """首页使用的轻量线索统计，避免为四个数字加载完整线索列表。"""
+    user = _user(payload, db)
+    filters = []
+    if user.organization_id:
+        filters.append(Lead.organization_id == user.organization_id)
+
+    total = db.query(func.count(Lead.id)).filter(*filters).scalar() or 0
+    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today = (
+        db.query(func.count(Lead.id))
+        .filter(*filters, Lead.created_at >= today_start)
+        .scalar()
+        or 0
+    )
+    status_rows = (
+        db.query(Lead.status, func.count(Lead.id))
+        .filter(*filters)
+        .group_by(Lead.status)
+        .all()
+    )
+    by_status = {status: count for status, count in status_rows}
+    return {
+        "total": total,
+        "today": today,
+        "by_status": {status: by_status.get(status, 0) for status in sorted(VALID_STATUS)},
+    }
 
 
 @router.post("")
