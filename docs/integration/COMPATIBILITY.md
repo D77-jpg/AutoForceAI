@@ -40,7 +40,14 @@
 - 能力标识：`quotation-draft.v1`
 - 扩展契约 SHA-256：`c2b7921dfe076dd1748ca220a2435de26eabc05161264f01514c4a5def397e33`
 - Genesis_CRM：`main@e9b7c64`；写入实现 `4dd935b`，PDF 实现 `fd64bbe`
-- AutoForceAI 实现基线：`2fc31d1`（AI 建议、来源校验、人工确认、客户端、PDF 代理与 UI）
+- AutoForceAI 实现基线：`2fc31d1`（AI 建议、来源校验、人工确认、客户端、PDF 代理与 UI）；合并主干 `e2aeea7`
 
 本地验收：AutoForceAI 后端 `100 passed`，扩展契约测试 `skip=0`，前端 typecheck 与
-production build 通过。远程 CI、真实已同步客户 E2E 与产品验收在 AutoForceAI PR 合并前执行。
+production build 通过。AutoForceAI PR #5 已合并，远程 3/3 checks passed。
+
+真实已同步客户 E2E（2026-09-24）：`lead:21` 在未确认阶段仅生成本地建议且保留数量、
+单价缺失；人工补齐后在 Genesis 幂等创建唯一草稿 `QT-20260924-001`
+（`quotationId=6ab4ec6fb431451a711f66da`），Genesis 权威金额为 `7.00 USD`；重复确认未新增
+第二张报价。PDF 代理返回 94,356 字节、版本 1 与 ETag，Genesis 深链指向正确客户。
+旧 `phase2-trial` 凭证已撤销，当前连接使用新最小权限加密凭证，health 返回
+`quotation-draft.v1` 能力及 `quotations:draft` / `quotations:read` scope。
