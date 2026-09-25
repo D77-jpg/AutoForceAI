@@ -78,36 +78,7 @@ export default function Sidebar() {
   };
 
   const getAppConfig = () => {
-    if (pathname?.startsWith('/service')) {
-        return {
-            appName: 'AI 客服',
-            appEnName: '全渠道智能接待与服务中心',
-            homeLink: '/service',
-            groups: [
-                {
-                    title: '会话管理',
-                    items: [
-                        { href: '/service/sessions', icon: Activity, label: '智能接待' },
-                        { href: '/service/history', icon: Book, label: '历史会话查询' },
-                        { href: '/leads', icon: Users, label: '本地线索池' }
-                    ]
-                },
-                {
-                    title: '机器人配置',
-                    items: [
-                        { href: '/service/config', icon: Bot, label: '接待机器人' }
-                    ]
-                },
-                {
-                    title: '客服流程质检',
-                    items: [
-                        { href: '/service/rules', icon: ShieldCheck, label: '质检规则' },
-                        { href: '/service/stats', icon: BarChart4, label: '服务质检' }
-                    ]
-                }
-            ]
-        };
-    } else if (pathname?.startsWith('/knowledge')) {
+    if (pathname?.startsWith('/knowledge')) {
       return {
         appName: '企业知识库',
         appEnName: '企业级知识资产管理中枢',

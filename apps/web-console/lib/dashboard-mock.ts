@@ -24,10 +24,7 @@ export const DASHBOARD_DEPARTMENTS: DepartmentNav[] = [
     title: '营收中心',
     modules: [
       { id: 'digital-human', label: '数字人直播', href: '/digital-human', iconKey: 'mic', tint: 'revenue' },
-      { id: 'service', label: '智能接待', href: '/service/sessions', iconKey: 'message', tint: 'revenue' },
       { id: 'leads', label: '本地线索池', href: '/leads', iconKey: 'briefcase', tint: 'revenue' },
-      { id: 'service-stats', label: '服务质检', href: '/service/stats', iconKey: 'activity', tint: 'revenue' },
-      { id: 'service-rules', label: '质检规则', href: '/service/rules', iconKey: 'shield', tint: 'revenue' },
     ],
   },
   {

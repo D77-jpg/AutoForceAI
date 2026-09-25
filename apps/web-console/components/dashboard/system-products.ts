@@ -50,11 +50,11 @@ export const SYSTEM_PRODUCTS: SystemProduct[] = [
   {
     id: 'service',
     name: 'AI客服',
-    slogan: '全渠道自动接单机器',
-    desc: '基于RAG的智能问答与销售线索转化',
+    slogan: '线索与客户服务入口',
+    desc: '查看本地线索；智能接待页面尚未开放',
     icon: MessageSquare,
-    keyData: '99% 响应率',
-    href: '/service/sessions',
+    keyData: '服务入口待开放',
+    href: '/leads',
     tint: 'revenue',
   },
   {

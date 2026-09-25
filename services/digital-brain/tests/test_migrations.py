@@ -37,7 +37,7 @@ EXPECTED_PHASE1 = {
 def _cfg(url: str):
     from alembic.config import Config
     cfg = Config(str(SERVICE_ROOT / "alembic.ini"))
-    cfg.set_main_option("sqlalchemy.url", url)
+    cfg.set_main_option("sqlalchemy.url", url.replace("%", "%%"))
     return cfg
 
 
@@ -209,9 +209,11 @@ def test_ensure_schema_current_stamps_existing_db(db_url):
 
     from core.migrations import ensure_schema_current
     engine = create_engine(db_url)
-    ensure_schema_current(engine)
-    ensure_schema_current(engine)  # 幂等
-    engine.dispose()
+    try:
+        ensure_schema_current(engine)
+        ensure_schema_current(engine)  # 幂等
+    finally:
+        engine.dispose()
     assert _current_rev(db_url) == HEAD
 
 
