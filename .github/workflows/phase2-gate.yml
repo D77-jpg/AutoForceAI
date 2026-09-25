@@ -60,6 +60,8 @@ jobs:
       # web-console 独立安装（根 package.json 不再声明 workspaces，子目录 lockfile 为准）
       - name: Install（锁定依赖）
         run: npm ci --legacy-peer-deps
+      - name: 前端导航与方案生成测试
+        run: npm test
       - name: TypeScript 检查
         run: npm run typecheck
       - name: Production build

@@ -135,7 +135,7 @@ export default function Sidebar() {
           {
             title: '知识库应用',
             items: [
-               { href: '/knowledge/solution', icon: Presentation, label: '方案生成', badge: '开发中' },
+               { href: '/knowledge/solution', icon: Presentation, label: '方案生成' },
             ]
           }
         ]
