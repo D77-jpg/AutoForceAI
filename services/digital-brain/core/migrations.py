@@ -37,7 +37,9 @@ def ensure_schema_current(engine) -> None:
 
     cfg = Config(ALEMBIC_INI)
     # 以运行中的 engine 为准（避免测试/多环境下 env 串错库）
-    cfg.set_main_option("sqlalchemy.url", engine.url.render_as_string(hide_password=False))
+    # Alembic Config uses configparser interpolation: Windows SQLite URLs contain
+    # percent-encoded drive colons (C%3A); escape percent signs only for this INI value.
+    cfg.set_main_option("sqlalchemy.url", engine.url.render_as_string(hide_password=False).replace("%", "%%"))
     script = ScriptDirectory.from_config(cfg)
     head = script.get_current_head()
 

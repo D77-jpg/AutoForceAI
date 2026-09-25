@@ -41,6 +41,19 @@ def _cfg(url: str):
     return cfg
 
 
+def test_windows_encoded_sqlite_url_survives_alembic_interpolation():
+    """SQLAlchemy encodes Windows C: as C%3A; configparser must not reject it."""
+    from alembic.config import Config
+
+    # SQLAlchemy on Windows percent-encodes the drive colon; inject its exact
+    # rendered form so this regression test also runs on Linux/macOS hosts.
+    url = "sqlite:///C%3A/temp/phase2-gate.db"
+    from core.migrations import ALEMBIC_INI
+    cfg = Config(ALEMBIC_INI)
+    cfg.set_main_option("sqlalchemy.url", url.replace("%", "%%"))
+    assert cfg.get_main_option("sqlalchemy.url") == url
+
+
 @pytest.fixture()
 def db_url():
     fd, path = tempfile.mkstemp(suffix=".db")
