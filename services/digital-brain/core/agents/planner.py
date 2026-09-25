@@ -1,8 +1,9 @@
 import json
 from sqlalchemy.orm import Session
 from database.models import Mission, DigitalEmployee, MissionTask, TaskStatus, MissionStatus
-from core.llm.runtime import get_default_llm_model, query_default_llm  # re-exported for service_chat / rag
+from core.llm.runtime import get_default_llm_model, query_default_llm  # legacy re-exports; not used for mission execution
 from .prompts import PLANNING_PROMPT
+from .role_templates import TRUSTED_EXECUTABLE_TOOLS
 
 
 class MissionPlanner:
@@ -10,7 +11,10 @@ class MissionPlanner:
         self.db = db
 
     def _query_llm(self, prompt: str) -> str:
-        return query_default_llm(self.db, prompt, temperature=0.3)
+        # Existing provider/fallback calls have no enforceable monetary accounting
+        # and no reliably cancellable request timeout. Fail closed rather than
+        # spending beyond the persisted employee limits or claiming an SLA.
+        raise RuntimeError("Planning unavailable: LLM timeout and cost limits cannot be enforced")
 
     def create_plan(self, mission_id: int):
         """
@@ -22,26 +26,25 @@ class MissionPlanner:
 
         employee = mission.employee
 
-        # Get capabilities from skills relation or JSON fallback
-        if hasattr(employee, 'skills') and employee.skills:
-            caps_str = ", ".join([s.tool_name for s in employee.skills])
-        else:
-            caps_str = json.dumps(employee.capabilities, ensure_ascii=False) if employee.capabilities else "General AI Assistance"
+        # Stored skills are never executable grants. Ignore unapproved legacy rows.
+        safe_tools = set(employee.allowed_tools or []) & TRUSTED_EXECUTABLE_TOOLS
+        caps_str = ", ".join(s.tool_name for s in employee.skills if s.tool_name in safe_tools) or "no executable tools available"
 
         # Prepare Prompt
-        prompt = PLANNING_PROMPT.format(
-            agent_name=employee.name,
-            agent_role=employee.role.value if hasattr(employee.role, 'value') else str(employee.role or "Assistant"),
-            capabilities=caps_str,
-            objective=mission.objective
-        )
+        prompt = PLANNING_PROMPT
+        for key, value in {
+            "agent_name": employee.name,
+            "agent_role": employee.role.value if hasattr(employee.role, 'value') else str(employee.role or "Assistant"),
+            "capabilities": caps_str,
+            "objective": mission.objective,
+        }.items():
+            prompt = prompt.replace("{" + key + "}", str(value))
 
-        # Call LLM
-        print(f"[Planner] Asking LLM to plan for: {mission.title}")
-        content = self._query_llm(prompt)
-
-        # Parse JSON
+        # Planning is unavailable unless the model adapter can enforce limits.
+        # Keep failures in the mission record without exposing raw prompt/content.
+        content = ""
         try:
+            content = self._query_llm(prompt)
             # Clean md fences
             if "```json" in content:
                 content = content.split("```json")[1].split("```")[0].strip()
@@ -51,14 +54,19 @@ class MissionPlanner:
             plan_data = json.loads(content)
 
             # Update Mission
-            mission.plan_summary = plan_data.get("summary", "")
-            mission.status = MissionStatus.IN_PROGRESS
+            mission.plan_summary = "PLAN ONLY — NOT EXECUTED. " + str(plan_data.get("summary", ""))
+            mission.status = MissionStatus.PLANNING
 
             # Create Tasks (replace existing)
             self.db.query(MissionTask).filter(MissionTask.mission_id == mission.id).delete()
 
             tasks = plan_data.get("tasks", [])
+            if not isinstance(tasks, list) or len(tasks) > min(employee.max_steps or 5, 20):
+                raise ValueError("Invalid plan size")
+            safe_types = {"research", "analysis", "generate_content"}
             for task in tasks:
+                if not isinstance(task, dict) or task.get("type") not in safe_types:
+                    raise ValueError("Plan contains unknown or unsafe action")
                 db_task = MissionTask(
                     mission_id=mission.id,
                     title=task.get("title"),
@@ -75,8 +83,7 @@ class MissionPlanner:
             return plan_data
 
         except Exception as e:
-            print(f"[Planner] Failed to parse plan: {e}")
-            print(f"[Planner] Raw content: {content}")
+            print("[Planner] Plan rejected; see mission status (content omitted)")
             # Don't crash, just leave mission in planning state with the error recorded
             mission.plan_summary = f"Planning failed: {str(e)}"
             self.db.commit()
