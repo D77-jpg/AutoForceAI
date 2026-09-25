@@ -52,6 +52,9 @@ def test_windows_encoded_sqlite_url_survives_alembic_interpolation():
     cfg = Config(ALEMBIC_INI)
     cfg.set_main_option("sqlalchemy.url", url.replace("%", "%%"))
     assert cfg.get_main_option("sqlalchemy.url") == url
+    # Alembic env.py resolves the URL and sets it again during every stamp/upgrade.
+    cfg.set_main_option("sqlalchemy.url", cfg.get_main_option("sqlalchemy.url").replace("%", "%%"))
+    assert cfg.get_main_option("sqlalchemy.url") == url
 
 
 @pytest.fixture()

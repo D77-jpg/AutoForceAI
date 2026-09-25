@@ -27,7 +27,9 @@ def _resolve_url() -> str:
     return settings.database.url
 
 
-config.set_main_option("sqlalchemy.url", _resolve_url())
+# Alembic config is backed by configparser; Windows SQLite drive letters are
+# rendered as C%3A, so escaping is required on this second set as well.
+config.set_main_option("sqlalchemy.url", _resolve_url().replace("%", "%%"))
 
 import database.shared_models  # noqa: E402,F401  注册共享表（users/leads/crm_*）
 import database.models  # noqa: E402,F401  注册租户表（tenant + shared 同一 Base）
