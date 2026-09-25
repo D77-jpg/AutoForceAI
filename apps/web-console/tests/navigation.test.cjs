@@ -34,7 +34,9 @@ for (const source of sources) {
   });
 }
 
-test('knowledge solution remains visible and labelled as in development', () => {
+test('knowledge solution is available without an in-development badge', () => {
   const sidebar = fs.readFileSync(path.join(root, 'components/sidebar.tsx'), 'utf8');
-  assert.match(sidebar, /href: '\/knowledge\/solution'[^\n]*badge: '开发中'/);
+  const entry = sidebar.match(/\{ href: '\/knowledge\/solution'[^\n]*\}/)?.[0];
+  assert.ok(entry, 'solution navigation must remain visible');
+  assert.doesNotMatch(entry, /badge:/);
 });
