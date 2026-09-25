@@ -37,8 +37,24 @@ EXPECTED_PHASE1 = {
 def _cfg(url: str):
     from alembic.config import Config
     cfg = Config(str(SERVICE_ROOT / "alembic.ini"))
-    cfg.set_main_option("sqlalchemy.url", url)
+    cfg.set_main_option("sqlalchemy.url", url.replace("%", "%%"))
     return cfg
+
+
+def test_windows_encoded_sqlite_url_survives_alembic_interpolation():
+    """SQLAlchemy encodes Windows C: as C%3A; configparser must not reject it."""
+    from alembic.config import Config
+
+    # SQLAlchemy on Windows percent-encodes the drive colon; inject its exact
+    # rendered form so this regression test also runs on Linux/macOS hosts.
+    url = "sqlite:///C%3A/temp/phase2-gate.db"
+    from core.migrations import ALEMBIC_INI
+    cfg = Config(ALEMBIC_INI)
+    cfg.set_main_option("sqlalchemy.url", url.replace("%", "%%"))
+    assert cfg.get_main_option("sqlalchemy.url") == url
+    # Alembic env.py resolves the URL and sets it again during every stamp/upgrade.
+    cfg.set_main_option("sqlalchemy.url", cfg.get_main_option("sqlalchemy.url").replace("%", "%%"))
+    assert cfg.get_main_option("sqlalchemy.url") == url
 
 
 @pytest.fixture()
@@ -196,9 +212,11 @@ def test_ensure_schema_current_stamps_existing_db(db_url):
 
     from core.migrations import ensure_schema_current
     engine = create_engine(db_url)
-    ensure_schema_current(engine)
-    ensure_schema_current(engine)  # 幂等
-    engine.dispose()
+    try:
+        ensure_schema_current(engine)
+        ensure_schema_current(engine)  # 幂等
+    finally:
+        engine.dispose()
     assert _current_rev(db_url) == HEAD
 
 

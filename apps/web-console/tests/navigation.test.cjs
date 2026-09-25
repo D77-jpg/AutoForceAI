@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const { spawnSync } = require('node:child_process');
 
 const root = path.resolve(__dirname, '..');
 const sources = [
@@ -12,9 +13,14 @@ const sources = [
   'lib/dashboard-mock.ts',
   'app/ops/page.tsx',
 ];
+const listed = spawnSync('git', ['ls-files', '--cached', '--', 'apps/web-console/app'], {
+  cwd: path.resolve(root, '../..'), encoding: 'utf8', windowsHide: true,
+});
+assert.equal(listed.status, 0, listed.stderr);
+const trackedPages = new Set(listed.stdout.trim().split(/\r?\n/));
 const forbidden = [
   '/ecommerce', '/organization/agents', '/digital-human/assets', '/monitor/alerts',
-  '/crm/customers', '/crm/opportunities', '/crm/contracts',
+  '/crm/customers', '/crm/opportunities', '/crm/contracts', '/service',
 ];
 
 for (const source of sources) {
@@ -28,8 +34,8 @@ for (const source of sources) {
     for (const href of links) {
       assert.ok(!forbidden.some((route) => href === route || href.startsWith(`${route}/`)),
         `${source}: retired/duplicate route ${href}`);
-      assert.ok(fs.existsSync(path.join(root, 'app', href.slice(1), 'page.tsx')),
-        `${source}: ${href} has no app page`);
+      const route = `apps/web-console/app${href === '/' ? '' : href}/page.tsx`;
+      assert.ok(trackedPages.has(route), `${source}: ${href} has no tracked app page`);
     }
   });
 }
