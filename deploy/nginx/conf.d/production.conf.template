@@ -22,7 +22,6 @@ server {
     add_header X-Content-Type-Options nosniff always;
     add_header Referrer-Policy strict-origin-when-cross-origin always;
     add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
-    # No WebSocket/HMR proxy endpoints in production.
     location ~ ^/(?:_next/webpack-hmr|sockjs-node|__vite_ping)(?:/|$) { return 404; }
     location ~ ^/(?:api/|auth/|health$|uploads/|widget/) {
         proxy_pass http://backend:8010;
