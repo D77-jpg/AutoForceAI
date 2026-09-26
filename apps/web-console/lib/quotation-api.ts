@@ -1,4 +1,5 @@
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8010";
+// Empty means same-origin HTTPS ingress; never call the visitor's localhost in production.
+const API = process.env.NEXT_PUBLIC_API_URL || "";
 
 export type ProposalSource = {
   kind: "lead" | "knowledge" | "customer" | "quotation";

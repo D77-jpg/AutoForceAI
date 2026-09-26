@@ -34,6 +34,7 @@ class ProductionComposeChecks(unittest.TestCase):
             self.assertIn("healthcheck", services[name], name)
         self.assertTrue(document["networks"]["data"]["internal"])
         self.assertIn("server", services["genesis-server"]["networks"]["app"]["aliases"])
+        self.assertIn("rpa_browser_data", document["volumes"])
         self.assertIn("pgvector/pgvector", services["postgres"]["image"])
 
     def test_tls_domains_and_no_dev_websocket(self):
@@ -49,6 +50,12 @@ class ProductionComposeChecks(unittest.TestCase):
         for key in ("JWT_SECRET", "GENESIS_JWT_SECRET", "POSTGRES_PASSWORD", "MONGO_ROOT_PASSWORD"):
             self.assertRegex(template, rf"(?m)^{key}=REPLACE_")
         self.assertNotIn("PRIVATE KEY-----", template)
+        worker = (ROOT / "worker.Dockerfile").read_text(encoding="utf-8")
+        self.assertIn("PLAYWRIGHT_BROWSERS_PATH=0", worker)
+        self.assertIn("playwright install --with-deps chromium", worker)
+        # Production builds use same-origin browser API, never visitor localhost.
+        quote = (ROOT.parent / "apps/web-console/lib/quotation-api.ts").read_text(encoding="utf-8")
+        self.assertNotIn('http://localhost:8010', quote)
 
 
 if __name__ == "__main__":

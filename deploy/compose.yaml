@@ -94,6 +94,9 @@ services:
       GEO_SERVER_URL: http://backend:8010/api/v1
       WORKER_SECRET: ${WORKER_SECRET:?Set private WORKER_SECRET}
       RPA_HEADLESS: "true"
+      RPA_BROWSER: chromium
+    volumes:
+      - rpa_browser_data:/app/browser_data
     depends_on:
       backend: { condition: service_healthy }
     networks: [app]
@@ -210,3 +213,4 @@ volumes:
   mongobackups: {}
   uploads: {}
   genesis_uploads: {}
+  rpa_browser_data: {}
