@@ -8,13 +8,15 @@ import { EmptyState } from '@/components/ui/empty-state';
 export default function MonitorPage() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   const fetchStats = async () => {
     try {
       const res = await api.get('/api/v1/monitor/system');
       setStats(res.data);
+      setLoadError(false);
     } catch (err) {
-      console.error(err);
+      setLoadError(true);
     } finally {
         setLoading(false);
     }
@@ -33,11 +35,7 @@ export default function MonitorPage() {
             description="实时服务器状态与资源概览。"
             actions={
                 <div className="flex items-center gap-2 text-xs text-text-secondary">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
-                    </span>
-                    实时更新（5 秒）
+                    {loadError ? '遥测读取失败（上次成功数据）' : stats?.status === 'partial' ? '部分指标不可用' : '每 5 秒刷新'}
                 </div>
             }
         />
@@ -61,11 +59,11 @@ export default function MonitorPage() {
                             </div>
                             <div>
                                 <h3 className="text-sm font-medium text-text">CPU 使用率</h3>
-                                <p className="text-xs text-text-secondary">{stats?.system_info?.platform || 'Linux'} 服务器</p>
+                                <p className="text-xs text-text-secondary">{stats?.system_info?.platform || '未知平台'} 服务器</p>
                             </div>
                         </div>
                         <div className="flex items-end gap-2 mb-2">
-                             <span className="text-2xl font-bold text-text tabular-nums">{stats?.cpu_usage}%</span>
+                             <span className="text-2xl font-bold text-text tabular-nums">{stats?.cpu_usage == null ? '不可用' : `${stats.cpu_usage}%`}</span>
                              <span className="text-xs text-text-secondary mb-1">负载</span>
                         </div>
                         <div className="w-full bg-text/5 rounded-full h-1.5 overflow-hidden">
@@ -88,10 +86,10 @@ export default function MonitorPage() {
                             </div>
                         </div>
                         <div className="flex items-end gap-2 mb-2">
-                             <span className="text-2xl font-bold text-text tabular-nums">{stats?.memory_usage?.percent}%</span>
+                             <span className="text-2xl font-bold text-text tabular-nums">{stats?.memory_usage?.percent == null ? '不可用' : `${stats.memory_usage.percent}%`}</span>
                              <span className="text-xs text-text-secondary mb-1 tabular-nums">
-                                {(stats?.memory_usage?.used / 1024 / 1024 / 1024 || 0).toFixed(1)}GB / 
-                                {(stats?.memory_usage?.total / 1024 / 1024 / 1024 || 0).toFixed(1)}GB
+                                {stats?.memory_usage?.used == null ? '不可用' : `${(stats.memory_usage.used / 1024 ** 3).toFixed(1)}GB`} /
+                                {stats?.memory_usage?.total == null ? '不可用' : `${(stats.memory_usage.total / 1024 ** 3).toFixed(1)}GB`}
                              </span>
                         </div>
                         <div className="w-full bg-text/5 rounded-full h-1.5 overflow-hidden">

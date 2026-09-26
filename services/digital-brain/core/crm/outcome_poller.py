@@ -189,12 +189,18 @@ def poll_all_outcomes(db: Session, worker_id: str = "poller") -> int:
         try:
             total += poll_org_outcomes(db, cfg, worker_id=worker_id)
             record_poller_success(db, worker_id)
+            from core.alerts import record_recovery
+            record_recovery(db, organization_id=cfg.organization_id, source="crm_outcome")
             db.commit()
         except CredentialError as exc:
             db.rollback()
             cfg.last_health_status = "credential_error"
             cfg.last_health_detail = f"凭证不可用（{exc.code}）：请检查 CRM_CREDENTIAL_ENCRYPTION_KEY 或重设 token"
             cfg.last_health_checked_at = datetime.now()
+            db.commit()
+            from core.alerts import record_failure
+            record_failure(db, organization_id=cfg.organization_id, source="crm_outcome",
+                           category=exc.code, severity="critical")
             db.commit()
             logger.warning("outcome 轮询因凭证不可用暂停 org=%s: %s", cfg.organization_id, exc.code)
         except CrmApiError as exc:
@@ -205,11 +211,18 @@ def poll_all_outcomes(db: Session, worker_id: str = "poller") -> int:
                 cfg.last_health_checked_at = datetime.now()
                 db.commit()
             record_error(db, f"poller org={cfg.organization_id}: [{exc.code or 'NETWORK'}] HTTP {exc.http_status}")
+            from core.alerts import record_failure
+            record_failure(db, organization_id=cfg.organization_id, source="crm_outcome",
+                           category=exc.code or "NETWORK",
+                           severity="critical" if exc.auth_invalid else "warning")
             db.commit()
             logger.warning("outcome 轮询失败 org=%s: %s", cfg.organization_id, exc)
         except Exception as exc:
             db.rollback()
             record_error(db, f"poller org={cfg.organization_id}: {exc.__class__.__name__}")
+            from core.alerts import record_failure
+            record_failure(db, organization_id=cfg.organization_id, source="crm_outcome",
+                           category="UNEXPECTED")
             db.commit()
             logger.exception("outcome 轮询异常 org=%s", cfg.organization_id)
     return total

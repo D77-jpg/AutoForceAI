@@ -1,8 +1,11 @@
 import os
+import json
+import time
+import uuid
 import uvicorn
 from contextlib import asynccontextmanager
 from datetime import datetime
-from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Header
+from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -15,9 +18,9 @@ from database.models import AnalysisTask, TaskStatus, ContentAsset
 # SaaS New Architecture Imports
 from database.shared_models import SharedBase, RPAJobStatus
 from database.models import RPAJob
-from core.db_manager import SHARED_ENGINE, get_shared_db, init_shared_db
+from core.db_manager import SHARED_ENGINE, SharedSessionLocal, get_shared_db, init_shared_db
 from routers import auth_router, monitor_router, bot_router, branding_router, content_router, agent_router, platform_router, storage_router, brain_router, export_router, admin_router
-from routers import kb_router, service_chat_router, lead_router, marketing_router, crm_integration_router, quotation_router
+from routers import kb_router, service_chat_router, lead_router, marketing_router, crm_integration_router, quotation_router, alert_router
 from core.dependencies import get_db, get_current_user_id
 from core.config import settings
 from fastapi.staticfiles import StaticFiles
@@ -49,6 +52,19 @@ async def lifespan(app: FastAPI):
         start_geo_scheduler(interval_seconds=int(os.getenv("GEO_SCHEDULER_INTERVAL", "60")))
     except Exception as exc:
         print(f"[Warn] GEO scheduler not started: {exc}")
+    # Retention is bounded and only removes resolved incidents. Never let
+    # retention failure prevent the main service from starting.
+    try:
+        from core.alerts import cleanup_resolved, validate_notifications_disabled
+        validate_notifications_disabled()
+        with SharedSessionLocal() as cleanup_db:
+            cleanup_resolved(cleanup_db)
+            cleanup_db.commit()
+    except ValueError:
+        raise  # Unsafe notification configuration must fail closed at startup.
+    except Exception:
+        import logging
+        logging.getLogger("autoforce.alerts").warning("Alert retention cleanup unavailable")
     # CRM Outbox 投递器（阶段 2 Wave C）：租约抢占 + 退避 + 死信
     try:
         from core.crm.dispatcher import start_dispatcher
@@ -68,6 +84,30 @@ async def lifespan(app: FastAPI):
         pass
 
 app = FastAPI(title="Digital Employee SaaS API", version="2.0.0", lifespan=lifespan)
+
+@app.middleware("http")
+async def request_metadata_log(request: Request, call_next):
+    """Log only safe request metadata, never headers, URL query or request body."""
+    request_id = str(uuid.uuid4())
+    start = time.monotonic()
+    route = "unmatched"
+    status = 500
+    try:
+        response = await call_next(request)
+        status = response.status_code
+        matched = request.scope.get("route")
+        route = getattr(matched, "path", "unmatched")
+        response.headers["X-Request-ID"] = request_id
+        return response
+    finally:
+        import logging
+        logging.getLogger("autoforce.api").info(json.dumps({
+            "request_id": request_id, "route": route, "status": status,
+            "latency_ms": round((time.monotonic() - start) * 1000, 2),
+            # Only trusted auth dependencies can resolve organization; do not
+            # infer it from caller-controlled headers, params or unverified JWT.
+            "organization": getattr(request.state, "organization_id", None),
+        }, separators=(",", ":")))
 
 # Add CORS Middleware - CRITICAL for Direct Browser Access & Streaming
 app.add_middleware(
@@ -95,12 +135,11 @@ from fastapi.responses import JSONResponse
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    import json
-    print(f"\n[Validation Error] Input Data Validation Failed:")
-    print(json.dumps(exc.errors(), indent=2))
+    # Validation errors can include submitted passwords/tokens in `input`.
+    # Never print them or echo them to clients.
     return JSONResponse(
         status_code=422,
-        content={"detail": exc.errors()},
+        content={"detail": "Invalid request data"},
     )
 
 from routers import solution_router, ppt_template_router
@@ -109,6 +148,7 @@ from routers import solution_router, ppt_template_router
 app.include_router(auth_router.router)
 app.include_router(ppt_template_router.router)
 app.include_router(monitor_router.router)
+app.include_router(alert_router.router)
 app.include_router(kb_router.router)
 app.include_router(bot_router.router)
 app.include_router(storage_router.router)
@@ -348,8 +388,8 @@ def perform_analysis_task(task_id: int, request: MonitorRequest):
             # Log Search Usage
             if llm_resp.usage:
                 CostMonitor.log_request(
-                    provider=getattr(engine_client, 'default_model', 'unknown').split('-')[0], # approximation
-                    model=llm_resp.model_name,
+                    provider=getattr(engine_client, 'provider_name', None) or 'unknown',
+                    model=getattr(llm_resp, 'model_name', None) or 'unknown',
                     input_tokens=llm_resp.usage.get('input_tokens',0),
                     output_tokens=llm_resp.usage.get('output_tokens',0),
                     latency_ms=int((datetime.now() - start_t).total_seconds() * 1000),
@@ -790,7 +830,10 @@ def complete_rpa_task(
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
         
-    job.status = request.status # success / failed
+    if request.status not in ("success", "failed"):
+        raise HTTPException(status_code=422, detail="Invalid task status")
+    previous_status = job.status
+    job.status = request.status
     
     # Store URL in message or execution log if available
     final_msg = request.msg
@@ -798,11 +841,10 @@ def complete_rpa_task(
         final_msg = f"{final_msg} |||LINK:{request.data.get('url')}|||"
         
     job.result_log = final_msg
-    db.commit()
-    
-    from datetime import datetime
     job.completed_at = datetime.now()
-    
+    if previous_status != request.status:
+        from core.alerts import record_rpa_job_outcome
+        record_rpa_job_outcome(db, job, failed=request.status == "failed")
     db.commit()
     
     print(f"[RPA Callback] 任务 {task_id} 完成. 状态: {request.status}")

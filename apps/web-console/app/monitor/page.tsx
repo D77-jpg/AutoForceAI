@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import api from '../../lib/api';
 import { 
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell
@@ -32,6 +33,7 @@ export default function MonitorPage() {
     const [llmStats, setLlmStats] = useState<any>(null);
     const [recentLogs, setRecentLogs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -49,8 +51,9 @@ export default function MonitorPage() {
             setRpaStats(rpaRes.data);
             setLlmStats(llmRes.data);
             setRecentLogs(logsRes.data);
+            setLoadError(false);
         } catch (error) {
-            console.error("Monitor Data Load Failed", error);
+            setLoadError(true);
             // showToast("Failed to fetch monitor data", "error");
         } finally {
             setLoading(false);
@@ -71,25 +74,25 @@ export default function MonitorPage() {
                 description="AI Agent 与 RPA 执行器的实时运行观测"
                 className="mb-0"
                 actions={
-                    <div className="flex items-center gap-2 text-xs text-success bg-success/10 px-3 py-1 rounded-pill border border-success/20">
-                        <div className="w-2 h-2 rounded-pill bg-success animate-pulse"></div>
-                        系统在线
-                    </div>
+                    <Link href="/monitor/alerts" className="inline-flex items-center gap-2 rounded-md border border-separator px-3 py-2 text-sm text-accent hover:bg-text/5">
+                        <AlertCircle size={16} /> 查看告警记录
+                    </Link>
                 }
             />
 
+            {loadError && <p role="alert" className="rounded-md border border-danger p-3 text-danger">监控读取失败；以下可能是上次成功数据，不能代表当前状态。</p>}
             {/* Top Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <StatCard 
                     title="AI Token 总量（7 天）" 
-                    value={(llmStats?.summary?.total_tokens / 1000).toFixed(1) + "k"}
+                    value={llmStats?.summary ? (llmStats.summary.total_tokens / 1000).toFixed(1) + "k" : "不可用"}
                     subValue={`${llmStats?.summary?.total_calls} 次 API 调用`}
                     icon={Cpu}
                     color="text-accent"
                 />
                  <StatCard 
                     title="RPA 队列深度" 
-                    value={rpaStats?.counts?.queued || 0}
+                    value={rpaStats?.counts?.queued ?? "不可用"}
                     subValue="待处理任务"
                     icon={Database}
                     color="text-text-secondary"
@@ -97,17 +100,17 @@ export default function MonitorPage() {
                 <StatCard 
                     title="Worker 成功率" 
                     value={
-                        rpaStats?.counts?.completed + rpaStats?.counts?.failed > 0 
-                        ? ((rpaStats.counts.completed / (rpaStats.counts.completed + rpaStats.counts.failed)) * 100).toFixed(1) + "%" 
+                        (rpaStats?.counts?.success || 0) + (rpaStats?.counts?.completed || 0) + (rpaStats?.counts?.failed || 0) > 0
+                        ? ((((rpaStats?.counts?.success || 0) + (rpaStats?.counts?.completed || 0)) / ((rpaStats?.counts?.success || 0) + (rpaStats?.counts?.completed || 0) + (rpaStats?.counts?.failed || 0))) * 100).toFixed(1) + "%"
                         : "N/A"
                     }
-                    subValue={`已完成 ${rpaStats?.counts?.completed} 项`}
+                    subValue={`已完成 ${(rpaStats?.counts?.success || 0) + (rpaStats?.counts?.completed || 0)} 项`}
                     icon={CheckCircle2}
                     color="text-success"
                 />
                  <StatCard 
                     title="失败任务" 
-                    value={rpaStats?.counts?.failed || 0}
+                    value={rpaStats?.counts?.failed ?? "不可用"}
                     subValue="需要关注"
                     icon={AlertCircle}
                     color="text-danger"

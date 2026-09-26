@@ -77,8 +77,10 @@ class LLMRequestLog(SharedBase):
     
     latency_ms = Column(Integer, default=0) # 耗时
     status = Column(String, default="success") # success, error
-    error_msg = Column(Text, nullable=True)
-    
+    error_msg = Column(Text, nullable=True)  # legacy field; never write raw exceptions
+    error_category = Column(String(64), nullable=True)
+    cost_usd = Column(Float, nullable=True)  # None means no verified price; never fabricate zero
+
     created_at = Column(DateTime, default=datetime.now)
 
 class KnowledgeBase(SharedBase):
@@ -560,6 +562,27 @@ class CrmStatusQueryAudit(SharedBase):
     tool_name = Column(String, nullable=False)
     outcome_code = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.now, nullable=False)
+
+
+class Alert(SharedBase):
+    """Organization-scoped, deduplicated worker incident (no raw exception payload)."""
+    __tablename__ = "alerts"
+    __table_args__ = (Index("uq_alert_fingerprint", "fingerprint", unique=True),)
+
+    id = Column(Integer, primary_key=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    source = Column(String(40), nullable=False)
+    category = Column(String(80), nullable=False)
+    fingerprint = Column(String(64), nullable=False)
+    severity = Column(String(16), nullable=False, default="warning")
+    status = Column(String(16), nullable=False, default="open")
+    summary = Column(String(180), nullable=False)
+    occurrences = Column(Integer, nullable=False, default=1)
+    event_type = Column(String(16), nullable=False, default="first")
+    first_seen_at = Column(DateTime, nullable=False, default=datetime.now)
+    last_seen_at = Column(DateTime, nullable=False, default=datetime.now)
+    acknowledged_at = Column(DateTime, nullable=True)
+    resolved_at = Column(DateTime, nullable=True)
 
 
 class CrmWorkerState(SharedBase):

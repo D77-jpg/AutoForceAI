@@ -252,9 +252,36 @@ def dispatch_once(db: Session, worker_id: str, batch_size: int = 20) -> int:
     """单轮投递：回收过期租约 → 抢占 → 逐个投递。返回处理数。"""
     recover_expired_leases(db)
     jobs = _lease_jobs(db, worker_id, batch_size)
+    from core.alerts import record_failure, record_recovery
+    from database.shared_models import Alert
     for job in jobs:
         try:
             _deliver(db, job)
+            # Count only actual delivery attempts, not paused configuration/lease polling.
+            if job.status in ("retrying", "dead") and job.last_error_code not in (
+                "CONFIG_DISABLED", "AUTH_INVALID",
+            ) and job.last_error_code:
+                record_failure(db, organization_id=job.organization_id, source="crm_dispatcher",
+                               category=job.last_error_code,
+                               severity="critical" if job.status == "dead" or
+                               (job.last_error_code or "").upper() in ("CREDENTIAL_ERROR", "UNAUTHORIZED", "FORBIDDEN")
+                               else "warning")
+            elif job.status == "succeeded":
+                # A successful individual job does not recover an org-wide incident
+                # while other jobs of the same category are still failing.
+                pending_categories = [category for (category,) in db.query(Alert.category).filter(
+                    Alert.organization_id == job.organization_id,
+                    Alert.source == "crm_dispatcher", Alert.status != "resolved",
+                ).all()]
+                for category in pending_categories:
+                    still_failing = db.query(CrmSyncJob.id).filter(
+                        CrmSyncJob.organization_id == job.organization_id,
+                        CrmSyncJob.status.in_(("retrying", "dead")),
+                        CrmSyncJob.last_error_code == category,
+                    ).first()
+                    if not still_failing:
+                        record_recovery(db, organization_id=job.organization_id,
+                                        source="crm_dispatcher", category=category)
             db.commit()
         except Exception:
             db.rollback()
@@ -269,6 +296,7 @@ def _loop(interval: float, batch_size: int, worker_id: str) -> None:
 
     outcome_interval = float(os.getenv("CRM_OUTCOME_POLL_INTERVAL", "60"))
     last_outcome_poll = 0.0
+    last_alert_cleanup = 0.0
 
     logger.info("CRM dispatcher 启动: worker=%s interval=%ss batch=%s outcome=%ss",
                 worker_id, interval, batch_size, outcome_interval)
@@ -277,6 +305,10 @@ def _loop(interval: float, batch_size: int, worker_id: str) -> None:
             db = SharedSessionLocal()
             try:
                 dispatch_once(db, worker_id, batch_size)
+                if time.monotonic() - last_alert_cleanup >= 86400:
+                    from core.alerts import cleanup_resolved
+                    cleanup_resolved(db)
+                    last_alert_cleanup = time.monotonic()
                 record_dispatcher_success(db, worker_id)
                 db.commit()
                 # 成交/流失回流：按自身节奏轮询（默认 60s），行级租约保证单实例推进
@@ -308,6 +340,8 @@ def start_dispatcher(interval: Optional[float] = None, batch_size: int = 20) -> 
     """
     global _dispatcher_thread
     from core.crm.worker_state import worker_enabled
+    from core.alerts import validate_notifications_disabled
+    validate_notifications_disabled()
     if not worker_enabled():
         logger.info("CRM_BACKGROUND_WORKER_ENABLED=off：本实例不启动 CRM 后台 worker（API/门户不受影响）")
         return
