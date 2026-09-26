@@ -1,6 +1,5 @@
 """H-13 offline safety checks: no production service may expose private ports."""
 import pathlib
-import re
 import subprocess
 import unittest
 
@@ -9,10 +8,7 @@ ROOT = pathlib.Path(__file__).resolve().parent
 
 class ProductionComposeChecks(unittest.TestCase):
     def test_compose_renders_and_only_ingress_publishes(self):
-        try:
-            import yaml
-        except ImportError:
-            self.skipTest("PyYAML not installed; docker compose config still required")
+        import yaml  # Fail closed if the release-gate dependency is missing.
         result = subprocess.run(
             ["docker", "compose", "--env-file", str(ROOT / "production.env.example"),
              "-f", str(ROOT / "compose.yaml"), "config"],
