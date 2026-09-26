@@ -345,7 +345,9 @@ class InspectionRecord(SharedBase):
     issues = Column(JSON, default=list) # [{rule_name: "SOP", deduction: 5, reason: "No upsell"}]
     suggestion = Column(Text, nullable=True) # "建议客服在..."
     
-    model_used = Column(String, nullable=True) # e.g. "gpt-4"
+    model_used = Column(String, nullable=True) # actual response model, or 'unknown'
+    model_provider = Column(String, nullable=True) # actual adapter provider, or 'unknown'
+    model_request_id = Column(String, nullable=True) # response request identifier, if available
     created_at = Column(DateTime, default=datetime.now)
     
     session = relationship("BrainSession")
