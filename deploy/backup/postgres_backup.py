@@ -28,8 +28,11 @@ def name(value):
 
 
 def safe_directory(value):
-    path = Path(value).expanduser().resolve(strict=True)
-    if not path.is_dir() or path == Path(path.anchor) or path.is_symlink():
+    original = Path(value).expanduser()
+    if original.is_symlink() or not original.exists():
+        raise ValueError("Refusing unsafe/unresolved/root backup directory")
+    path = original.resolve(strict=True)
+    if not path.is_dir() or path == Path(path.anchor):
         raise ValueError("Refusing unsafe/unresolved/root backup directory")
     return path
 
@@ -97,8 +100,11 @@ def backup(directory, db, recipient=None):
 
 def verified_manifest(directory, manifest):
     root = safe_directory(directory)
-    entry = (root / manifest).resolve(strict=True)
-    if entry.parent != root or entry.is_symlink() or not entry.name.endswith(".manifest.json"):
+    raw_entry = root / manifest
+    if raw_entry.is_symlink() or not raw_entry.is_file():
+        raise ValueError("Manifest must be a regular file directly inside backup directory")
+    entry = raw_entry.resolve(strict=True)
+    if entry.parent != root or not entry.name.endswith(".manifest.json"):
         raise ValueError("Manifest must be a regular file directly inside backup directory")
     data = json.loads(entry.read_text(encoding="utf-8"))
     if data.get("schema") != 1 or data.get("engine") != "postgresql":
@@ -107,8 +113,11 @@ def verified_manifest(directory, manifest):
     archive_name = data["archive"]
     if not isinstance(archive_name, str) or Path(archive_name).name != archive_name or not archive_name.startswith(entry.name.removesuffix(".manifest.json") + ".dump"):
         raise ValueError("Invalid archive name")
-    archive = (root / archive_name).resolve(strict=True)
-    if archive.parent != root or archive.is_symlink() or not archive.is_file():
+    raw_archive = root / archive_name
+    if raw_archive.is_symlink() or not raw_archive.is_file():
+        raise ValueError("Archive must be a regular file directly inside backup directory")
+    archive = raw_archive.resolve(strict=True)
+    if archive.parent != root:
         raise ValueError("Archive must be a regular file directly inside backup directory")
     if archive.stat().st_size != data["bytes"] or digest(archive) != data["sha256"]:
         raise ValueError("Backup checksum mismatch")
