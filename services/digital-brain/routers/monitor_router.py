@@ -158,21 +158,31 @@ def get_system_status(db: Session = Depends(get_shared_db)):
     """Get System Health & Resource Usage"""
     
     # System Info
-    cpu_percent = psutil.cpu_percent(interval=None) if hasattr(psutil, 'cpu_percent') else 0
-    memory = psutil.virtual_memory() if hasattr(psutil, 'virtual_memory') else None
+    try:
+        cpu_percent = psutil.cpu_percent(interval=None) if psutil else None
+        memory = psutil.virtual_memory() if psutil else None
+    except Exception:
+        cpu_percent, memory = None, None
     
     # DB Counts
-    active_models = db.query(LLMModel).filter(LLMModel.is_active == True).count()
-    active_users = db.query(User).filter(User.is_active == True).count()
-    queued_jobs = db.query(RPAJob).filter(RPAJob.status == "queued").count()
+    def safe_count(query):
+        try:
+            return query.count()
+        except Exception:
+            db.rollback()
+            return None
+
+    active_models = safe_count(db.query(LLMModel).filter(LLMModel.is_active == True))
+    active_users = safe_count(db.query(User).filter(User.is_active == True))
+    queued_jobs = safe_count(db.query(RPAJob).filter(RPAJob.status == "queued"))
     
     return {
-        "status": "healthy",
+        "status": "healthy" if cpu_percent is not None and all(value is not None for value in (active_models, active_users, queued_jobs)) else "partial",
         "cpu_usage": cpu_percent,
         "memory_usage": {
-            "total": memory.total if memory else 0,
-            "used": memory.used if memory else 0,
-            "percent": memory.percent if memory else 0
+            "total": memory.total if memory else None,
+            "used": memory.used if memory else None,
+            "percent": memory.percent if memory else None
         },
         "system_info": {
             "platform": platform.system(),
@@ -191,7 +201,7 @@ def get_rpa_stats(db: Session = Depends(get_shared_db)): # Use shared_db for RPA
     """Get RPA Job counts by status"""
     # Group by status
     stats = db.query(RPAJob.status, func.count(RPAJob.id)).group_by(RPAJob.status).all()
-    result = {k: 0 for k in ["queued", "running", "completed", "failed"]} # Normalize keys if needed
+    result = {k: 0 for k in ["queued", "claimed", "running", "success", "completed", "failed"]}
     
     # Map ENUM to Frontend keys if they differ, otherwise just use as is
     for status, count in stats:
@@ -203,7 +213,7 @@ def get_rpa_stats(db: Session = Depends(get_shared_db)): # Use shared_db for RPA
     return {
         "counts": result,
         "recent_failures": [
-            {"id": j.id, "platform": j.platform, "msg": str(j.payload), "time": j.created_at} 
+            {"id": j.id, "platform": j.platform, "msg": "RPA task failed", "time": j.created_at}
             for j in failed_jobs
         ]
     }
@@ -213,8 +223,8 @@ def get_llm_usage(days: int = Query(7, ge=1, le=366), db: Session = Depends(get_
     """Return the last `days` UTC calendar dates, including today and empty dates.
 
     Existing database timestamps are timezone-naive; they are interpreted as UTC.
-    The log table has no price or persisted cost, so cost_usd is unknown (null),
-    never an invented zero. Python aggregation avoids dialect-specific date SQL.
+    Only independently verified persisted prices contribute to cost_usd; if
+    any call has unknown cost, the bucket remains null. No price is guessed.
     """
     today = datetime.now(timezone.utc).date()
     first_day = today - timedelta(days=days - 1)
@@ -246,6 +256,8 @@ def get_llm_usage(days: int = Query(7, ge=1, le=366), db: Session = Depends(get_
         tokens = log.total_tokens or 0
         outcome = "success" if log.status == "success" else "failure"
         stats["tokens"] += tokens
+        if log.cost_usd is not None and stats["cost_usd"] is not None:
+            stats["cost_usd"] += log.cost_usd
         stats["calls"] += 1
         stats[outcome] += 1
         provider = log.provider or "unknown"
@@ -258,5 +270,11 @@ def get_llm_usage(days: int = Query(7, ge=1, le=366), db: Session = Depends(get_
             "by_provider": provider_stats}
 
 @router.get("/llm/logs")
-def get_recent_logs(limit: int = 50, db: Session = Depends(get_shared_db)):
-    return db.query(LLMRequestLog).order_by(LLMRequestLog.created_at.desc()).limit(limit).all()
+def get_recent_logs(limit: int = Query(50, ge=1, le=200), db: Session = Depends(get_shared_db)):
+    rows = db.query(LLMRequestLog).order_by(LLMRequestLog.created_at.desc()).limit(limit).all()
+    return [{"id": row.id, "created_at": row.created_at, "provider": row.provider,
+             "model": row.model, "input_tokens": row.input_tokens,
+             "output_tokens": row.output_tokens, "total_tokens": row.total_tokens,
+             "latency_ms": row.latency_ms, "status": row.status,
+             "error_category": row.error_category, "cost_usd": row.cost_usd}
+            for row in rows]

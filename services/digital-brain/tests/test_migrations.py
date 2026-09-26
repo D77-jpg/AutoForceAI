@@ -27,7 +27,10 @@ import database.models  # noqa: E402,F401
 
 SERVICE_ROOT = Path(__file__).resolve().parents[1]
 CRM_TABLES = {"crm_integration_configs", "crm_sync_jobs", "crm_entity_links", "crm_outcome_events", "crm_worker_state"}
-HEAD = "0007_crm_status_query_audit"
+# Head is discovered dynamically so concurrent feature migrations do not stale this test.
+from alembic.config import Config
+from alembic.script import ScriptDirectory
+HEAD = ScriptDirectory.from_config(Config(str(SERVICE_ROOT / "alembic.ini"))).get_current_head()
 EXPECTED_PHASE1 = {
     "users", "organizations", "leads", "projects", "chat_sessions", "chat_messages",
     "knowledge_bases", "knowledge_docs", "knowledge_chunks",
