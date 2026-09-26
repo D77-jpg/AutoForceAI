@@ -111,7 +111,7 @@ async def generate_content(request: ContentGenerationRequest):
                 image_url=image_url
             )
         except Exception as e:
-            print(f"[!] Content Gen Error: {e}")
+            print("[!] Content generation failed")
             # Fallthrough to mock
             return ContentGenerationResponse(
                 title=f"Error: {str(e)}",
@@ -150,7 +150,7 @@ async def publish_content(
     db.commit()
     db.refresh(new_job)
     
-    print(f"[PUBLISH] Created Job ID: {new_job.id} | Platform: {request.platform} | Title: {request.title}")
+    print(f"[PUBLISH] Created Job ID: {new_job.id}")
     
     return {
         "msg": "已加入分发队列", 
@@ -214,9 +214,9 @@ async def generate_image(req: ImageGenRequest):
             img_url = rsp.output.results[0].url
             return {"success": True, "url": img_url}
         else:
-            return {"success": False, "error": rsp.message, "code": rsp.code}
+            return {"success": False, "error": "Image generation failed", "code": "PROVIDER_ERROR"}
             
     except Exception as e:
-        print(f"[IMAGE] Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        print("[IMAGE] Provider operation failed")
+        raise HTTPException(status_code=500, detail="Image generation failed")
 

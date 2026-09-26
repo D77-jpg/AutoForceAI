@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from core.auth import decode_token
 from core.db_manager import SharedSessionLocal, get_tenant_session
+from core.security_rate_limit import enforce_user_rate_limit
 from database.shared_models import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/wechat/login")
@@ -34,11 +35,15 @@ def get_current_user(request: Request, token: str = Depends(oauth2_scheme)) -> d
     payload["id"] = user_id
     with SharedSessionLocal() as db:
         user = db.query(User).filter(User.id == user_id, User.is_active.is_(True)).first()
-        request.state.organization_id = user.organization_id if user else None
-        if user:
-            payload["org_id"] = user.organization_id
-            payload["organization_id"] = user.organization_id
-            payload["role"] = user.role.value if hasattr(user.role, "value") else user.role
+        if not user:
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Could not validate credentials",
+                                headers={"WWW-Authenticate": "Bearer"})
+        request.state.user_id = user.id
+        request.state.organization_id = user.organization_id
+        payload["org_id"] = user.organization_id
+        payload["organization_id"] = user.organization_id
+        payload["role"] = user.role.value if hasattr(user.role, "value") else user.role
+    enforce_user_rate_limit(request)
     return payload
 
 

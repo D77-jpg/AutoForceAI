@@ -29,8 +29,6 @@ interface Model {
   is_active: boolean;
   supports_geo: boolean;
   supports_chat: boolean;
-  api_key?: string;
-  base_url?: string;
   is_default: boolean;
   is_kb_search_default?: boolean;
 }
@@ -291,8 +289,9 @@ function ModelModal({ model, providers, onClose, onSuccess }: { model: Model | n
         // Set default active status for NEW models to false (per user request: "default is unchecked")
         // But keep existing model's status if editing
         is_active: model ? (model.is_active ?? true) : false,
-        api_key: model?.api_key || '',
-        base_url: model?.base_url || '',
+        // Secret and credential-bearing URL values are never retrieved from the API.
+        api_key: '',
+        base_url: '',
         is_default: model?.is_default || false,
         is_kb_search_default: model?.is_kb_search_default || false
     });
@@ -344,7 +343,13 @@ function ModelModal({ model, providers, onClose, onSuccess }: { model: Model | n
 
         try {
             if (isEdit && model) {
-                await api.put(`/api/v1/platform/models/${model.id}`, submitData);
+                // Blank means unchanged: do not submit empty credential/URL values.
+                const { api_key, base_url, ...safeUpdates } = submitData;
+                await api.put(`/api/v1/platform/models/${model.id}`, {
+                    ...safeUpdates,
+                    ...(api_key.trim() ? { api_key } : {}),
+                    ...(base_url.trim() ? { base_url } : {}),
+                });
             } else {
                 await api.post('/api/v1/platform/models', submitData);
             }
@@ -465,17 +470,19 @@ function ModelModal({ model, providers, onClose, onSuccess }: { model: Model | n
                                     value={formData.base_url}
                                     onChange={e => setFormData({...formData, base_url: e.target.value})}
                                     className="w-full bg-surface-2 border border-transparent rounded-lg p-2.5 text-sm text-text font-mono focus:border-accent/50 outline-none transition-colors"
-                                    placeholder="https://api.openai.com/v1"
+                                    placeholder={isEdit ? '留空则保持原有地址' : 'https://api.openai.com/v1'}
                                 />
                             </div>
                             
                             <div className="space-y-1.5">
                                 <label className="text-xs font-medium text-text-secondary">API Key</label>
-                                <textarea 
+                                <input
+                                    type="password"
+                                    autoComplete="new-password"
                                     value={formData.api_key}
                                     onChange={e => setFormData({...formData, api_key: e.target.value})}
-                                    className="w-full h-[120px] bg-surface-2 border border-transparent rounded-lg p-2.5 text-sm text-text font-mono focus:border-accent/50 outline-none transition-colors resize-none"
-                                    placeholder="sk-..."
+                                    className="w-full bg-surface-2 border border-transparent rounded-lg p-2.5 text-sm text-text font-mono focus:border-accent/50 outline-none transition-colors"
+                                    placeholder={isEdit ? '留空则保持原有密钥' : '请输入 API Key'}
                                 />
                             </div>
 

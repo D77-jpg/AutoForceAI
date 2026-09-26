@@ -1,0 +1,56 @@
+name: security-audit
+
+on:
+  push:
+    branches: [main, codex/security-hardening]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned auditor
+        run: python -m pip install 'pip-audit==2.10.1'
+      # The requirements are mostly unpinned; pip-audit resolves them fresh on each run.
+      # Unlike a lockfile audit this cannot attest to a deployed Python environment.
+      - name: Audit Python requirements (all reported vulnerabilities fail)
+        run: python .github/scripts/security_audit.py python services/digital-brain/requirements.txt services/rpa-worker/requirements.txt
+
+  node-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Audit both committed npm lockfiles (high and critical fail)
+        run: python3 .github/scripts/security_audit.py npm apps/web-console services/digital-brain/apps/web-console
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install pinned gitleaks binary
+        env:
+          GITLEAKS_VERSION: '8.24.3'
+        run: |
+          curl --fail --location --retry 3 --silent --show-error \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            --output /tmp/gitleaks.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          /tmp/gitleaks version
+      - name: Scan entire git history without logging findings or secret values
+        run: /tmp/gitleaks git --quiet --redact --exit-code 1 --log-opts='--all' .

@@ -1,14 +1,27 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
 from typing import List, Optional
 from pydantic import BaseModel
-from datetime import datetime
 
-from core.dependencies import get_db # Changes to get_shared_db if needed
+from core.dependencies import get_current_user
 from core.db_manager import get_shared_db
 from database.shared_models import LLMProvider, LLMModel
-from database.shared_models import User
+
+
+def require_platform_admin(user: dict = Depends(get_current_user)) -> dict:
+    """Only administrators may inspect or change platform credentials/configuration."""
+    if user.get("role") not in ("admin", "enterprise_admin"):
+        raise HTTPException(status_code=403, detail="Administrator access required")
+    return user
+
+
+def commit_configuration(db: Session) -> None:
+    """Do not expose driver exceptions containing bound credential parameters."""
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Unable to save model configuration") from None
 
 router = APIRouter(prefix="/api/v1/platform", tags=["Platform & Models"])
 
@@ -49,8 +62,7 @@ class ModelResponse(BaseModel):
     supports_chat: bool
     is_active: bool
     provider_name: Optional[str] = None
-    api_key: Optional[str] = None
-    base_url: Optional[str] = None
+    # Neither credentials nor URLs (which may contain tokens/userinfo) are returned.
     is_default: bool = False
     is_kb_search_default: bool = False
 
@@ -65,7 +77,6 @@ class ProviderCreate(BaseModel):
 class ProviderResponse(BaseModel):
     id: int
     name: str
-    base_url: Optional[str]
     is_active: bool
     models: List[ModelResponse] = []
 
@@ -75,7 +86,7 @@ class ProviderResponse(BaseModel):
 # --- Endpoints ---
 
 @router.get("/providers", response_model=List[ProviderResponse])
-def get_providers(db: Session = Depends(get_shared_db)):
+def get_providers(db: Session = Depends(get_shared_db), admin: dict = Depends(require_platform_admin)):
     """List all configured providers and their models"""
     providers = db.query(LLMProvider).filter(LLMProvider.is_active == True).all()
     # Pydantic will handle the relationship serialization
@@ -84,7 +95,7 @@ def get_providers(db: Session = Depends(get_shared_db)):
     return providers
 
 @router.post("/providers", response_model=ProviderResponse)
-def create_provider(provider: ProviderCreate, db: Session = Depends(get_shared_db)):
+def create_provider(provider: ProviderCreate, db: Session = Depends(get_shared_db), admin: dict = Depends(require_platform_admin)):
     """Add a new model provider"""
     db_provider = LLMProvider(
         name=provider.name,
@@ -92,12 +103,12 @@ def create_provider(provider: ProviderCreate, db: Session = Depends(get_shared_d
         api_key=provider.api_key
     )
     db.add(db_provider)
-    db.commit()
+    commit_configuration(db)
     db.refresh(db_provider)
     return db_provider
 
 @router.get("/models", response_model=List[ModelResponse])
-def get_models(type: Optional[str] = None, geo_only: bool = False, include_inactive: bool = True, db: Session = Depends(get_shared_db)):
+def get_models(type: Optional[str] = None, geo_only: bool = False, include_inactive: bool = True, db: Session = Depends(get_shared_db), user: dict = Depends(get_current_user)):
     """List all models flat list"""
     # Use outerjoin to include models without a provider (Custom)
     # Default to include all models now (for registry management)
@@ -141,7 +152,7 @@ def get_models(type: Optional[str] = None, geo_only: bool = False, include_inact
     return result
 
 @router.post("/models", response_model=ModelResponse)
-def create_model(model: ModelCreate, db: Session = Depends(get_shared_db)):
+def create_model(model: ModelCreate, db: Session = Depends(get_shared_db), admin: dict = Depends(require_platform_admin)):
     # Verify provider if provider_id is provided
     if model.provider_id:
         provider = db.query(LLMProvider).filter(LLMProvider.id == model.provider_id).first()
@@ -168,11 +179,11 @@ def create_model(model: ModelCreate, db: Session = Depends(get_shared_db)):
         existing_model.supports_geo = model.supports_geo
         existing_model.supports_chat = model.supports_chat
         
-        # Only update credentials if provided (to allow non-destructive updates if field left blank? 
-        # But frontend sends current state. If frontend sends empty string, it might wipe it.
-        # User said "Enter API Key". So we expect it.
-        existing_model.api_key = model.api_key
-        existing_model.base_url = model.base_url
+        # A blank or omitted secret must never erase a stored credential.
+        if model.api_key:
+            existing_model.api_key = model.api_key
+        if model.base_url:
+            existing_model.base_url = model.base_url
         
         # Handle Defaults
         if model.is_default:
@@ -190,7 +201,7 @@ def create_model(model: ModelCreate, db: Session = Depends(get_shared_db)):
         else:
             existing_model.is_kb_search_default = False
 
-        db.commit()
+        commit_configuration(db)
         db.refresh(existing_model)
         return existing_model
 
@@ -216,16 +227,12 @@ def create_model(model: ModelCreate, db: Session = Depends(get_shared_db)):
         is_kb_search_default=model.is_kb_search_default
     )
     db.add(db_model)
-    try:
-        db.commit()
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
+    commit_configuration(db)
     db.refresh(db_model)
     return db_model
 
 @router.put("/models/{model_id}", response_model=ModelResponse)
-def update_model(model_id: int, updates: ModelUpdate, db: Session = Depends(get_shared_db)):
+def update_model(model_id: int, updates: ModelUpdate, db: Session = Depends(get_shared_db), admin: dict = Depends(require_platform_admin)):
     db_model = db.query(LLMModel).filter(LLMModel.id == model_id).first()
     if not db_model:
         raise HTTPException(status_code=404, detail="Model not found")
@@ -249,22 +256,22 @@ def update_model(model_id: int, updates: ModelUpdate, db: Session = Depends(get_
     if updates.supports_geo is not None: db_model.supports_geo = updates.supports_geo
     if updates.supports_chat is not None: db_model.supports_chat = updates.supports_chat
     if updates.is_active is not None: db_model.is_active = updates.is_active
-    if updates.api_key is not None: db_model.api_key = updates.api_key
-    if updates.base_url is not None: db_model.base_url = updates.base_url
+    if updates.api_key: db_model.api_key = updates.api_key
+    if updates.base_url: db_model.base_url = updates.base_url
     
-    db.commit()
+    commit_configuration(db)
     db.refresh(db_model)
     return db_model
 
 @router.delete("/models/{model_id}")
-def delete_model(model_id: int, db: Session = Depends(get_shared_db)):
+def delete_model(model_id: int, db: Session = Depends(get_shared_db), admin: dict = Depends(require_platform_admin)):
     db_model = db.query(LLMModel).filter(LLMModel.id == model_id).first()
     if not db_model:
         raise HTTPException(status_code=404, detail="Model not found")
 
     # Hard delete (completely remove from database)
     db.delete(db_model)
-    db.commit()
+    commit_configuration(db)
     return {"message": "Model deleted"}
 
 
