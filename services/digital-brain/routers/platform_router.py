@@ -273,7 +273,9 @@ def delete_model(model_id: int, db: Session = Depends(get_shared_db)):
 # Tools that are built into the platform (System) vs business tools (Business)
 _SYSTEM_TOOLS = {"web_search", "rpa_browser", "ppt_generator"}
 _TOOL_TAGS = {
-    "check_order_status": ["Business", "Python"],
+    "check_order_status": ["Unsupported", "No order contract"],
+    "get_crm_customer_status": ["Business", "Bound context", "Read-only"],
+    "get_crm_quotation_status": ["Business", "Bound context", "Read-only"],
     "web_search": ["System", "Built-in"],
     "rpa_browser": ["System", "Built-in"],
     "ppt_generator": ["System", "Built-in"],
@@ -318,7 +320,9 @@ def list_skills():
 # Tools that are built into the platform (System) vs business tools (Business)
 _SYSTEM_TOOLS = {"web_search", "rpa_browser", "ppt_generator"}
 _TOOL_TAGS = {
-    "check_order_status": ["Business", "Python"],
+    "check_order_status": ["Unsupported", "No order contract"],
+    "get_crm_customer_status": ["Business", "Bound context", "Read-only"],
+    "get_crm_quotation_status": ["Business", "Bound context", "Read-only"],
     "web_search": ["System", "Built-in"],
     "rpa_browser": ["System", "Built-in"],
     "ppt_generator": ["System", "Built-in"],

@@ -27,7 +27,7 @@ import database.models  # noqa: E402,F401
 
 SERVICE_ROOT = Path(__file__).resolve().parents[1]
 CRM_TABLES = {"crm_integration_configs", "crm_sync_jobs", "crm_entity_links", "crm_outcome_events", "crm_worker_state"}
-HEAD = "0006_inspector_model_attribution"
+HEAD = "0007_crm_status_query_audit"
 EXPECTED_PHASE1 = {
     "users", "organizations", "leads", "projects", "chat_sessions", "chat_messages",
     "knowledge_bases", "knowledge_docs", "knowledge_chunks",
