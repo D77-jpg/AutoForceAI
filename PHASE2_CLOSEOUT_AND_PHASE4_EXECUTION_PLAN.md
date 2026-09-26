@@ -33,15 +33,19 @@
 
 ### 2.1 AutoForceAI
 
-| 项目 | 状态 | 基线/结果 |
+> 下表是 2026-09-23 阶段 2.9 工作树的**历史快照**，不是 H-14 当前主线状态；
+> 其中“超前 19 个提交”“非干净工作区”和 Genesis “暂无 upstream”均已过期。
+> 当前双仓 main 和 H-14 候选状态以 `docs/integration/COMPATIBILITY.md` 的 H-14 节为准。
+
+| 项目 | 当时状态 | 当时基线/结果 |
 |---|---|---|
 | Wave A/B：契约、客户端、连接配置 | 已完成 | `3e31290` |
 | Wave C：Outbox、租约、退避、死信、重投 | 已完成 | `cf5fccf` |
 | Wave D：成交回流、CRM 门户摘要 | 已完成 | `bd84e26` |
 | CRM Python 测试 | 通过 | 31/31 |
 | Web Console TypeScript | 通过 | `tsc --noEmit` |
-| 本地 `main` 与远程 | 待处理 | `main` 比 `origin/main` 超前 19 个提交 |
-| 工作区 | 非干净 | 存在未提交的 dashboard/UI 改动，不能混入 CRM 收口提交 |
+| 本地 `main` 与远程（历史记录） | 当时待处理 | 当时 `main` 比 `origin/main` 超前 19 个提交；H-14 不再适用 |
+| 工作区（历史记录） | 当时非干净 | 当时存在未提交的 dashboard/UI 改动；H-14 从干净主线开工 |
 
 ### 2.2 Genesis_CRM
 
@@ -53,7 +57,7 @@
 | 客户状态与报价查询 | 已预留 | 阶段 5.2 可复用 |
 | Integration API 测试 | 通过 | 13/13 |
 | 前后端 TypeScript | 通过 | 双端 typecheck |
-| 远程交付 | 待处理 | `feat/integration-api-v1` 暂无 upstream |
+| 远程交付（历史记录） | 当时待处理 | 当时 `feat/integration-api-v1` 暂无 upstream；H-14 不再适用 |
 
 ### 2.3 已跑通的业务闭环
 
