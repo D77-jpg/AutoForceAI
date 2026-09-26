@@ -56,6 +56,10 @@ class ProductionComposeChecks(unittest.TestCase):
         # Production builds use same-origin browser API, never visitor localhost.
         quote = (ROOT.parent / "apps/web-console/lib/quotation-api.ts").read_text(encoding="utf-8")
         self.assertNotIn('http://localhost:8010', quote)
+        web_image = (ROOT / "web.Dockerfile").read_text(encoding="utf-8")
+        self.assertIn('CMD ["node", "server.js"]', web_image)
+        self.assertIn('/workspace/apps/web-console/.next/static ./.next/static', web_image)
+        self.assertIn('/workspace/apps/web-console/public ./public', web_image)
 
 
 if __name__ == "__main__":

@@ -15,9 +15,9 @@ FROM node:20-bookworm-slim
 ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0
 WORKDIR /app
 COPY --from=build --chown=node:node /workspace/apps/web-console/.next/standalone ./
-COPY --from=build --chown=node:node /workspace/apps/web-console/.next/static ./apps/web-console/.next/static
-COPY --from=build --chown=node:node /workspace/apps/web-console/public ./apps/web-console/public
+COPY --from=build --chown=node:node /workspace/apps/web-console/.next/static ./.next/static
+COPY --from=build --chown=node:node /workspace/apps/web-console/public ./public
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 CMD node -e "fetch('http://127.0.0.1:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-CMD ["node", "apps/web-console/server.js"]
+CMD ["node", "server.js"]
