@@ -2,6 +2,7 @@ import os
 import urllib.parse
 from pydantic import BaseModel
 from dotenv import load_dotenv
+from core.auth import is_production
 
 load_dotenv()
 
@@ -42,6 +43,11 @@ class AppSettings(BaseModel):
     version: str = "1.0.0"
     debug: bool = os.getenv("DEBUG", "False").lower() == "true"
     database: DatabaseSettings = DatabaseSettings()
-    worker_secret: str = os.getenv("WORKER_SECRET", "geo-rpa-secret-2026")
+    worker_secret: str = ""
+
+    def model_post_init(self, __context) -> None:
+        self.worker_secret = os.getenv("WORKER_SECRET", "")
+        if is_production() and len(self.worker_secret.encode("utf-8")) < 32:
+            raise RuntimeError("Production requires a strong WORKER_SECRET (at least 32 bytes)")
 
 settings = AppSettings()
