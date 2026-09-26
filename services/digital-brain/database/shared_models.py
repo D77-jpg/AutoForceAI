@@ -549,6 +549,19 @@ class CrmEntityLink(SharedBase):
     )
 
 
+class CrmStatusQueryAudit(SharedBase):
+    """Minimal read-only CRM tool audit; never store token or remote customer data."""
+    __tablename__ = "crm_status_query_audits"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True)
+    lead_id = Column(Integer, nullable=True)
+    tool_name = Column(String, nullable=False)
+    outcome_code = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.now, nullable=False)
+
+
 class CrmWorkerState(SharedBase):
     """
     CRM 后台 worker 全局健康状态（阶段 2.9 §3.6，单行表 id=1）。

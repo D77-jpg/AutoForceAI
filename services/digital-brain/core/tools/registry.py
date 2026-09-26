@@ -1,6 +1,7 @@
 from typing import Dict, Type, List
 from .base import BaseTool
 from .definitions import OrderStatusTool
+from .crm_status import CrmCustomerStatusTool, CrmQuotationStatusTool
 from .web_search import WebSearchTool
 from .rpa_browser import RPABrowserTool
 from .ppt_generator import PPTGeneratorTool
@@ -11,6 +12,10 @@ class ToolRegistry:
     @classmethod
     def register_defaults(cls):
         cls.register(OrderStatusTool())
+        # Unbound prototypes only expose schemas; run() fails without trusted
+        # server-side actor+session context, never supplied by tool arguments.
+        cls.register(CrmCustomerStatusTool())
+        cls.register(CrmQuotationStatusTool())
         cls.register(WebSearchTool())
         cls.register(RPABrowserTool())
         cls.register(PPTGeneratorTool())
