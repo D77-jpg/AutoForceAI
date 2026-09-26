@@ -52,8 +52,8 @@ async def lifespan(app: FastAPI):
     try:
         from core.geo_scheduler import start as start_geo_scheduler
         start_geo_scheduler(interval_seconds=int(os.getenv("GEO_SCHEDULER_INTERVAL", "60")))
-    except Exception as exc:
-        print(f"[Warn] GEO scheduler not started: {exc}")
+    except Exception:
+        print("[Warn] GEO scheduler not started")
     # Retention is bounded and only removes resolved incidents. Never let
     # retention failure prevent the main service from starting.
     try:
@@ -71,8 +71,8 @@ async def lifespan(app: FastAPI):
     try:
         from core.crm.dispatcher import start_dispatcher
         start_dispatcher()
-    except Exception as exc:
-        print(f"[Warn] CRM dispatcher not started: {exc}")
+    except Exception:
+        print("[Warn] CRM dispatcher not started")
     yield
     try:
         from core.crm.dispatcher import stop_dispatcher
@@ -494,7 +494,7 @@ def simulate_search_effect(request: SimulateRequest):
         """
 
         # 3. 调用 AI 获取"模拟回答"
-        print(f"[Simulate] Running simulation for {request.brand_name}")
+        print("[Simulate] Running simulation")
         ai_response = engine_client.client.chat.completions.create(
             model="glm-4",
             messages=[{"role": "user", "content": simulation_prompt}]
@@ -955,7 +955,7 @@ def publish_content_to_platform(
     发布内容到外部平台 (集成 WordPress API 和 RPA Bridge)
     """
     import time
-    print(f"[Publish Debug] Platform: {request.platform}, Title: {request.title}, Content Len: {len(request.content)}")
+    print("[Publish] Task requested")
     
     try:
         if request.platform == 'website':
