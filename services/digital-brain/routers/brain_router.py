@@ -88,7 +88,7 @@ def generate_session_title(db: Session, session_id: int, query: str):
             session.title = new_title
             db.commit()
     except Exception as e:
-        print(f"Error generating title: {e}")
+        print("Title generation failed")
 
 # --- Endpoints ---
 
@@ -171,7 +171,7 @@ async def extract_file_content(file: UploadFile = File(...)):
             "size": len(content)
         }
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail="Invalid uploaded file")
 
 @router.post("/chat")
 def brain_chat(
@@ -182,7 +182,7 @@ def brain_chat(
     """
     Streamed Chat Endpoint
     """
-    print(f"[DEBUG] Brain Chat Request: {request.query[:50]}")
+    # Do not log chat content or prompts.
     user = db.query(User).filter(User.id == user_id).first()
     if not user or not user.organization_id:
         raise HTTPException(status_code=400, detail="User context invalid")
@@ -224,7 +224,7 @@ def brain_chat(
         # Ensure requested KBs belong to user's org or are system KBs
         valid_kbs = base_kb_query.filter(KnowledgeBase.id.in_(request.kb_ids)).all()
         target_kb_ids = [k.id for k in valid_kbs]
-        print(f"[DEBUG] Validated Target KBs: {target_kb_ids} (Requested: {request.kb_ids})")
+        # IDs are not logged; query scope is enforced by the organization filter.
     else:
         # Default: Search Public KBs in Organization + System Public KBs
         public_kbs = base_kb_query.filter(KnowledgeBase.is_public == True).all()
@@ -285,7 +285,7 @@ def brain_chat(
                     )
                 yield pack_json({"t": "step", "msg": f"检索完成，找到 {len(chunks)} 条相关内容..."})
             except Exception as e:
-                print(f"RAG Error: {e}")
+                print("RAG retrieval failed")
                 chunks = []
                 yield pack_json({"t": "step", "msg": "检索服务暂时不可用，尝试通用回答..."})
 
@@ -478,7 +478,7 @@ def brain_chat(
                                  yield pack_json({"t": "token", "chunk": chunk_data["content"]})
                                  full_answer += chunk_data["content"]
             except Exception as e:
-                print(f"Model Inference Error: {e}")
+                print("Model inference failed")
                 
             # Save Assistant Reply
             new_msg = BrainMessage(
@@ -494,7 +494,7 @@ def brain_chat(
                  save_db.add(new_msg)
                  save_db.commit()
             except Exception as e:
-                 print(f"Error saving message: {e}")
+                 print("Message persistence failed")
             finally:
                  save_db.close()
             

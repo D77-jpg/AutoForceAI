@@ -6,14 +6,16 @@ import random # Added random
 import string # Added string
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from core.db_manager import get_shared_db
 from database.shared_models import User, Organization, UserRole
-from core.auth import create_access_token, get_password_hash, verify_password
+from core.auth import create_access_token, get_password_hash, is_production, verify_password
+from core.login_security import failed_login_policy, validate_registration_password
 from core.dependencies import get_current_user_id
+
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -103,8 +105,7 @@ def email_register(request: EmailRegisterRequest, db: Session = Depends(get_shar
     email = request.email.strip().lower()
     if not email or "@" not in email or "." not in email.split("@")[-1]:
         raise HTTPException(status_code=400, detail="邮箱格式不正确")
-    if len(request.password) < 6:
-        raise HTTPException(status_code=400, detail="密码长度至少 6 位")
+    validate_registration_password(request.password)
 
     existing = db.query(User).filter(User.email == email).first()
     if existing:
@@ -130,17 +131,18 @@ def email_register(request: EmailRegisterRequest, db: Session = Depends(get_shar
 
 
 @router.post("/login", response_model=LoginResponse)
-def email_login(request: EmailLoginRequest, db: Session = Depends(get_shared_db)):
-    """Email + password login."""
+def email_login(request: EmailLoginRequest, http_request: Request, db: Session = Depends(get_shared_db)):
+    """Email + password login with a per-account/client failed-attempt cooldown."""
     email = request.email.strip().lower()
+    client_ip = http_request.client.host if http_request.client else "unknown"
+    failed_login_policy.check(email, client_ip)
     user = db.query(User).filter(User.email == email).first()
-    if not user or not user.hashed_password:
-        raise HTTPException(status_code=401, detail="邮箱或密码错误")
-    if not verify_password(request.password, user.hashed_password):
+    if not user or not user.hashed_password or not verify_password(request.password, user.hashed_password):
+        failed_login_policy.fail(email, client_ip)
         raise HTTPException(status_code=401, detail="邮箱或密码错误")
     if not user.is_active:
         raise HTTPException(status_code=403, detail="账号已被停用，请联系管理员")
-
+    failed_login_policy.success(email, client_ip)
     return _build_login_response(user, db)
 
 
@@ -260,7 +262,9 @@ def join_organization(
 @router.get("/wechat/url")
 def get_wechat_auth_url():
     """Generates the WeChat QR connect URL"""
-    if not WECHAT_APP_ID or "wx" not in WECHAT_APP_ID:
+    if not WECHAT_APP_ID or "wx" not in WECHAT_APP_ID or not WECHAT_APP_SECRET or not WECHAT_REDIRECT_URI:
+        if is_production():
+            raise HTTPException(status_code=503, detail="微信登录未配置")
         return {"url": "#", "mock_mode": True, "msg": "WECHAT_APP_ID not configured"}
     
     base_url = "https://open.weixin.qq.com/connect/qrconnect"
@@ -280,21 +284,25 @@ def wechat_login(request: WeChatLoginRequest, db: Session = Depends(get_shared_d
     openid = None
     unionid = None
     nickname = None
-    
-    # 1. Determine Logic Path (Real vs Mock)
-    is_mock = request.code.startswith("mock_") or not WECHAT_APP_ID or "wx" not in WECHAT_APP_ID
-    
+    avatar_url = None
+
+    # Production must reject mock codes and missing configuration before DB access.
+    mock_code = request.code.startswith("mock_")
+    configured = bool(WECHAT_APP_ID and "wx" in WECHAT_APP_ID and WECHAT_APP_SECRET and WECHAT_REDIRECT_URI)
+    if is_production() and (mock_code or not configured):
+        raise HTTPException(status_code=403 if mock_code else 503, detail="微信登录不可用")
+    is_mock = mock_code or not configured
+
     if is_mock:
-        # Mock Logic for Dev
         openid = f"gh_{request.code}"
         nickname = f"User_{request.code[-4:]}"
     else:
         # Real WeChat API Exchange
         token_url = f"https://api.weixin.qq.com/sns/oauth2/access_token?appid={WECHAT_APP_ID}&secret={WECHAT_APP_SECRET}&code={request.code}&grant_type=authorization_code"
         try:
-            resp = requests.get(token_url).json()
+            resp = requests.get(token_url, timeout=10).json()
             if "errcode" in resp:
-                raise HTTPException(status_code=400, detail=f"WeChat API Error: {resp.get('errmsg')}")
+                raise HTTPException(status_code=400, detail="微信授权失败")
             
             openid = resp["openid"]
             unionid = resp.get("unionid") 
@@ -302,15 +310,14 @@ def wechat_login(request: WeChatLoginRequest, db: Session = Depends(get_shared_d
             
             # Optional: Get User Info
             user_info_url = f"https://api.weixin.qq.com/sns/userinfo?access_token={access_token_wx}&openid={openid}"
-            user_info_resp = requests.get(user_info_url)
+            user_info_resp = requests.get(user_info_url, timeout=10)
             # FORCE UTF-8 DECODING (Fixes encoding issues with WeChat API)
             try:
                 content = user_info_resp.content
                 # Try decoding as utf-8, fallback to latin-1 if needed, but usually utf-8 is correct for WeChat JSON
                 decoded_content = content.decode('utf-8')
                 user_info = json.loads(decoded_content)
-            except Exception as decode_err:
-                print(f"JSON Decode Warning: {decode_err}")
+            except (ValueError, UnicodeError):
                 user_info = user_info_resp.json() # Fallback
             
             nickname = user_info.get("nickname", f"User_{openid[:4]}")
@@ -320,8 +327,10 @@ def wechat_login(request: WeChatLoginRequest, db: Session = Depends(get_shared_d
             if avatar_url and avatar_url.startswith("http://"):
                 avatar_url = avatar_url.replace("http://", "https://")
             
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"WeChat Connection Failed: {str(e)}")
+        except HTTPException:
+            raise
+        except (requests.RequestException, ValueError, KeyError, UnicodeError):
+            raise HTTPException(status_code=502, detail="微信服务暂不可用")
 
     # 2. Find or Create User
     # Try finding by unionid first (if enterprise has multiple apps), then openid
@@ -333,6 +342,9 @@ def wechat_login(request: WeChatLoginRequest, db: Session = Depends(get_shared_d
         user = db.query(User).filter(User.wechat_openid == openid).first()
 
     is_new = False
+    if user and not user.is_active:
+        raise HTTPException(status_code=403, detail="账号已被停用，请联系管理员")
+
     if not user:
         is_new = True
         # Check if first user in system -> System Admin
@@ -381,14 +393,11 @@ def wechat_login(request: WeChatLoginRequest, db: Session = Depends(get_shared_d
     try:
         db.commit()
         db.refresh(user)
-    except Exception as e:
-        print(f"Error saving user profile: {e}")
-        # Rollback in case of error to avoid stuck session
+    except Exception:
         db.rollback()
+        raise HTTPException(status_code=500, detail="无法保存用户信息")
 
-    is_dev = os.getenv("DEBUG", "False").lower() == "true"
-    if is_dev:
-        print(f"[DEBUG] WECHAT LOGIN: Nickname={nickname}, Avatar={avatar_url}, Username={user.username}")
+    # Do not log profile data or upstream credentials, even in debug mode.
 
     # 3. Create Access Token (Include Role and Org in claim if possible, or just user_id)
     # We put role/org in token for frontend convenience, but verify_token usually just checks userId

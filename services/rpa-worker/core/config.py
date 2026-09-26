@@ -64,7 +64,7 @@ def get_conf(key, default):
 # Default to local dev server
 GEO_SERVER_URL = get_conf("GEO_SERVER_URL", "http://localhost:8002/api/v1")
 WORKER_ID = get_conf("WORKER_ID", "rpa_worker_default")
-WORKER_SECRET = get_conf("WORKER_SECRET", "geo-rpa-secret-2026")
+WORKER_SECRET = get_conf("WORKER_SECRET", "")
 
 # 客户端模式默认开启 Headless=False (要看到浏览器窗口)
 HEADLESS = str(get_conf("RPA_HEADLESS", "false")).lower() == "true"

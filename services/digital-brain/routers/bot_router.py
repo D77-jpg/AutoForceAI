@@ -165,7 +165,7 @@ def list_bots(
                 created_at=None 
             ))
     except Exception as e:
-        print(f"Error listing bots: {e}")
+        print("Bot listing failed")
         # Return partial results or re-raise?
         # Re-raising 500 might trigger alert, better to log and return what we have? 
         # But for now, let's allow it to fail to debug if needed.

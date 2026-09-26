@@ -1,5 +1,5 @@
 import os
-from zhipuai import ZhipuAI
+from core.llm.zhipu_compat import ZhipuAI
 from typing import List, Dict, Any
 from ..base import BaseLLM, LLMResponse
 
@@ -65,8 +65,8 @@ class ZhipuLLM(BaseLLM):
                     "output_tokens": response.usage.completion_tokens
                 }
             )
-        except Exception as e:
-            raise Exception(f"ZhipuAI Error: {str(e)}")
+        except Exception:
+            raise RuntimeError("ZhipuAI request failed") from None
 
     def chat_stream(self, messages: List[Dict[str, str]], **kwargs):
         print(f"[ZhipuLLM] chat_stream called. Client exists: {self.client is not None}")
@@ -108,6 +108,6 @@ class ZhipuLLM(BaseLLM):
                     yield content
             print(f"[ZhipuLLM] Stream finished. Chunks processed: {count}")
                     
-        except Exception as e:
-            print(f"[ZhipuLLM] Error: {e}")
-            yield f"[Error: {str(e)}]"
+        except Exception:
+            print("[ZhipuLLM] Stream failed")
+            yield "[Error: model request failed]"

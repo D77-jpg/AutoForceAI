@@ -4,6 +4,7 @@ import time
 import uuid
 import uvicorn
 from contextlib import asynccontextmanager
+from hmac import compare_digest
 from datetime import datetime
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,6 +24,8 @@ from routers import auth_router, monitor_router, bot_router, branding_router, co
 from routers import kb_router, service_chat_router, lead_router, marketing_router, crm_integration_router, quotation_router, alert_router
 from core.dependencies import get_db, get_current_user_id
 from core.config import settings
+from core.security_cors import allowed_origins
+from core.security_rate_limit import enforce_rate_limit
 from fastapi.staticfiles import StaticFiles
 
 # --- Missing Imports Added ---
@@ -50,8 +53,8 @@ async def lifespan(app: FastAPI):
     try:
         from core.geo_scheduler import start as start_geo_scheduler
         start_geo_scheduler(interval_seconds=int(os.getenv("GEO_SCHEDULER_INTERVAL", "60")))
-    except Exception as exc:
-        print(f"[Warn] GEO scheduler not started: {exc}")
+    except Exception:
+        print("[Warn] GEO scheduler not started")
     # Retention is bounded and only removes resolved incidents. Never let
     # retention failure prevent the main service from starting.
     try:
@@ -69,8 +72,8 @@ async def lifespan(app: FastAPI):
     try:
         from core.crm.dispatcher import start_dispatcher
         start_dispatcher()
-    except Exception as exc:
-        print(f"[Warn] CRM dispatcher not started: {exc}")
+    except Exception:
+        print("[Warn] CRM dispatcher not started")
     yield
     try:
         from core.crm.dispatcher import stop_dispatcher
@@ -93,7 +96,8 @@ async def request_metadata_log(request: Request, call_next):
     route = "unmatched"
     status = 500
     try:
-        response = await call_next(request)
+        denied = enforce_rate_limit(request)
+        response = denied if denied is not None else await call_next(request)
         status = response.status_code
         matched = request.scope.get("route")
         route = getattr(matched, "path", "unmatched")
@@ -112,7 +116,7 @@ async def request_metadata_log(request: Request, call_next):
 # Add CORS Middleware - CRITICAL for Direct Browser Access & Streaming
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For dev; lock down in prod
+    allow_origins=allowed_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -324,7 +328,7 @@ def perform_analysis_task(task_id: int, request: MonitorRequest):
     """
     后台任务：执行 AI 搜索与分析，并更新数据库
     """
-    print(f"[Task] 开始处理任务 #{task_id}: {request.brand_name} - {request.query}")
+    print(f"[Task] 开始处理任务 #{task_id}")
     
     db = SessionLocal()
     # 使用 AnalysisTask
@@ -345,7 +349,7 @@ def perform_analysis_task(task_id: int, request: MonitorRequest):
                 task.logs = current_logs
             db.commit()
         except Exception as e:
-            print(f"Update progress failed: {e}")
+            print("Update progress failed")
 
     try:
         task.status = TaskStatus.RUNNING.value
@@ -428,9 +432,9 @@ def perform_analysis_task(task_id: int, request: MonitorRequest):
         print(f"[Task] 任务 #{task_id} 完成！")
         
     except Exception as e:
-        print(f"[Error] 任务失败: {e}")
+        print("[Error] 分析任务失败")
         task.status = TaskStatus.FAILED.value
-        task.reasoning = f"Task Failed: {str(e)}"
+        task.reasoning = "Task Failed: internal error"
         db.commit()
     finally:
         db.close()
@@ -491,7 +495,7 @@ def simulate_search_effect(request: SimulateRequest):
         """
 
         # 3. 调用 AI 获取"模拟回答"
-        print(f"[Simulate] Running simulation for {request.brand_name}")
+        print("[Simulate] Running simulation")
         ai_response = engine_client.client.chat.completions.create(
             model="glm-4",
             messages=[{"role": "user", "content": simulation_prompt}]
@@ -507,7 +511,7 @@ def simulate_search_effect(request: SimulateRequest):
         }
 
     except Exception as e:
-        print(f"[Simulate Error] {e}")
+        print("[Simulate Error] Operation failed")
         raise HTTPException(status_code=500, detail=f"仿真失败: {str(e)}")
 
 @app.post("/api/v1/tools/optimize_content")
@@ -595,7 +599,7 @@ def optimize_content(request: OptimizeRequest):
             "json_ld_snippet": json_ld
         }
     except Exception as e:
-        print(f"[Optimize Error] {e}") # Add logging
+        print("[Optimize Error] Operation failed") # Add logging
         raise HTTPException(status_code=500, detail=f"Generation Error: {str(e)}")
 
 
@@ -616,6 +620,13 @@ class RPALogRequest(BaseModel):
 
 # --- RPA 任务管理 (Database Backend) ---
 
+def require_worker_key(candidate: Optional[str]) -> None:
+    """No worker endpoint may accept a missing/empty configured secret."""
+    expected = settings.worker_secret
+    if not expected or not candidate or not compare_digest(candidate, expected):
+        raise HTTPException(status_code=401, detail="Invalid Worker Key")
+
+
 @app.post("/api/v1/rpa/tasks/{task_id}/log")
 def append_rpa_log(
     task_id: int, 
@@ -626,10 +637,7 @@ def append_rpa_log(
     """
     RPA 机器人专用接口：实时汇报执行步骤
     """
-    # Verify worker key
-    if x_worker_key != settings.worker_secret:
-         # Optional: fall back to user auth if specific case needed, but for now strict worker check
-         raise HTTPException(status_code=401, detail="Invalid Worker Key")
+    require_worker_key(x_worker_key)
 
     import traceback
     try:
@@ -675,9 +683,8 @@ def append_rpa_log(
         db.commit()
         return {"status": "logged"}
     except Exception as e:
-        print(f"[RPA Log Error] Failed to append log: {e}")
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        print("[RPA Log Error] Failed to append log")
+        raise HTTPException(status_code=500, detail="Unable to append worker log")
 
 @app.post("/api/v1/rpa/tasks/{task_id}/retry")
 def retry_rpa_task(
@@ -781,8 +788,7 @@ def pop_rpa_task(
     RPA 机器人专用接口：获取一个待处理任务 (Global Queue in Shared DB)
     Requires X-Worker-Key header.
     """
-    if x_worker_key != settings.worker_secret:
-        raise HTTPException(status_code=401, detail="Invalid Worker Key")
+    require_worker_key(x_worker_key)
         
     # PRIORITY 1: Check for Real-time "View" requests (view_browser)
     # These should jump the queue immediately so the user doesn't wait.
@@ -823,8 +829,7 @@ def complete_rpa_task(
     """
     RPA 机器人专用接口：回传任务结果
     """
-    if x_worker_key != settings.worker_secret:
-        raise HTTPException(status_code=401, detail="Invalid Worker Key")
+    require_worker_key(x_worker_key)
 
     job = db.query(RPAJob).filter(RPAJob.id == task_id).first()
     if not job:
@@ -953,7 +958,7 @@ def publish_content_to_platform(
     发布内容到外部平台 (集成 WordPress API 和 RPA Bridge)
     """
     import time
-    print(f"[Publish Debug] Platform: {request.platform}, Title: {request.title}, Content Len: {len(request.content)}")
+    print("[Publish] Task requested")
     
     try:
         if request.platform == 'website':
@@ -995,7 +1000,7 @@ def publish_content_to_platform(
             return {"status": "manual_required", "msg": f"{request.platform} 暂未配置 API 连接器，内容已复制。"}
             
     except Exception as e:
-        print(f"[Publish Error] {e}")
+        print("[Publish Error] Operation failed")
         return {"status": "error", "msg": f"API 连接超时或认证失败: {str(e)}"}
 
 

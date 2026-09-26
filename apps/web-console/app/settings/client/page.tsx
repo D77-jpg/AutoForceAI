@@ -19,7 +19,8 @@ const generateConfig = () => {
     return {
         "GEO_SERVER_URL": `${baseUrl}/api/v1`, 
         "WORKER_ID": "client_placeholder", // 初始占位符，避免 hydration mismatch
-        "WORKER_SECRET": "geo-rpa-secret-2026", 
+        // Never ship a shared worker credential in browser JavaScript or downloads.
+        "WORKER_SECRET": "", // Operator must supply a private key out of band.
         "RPA_HEADLESS": "false",
         "RPA_BROWSER": "chromium"
     };
@@ -47,7 +48,7 @@ export default function ClientDownloadPage() {
 
     const handleCopyConfig = () => {
         navigator.clipboard.writeText(JSON.stringify(config, null, 4));
-        showToast("配置已复制，请创建 config.json 并粘贴", "success");
+        showToast("配置已复制；请通过私密渠道配置 WORKER_SECRET", "success");
     };
 
     const handleDownloadConfig = () => {
@@ -101,7 +102,7 @@ export default function ClientDownloadPage() {
                                 环境要求：Windows 10/11, 建议 8G 内存以上
                             </AlertDescription>
                             <AlertDescription className="text-xs text-text-secondary">
-                                下载后点击运行的下载文件：DigitalEmployeeRPA.exe
+                                下载后点击运行的下载文件：DigitalEmployeeRPA.exe。WORKER_SECRET 不随安装包或网页下发，须由管理员通过私密渠道配置。
                             </AlertDescription>
                         </Alert>
                     </CardContent>

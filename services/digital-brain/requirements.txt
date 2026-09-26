@@ -3,7 +3,6 @@ pydantic
 python-dotenv
 requests
 beautifulsoup4
-zhipuai
 dashscope
 fastapi
 uvicorn
@@ -18,7 +17,7 @@ pypdf
 python-docx
 tiktoken
 pgvector
-python-jose[cryptography]
+PyJWT==2.14.0
 passlib[bcrypt]
 # bcrypt must stay <4.1: passlib 1.7.4 reads bcrypt.__about__.__version__ which was
 # removed in bcrypt 4.1+, breaking password hashing at runtime.
@@ -29,7 +28,7 @@ python-pptx
 loguru
 markdown
 
-# 阶段 2.9 P0-4：正式数据库迁移
+# Phase 2.9 P0-4: production database migrations
 alembic==1.20.0
 
 psycopg[binary]==3.3.6

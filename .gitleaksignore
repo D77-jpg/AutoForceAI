@@ -1,0 +1,9 @@
+# Reviewed full-history fingerprints, Gitleaks v8.24.3 only.
+# Each exact commit:file:rule:line was inspected; see .github/SECURITY_AUDITS.md.
+# Do not add broad paths, rules, wildcard patterns, or any new finding without review.
+3e31290a1b1f4418e3e92ec6045f6e7c6b96e552:services/digital-brain/tests/test_crm_contract.py:generic-api-key:247
+d562c5f6e62ff01972113dad65fb4d77d4d09e7c:services/rpa-worker/.env.example:generic-api-key:5
+aa2bf935d53d4791eb7efa1233fc9073c16d63bc:apps/web-console/app/settings/client/page.tsx:generic-api-key:22
+aa2bf935d53d4791eb7efa1233fc9073c16d63bc:services/digital-brain/core/config.py:generic-api-key:45
+aa2bf935d53d4791eb7efa1233fc9073c16d63bc:services/digital-brain/routers/content_router.py:generic-api-key:199
+aa2bf935d53d4791eb7efa1233fc9073c16d63bc:services/rpa-worker/core/config.py:generic-api-key:67
