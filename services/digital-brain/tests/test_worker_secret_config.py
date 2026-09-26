@@ -2,6 +2,7 @@
 
 import pytest
 
+from fastapi import HTTPException
 from core.config import AppSettings
 
 
@@ -24,3 +25,19 @@ def test_production_fails_without_strong_worker_secret(monkeypatch):
         AppSettings()
     monkeypatch.setenv("WORKER_SECRET", "long-private-key-not-committed-anywhere")
     assert AppSettings().worker_secret == "long-private-key-not-committed-anywhere"
+
+
+def test_worker_endpoint_fails_closed_without_configured_secret(monkeypatch):
+    import server
+
+    monkeypatch.setattr(server.settings, "worker_secret", "")
+    for candidate in (None, "", "arbitrary"):
+        with pytest.raises(HTTPException) as exc:
+            server.require_worker_key(candidate)
+        assert exc.value.status_code == 401
+    monkeypatch.setattr(server.settings, "worker_secret", "strong-private-worker-key-for-unit-tests")
+    with pytest.raises(HTTPException):
+        server.require_worker_key(None)
+    with pytest.raises(HTTPException):
+        server.require_worker_key("wrong")
+    server.require_worker_key("strong-private-worker-key-for-unit-tests")

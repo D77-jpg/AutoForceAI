@@ -4,6 +4,7 @@ import time
 import uuid
 import uvicorn
 from contextlib import asynccontextmanager
+from hmac import compare_digest
 from datetime import datetime
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -619,6 +620,13 @@ class RPALogRequest(BaseModel):
 
 # --- RPA 任务管理 (Database Backend) ---
 
+def require_worker_key(candidate: Optional[str]) -> None:
+    """No worker endpoint may accept a missing/empty configured secret."""
+    expected = settings.worker_secret
+    if not expected or not candidate or not compare_digest(candidate, expected):
+        raise HTTPException(status_code=401, detail="Invalid Worker Key")
+
+
 @app.post("/api/v1/rpa/tasks/{task_id}/log")
 def append_rpa_log(
     task_id: int, 
@@ -629,10 +637,7 @@ def append_rpa_log(
     """
     RPA 机器人专用接口：实时汇报执行步骤
     """
-    # Verify worker key
-    if x_worker_key != settings.worker_secret:
-         # Optional: fall back to user auth if specific case needed, but for now strict worker check
-         raise HTTPException(status_code=401, detail="Invalid Worker Key")
+    require_worker_key(x_worker_key)
 
     import traceback
     try:
@@ -783,8 +788,7 @@ def pop_rpa_task(
     RPA 机器人专用接口：获取一个待处理任务 (Global Queue in Shared DB)
     Requires X-Worker-Key header.
     """
-    if x_worker_key != settings.worker_secret:
-        raise HTTPException(status_code=401, detail="Invalid Worker Key")
+    require_worker_key(x_worker_key)
         
     # PRIORITY 1: Check for Real-time "View" requests (view_browser)
     # These should jump the queue immediately so the user doesn't wait.
@@ -825,8 +829,7 @@ def complete_rpa_task(
     """
     RPA 机器人专用接口：回传任务结果
     """
-    if x_worker_key != settings.worker_secret:
-        raise HTTPException(status_code=401, detail="Invalid Worker Key")
+    require_worker_key(x_worker_key)
 
     job = db.query(RPAJob).filter(RPAJob.id == task_id).first()
     if not job:
