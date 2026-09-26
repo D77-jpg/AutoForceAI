@@ -113,6 +113,10 @@ pip install -r requirements.txt
 # Configure Environment
 cp .env.example .env
 # Edit .env with your API keys and DB details
+# Optional real web_search: set SERPER_API_KEY in this backend .env only.
+# The fixed HTTPS Serper endpoint may consume paid quota. Without a key the tool
+# returns SEARCH_NOT_CONFIGURED (never fabricated search results). Do not commit .env.
+# Search-result metadata is untrusted; this does not grant digital employees tool access.
 
 # Run Server
 python server.py

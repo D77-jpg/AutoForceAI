@@ -116,6 +116,9 @@ pip install -r requirements.txt
 # 配置环境变量
 cp .env.example .env
 # 编辑 .env 文件，填入你的 API Key 和数据库配置
+# 可选真实联网搜索：仅在后端 .env 中配置 SERPER_API_KEY，固定使用 HTTPS Serper 端点。
+# 使用 Serper 可能产生费用；未配置时返回 SEARCH_NOT_CONFIGURED，不伪造搜索结果。
+# 不要提交 .env；搜索结果属于不可信数据，也不会自动授权数字员工调用工具。
 
 # 运行服务器
 python server.py 
