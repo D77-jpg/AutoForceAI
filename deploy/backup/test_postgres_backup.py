@@ -99,6 +99,36 @@ class BackupTests(unittest.TestCase):
         self.assertEqual(verified_manifest(self.root, data["archive"].replace(".dump", ".manifest.json"))[0], data)
         self.assertNotIn("password", json.dumps(data))
 
+    def test_rehearsal_verifies_tables_counts_alembic_and_crm_mapping(self):
+        from postgres_backup import CRITICAL
+        manifest, _ = self.fixture()
+        statements = []
+        def fake_query(db, sql):
+            statements.append(sql)
+            if sql == "SELECT current_database()":
+                return db
+            if "COUNT(*) FROM pg_class" in sql:
+                return "0"
+            if sql.startswith("SELECT tablename"):
+                return "\n".join(CRITICAL)
+            if "COUNT(DISTINCT project_id)" in sql:
+                return "2"
+            if sql.startswith("SELECT COUNT(*)"):
+                return "1"
+            if sql.startswith("SELECT version_num"):
+                return "0007_crm_status_query_audit"
+            raise AssertionError(f"Unexpected SQL: {sql}")
+        with patch("postgres_backup.run") as execute, patch("postgres_backup.query", side_effect=fake_query):
+            report = restore(self.root, manifest.name, "qa_rehearsal")
+        self.assertEqual(report["status"], "passed")
+        self.assertEqual(report["crm_mapped_project_count"], 2)
+        self.assertEqual(report["alembic_version"], "0007_crm_status_query_audit")
+        self.assertEqual(set(report["critical_table_counts"]), set(CRITICAL))
+        restore_call = execute.call_args_list[-1].args[0]
+        self.assertIn("--single-transaction", restore_call)
+        self.assertIn("--exit-on-error", restore_call)
+        self.assertIn("qa_rehearsal", restore_call)
+
     def test_restore_requires_rehearsal_and_empty_target(self):
         manifest, _ = self.fixture()
         with self.assertRaises(ValueError):
