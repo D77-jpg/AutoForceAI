@@ -1,297 +1,105 @@
 "use client";
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { User, Save, ArrowLeft, Bot, Wrench, Check, Sparkles, Brain, LayoutTemplate } from 'lucide-react';
+
+import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { PageHeader } from '@/components/PageHeader';
-import api from '../../../lib/api';
-import { useToast } from '../../../contexts/ToastContext';
-
-const PRESETS = [
-  {
-    name: "Arthur",
-    role: "strategist",
-    description: "Expert in market analysis and strategic planning.",
-    system_prompt: "You are Arthur, a senior business strategist. Your goal is to analyze market trends and provide actionable insights. You think in frameworks (SWOT, PESTEL).",
-    skills: ["web_search", "database_reader"]
-  },
-  {
-    name: "Leo",
-    role: "executor",
-    description: "Creative content generator and social media operator.",
-    system_prompt: "You are Leo, a creative copywriter and social media manager. You write engaging, viral-worthy content. You are informal but professional.",
-    skills: ["web_search", "generate_content", "rpa_action"]
-  },
-  {
-    name: "Doc",
-    role: "archivist",
-    description: "Knowledge manager responsible for organizing assets.",
-    system_prompt: "You are Doc, a meticulous archivist. You organize information logically and verify facts before recording them.",
-    skills: ["database_reader", "file_manager"]
-  }
-];
-
-const AVAILABLE_SKILLS = [
-    { id: "web_search", name: "联网搜索", desc: "访问实时互联网数据（Google/Bing）" },
-    { id: "rpa_action", name: "浏览器自动化", desc: "控制浏览器抓取或在网站上发布内容" },
-    { id: "database_reader", name: "数据库分析", desc: "查询内部业务数据库" },
-    { id: "generate_content", name: "内容生成", desc: "生成文章、帖子与报告" },
-    { id: "send_email", name: "邮件发送", desc: "发送通知或外联邮件" },
-];
+import api from '@/lib/api';
+import { useToast } from '@/contexts/ToastContext';
+import { errorMessage, fetchProjects, projectQuery, type RoleTemplate, type WorkforceProject } from '../workforce-api';
 
 export default function CreateEmployeePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { showToast } = useToast();
-  const [loading, setLoading] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    name: '',
-    role: 'strategist',
-    description: '',
-    system_prompt: '',
-    skills: [] as string[]
-  });
+  const [projects, setProjects] = useState<WorkforceProject[]>([]);
+  const [projectId, setProjectId] = useState('');
+  const [templates, setTemplates] = useState<RoleTemplate[]>([]);
+  const [templateKey, setTemplateKey] = useState('');
+  const [name, setName] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const selected = templates.find(template => template.key === templateKey);
 
-  const loadPreset = (preset: any) => {
-    setFormData({
-        name: preset.name,
-        role: preset.role,
-        description: preset.description,
-        system_prompt: preset.system_prompt,
-        skills: preset.skills
-    });
-    showToast(`已加载模板：${preset.name}`, "success");
-  };
+  useEffect(() => {
+    let active = true;
+    Promise.all([fetchProjects(), api.get<RoleTemplate[]>('/agents/role-templates')])
+      .then(([availableProjects, response]) => {
+        if (!active) return;
+        if (!Array.isArray(response.data)) throw new Error('岗位模板响应格式不正确');
+        setProjects(availableProjects);
+        setTemplates(response.data);
+        const requested = searchParams.get('project_id');
+        if (requested && availableProjects.some(project => String(project.id) === requested)) setProjectId(requested);
+        else if (requested) setError('当前项目不可访问，请重新选择授权项目。');
+      })
+      .catch(err => { if (active) setError(`无法加载项目或岗位模板：${errorMessage(err)}`); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [searchParams]);
 
-  const toggleSkill = (skillId: string) => {
-    setFormData(prev => {
-        const newSkills = prev.skills.includes(skillId)
-            ? prev.skills.filter(s => s !== skillId)
-            : [...prev.skills, skillId];
-        return { ...prev, skills: newSkills };
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name) return showToast("请填写员工姓名", "error");
-
-    setLoading(true);
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    if (!projects.some(project => String(project.id) === projectId)) return setError('请先选择可访问的真实项目。');
+    if (!selected) return setError('请选择一个有效的岗位模板。');
+    setSaving(true);
+    setError('');
     try {
-        // Construct payload matching AgentCreate schema
-        const payload = {
-            name: formData.name,
-            role: formData.role,
-            description: formData.description,
-            system_prompt: formData.system_prompt,
-            capabilities: formData.skills, // Legacy/Display
-            skills: formData.skills.map(skillId => ({
-                tool_name: skillId,
-                config: {} // Default config
-            }))
-        };
-        
-        // Assuming Project ID 1 for now
-        await api.post(`/agents/1/employees`, payload);
-        
-        showToast("数字员工创建成功！", "success");
-        router.push('/workforce');
-    } catch (err: any) {
-        console.error(err);
-        showToast("创建数字员工失败：" + (err.message || "未知错误"), "error");
+      await api.post(`/agents/${projectId}/employees/from-template`, {
+        template_key: selected.key,
+        ...(name.trim() ? { name: name.trim() } : {}),
+      });
+      showToast('数字员工创建成功；后续模板升级不会自动覆盖其配置。', 'success');
+      router.push(`/workforce${projectQuery(Number(projectId))}`);
+    } catch (err) {
+      setError(`创建失败：${errorMessage(err)}`);
     } finally {
-        setLoading(false);
+      setSaving(false);
     }
-  };
+  }
 
-  return (
-    <div className="min-h-screen bg-bg text-text p-6 flex justify-center selection:bg-accent/20">
-      <div className="w-full max-w-6xl">
-        
-        {/* Header - More Compact & Action Oriented */}
-        <div className="mb-6 border-b border-separator pb-4">
-             <Link href="/workforce" className="inline-flex p-2 hover:bg-surface-2 rounded-lg transition-colors text-text-secondary hover:text-text group mb-2">
-                 <ArrowLeft size={20} strokeWidth={1.75} className="group-hover:-translate-x-1 transition-transform" />
-             </Link>
-             <PageHeader
-                title="设计新员工"
-                description="配置数字员工的角色、性格与核心能力。"
-                className="mb-0"
-                actions={
-                    <>
-                        <Link href="/workforce" className="h-10 px-4 text-sm text-text-secondary hover:text-text transition-colors flex items-center">
-                            取消
-                        </Link>
-                        <button
-                            onClick={handleSubmit}
-                            disabled={loading}
-                            className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-on-accent h-10 px-5 rounded-md text-sm font-medium transition-all shadow-card active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {loading ? '创建中...' : (
-                                <>
-                                    <Save size={18} strokeWidth={1.75} /> 保存配置
-                                </>
-                            )}
-                        </button>
-                    </>
-                }
-             />
+  return <div className="min-h-screen bg-bg text-text p-6"><div className="max-w-6xl mx-auto space-y-6">
+    <Link href={`/workforce${projectId ? projectQuery(Number(projectId)) : ''}`} className="inline-flex gap-2 items-center text-sm text-text-secondary hover:text-accent"><ArrowLeft size={16} /> 返回员工大厅</Link>
+    <PageHeader title="从岗位模板创建" description="选定授权项目与外贸岗位；创建后可单独编辑员工，模板升级不会覆盖现有配置。" />
+    {loading ? <p role="status" className="flex gap-2 items-center"><Loader2 className="animate-spin" size={18} /> 正在加载授权项目和模板…</p> : <>
+      {error && <p role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-600">{error}</p>}
+      {projects.length === 0 && <p role="alert" className="text-text-secondary">没有可访问的项目，无法创建员工。</p>}
+      {templates.length === 0 && <p role="alert" className="text-text-secondary">暂无可用岗位模板，无法创建员工。</p>}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="rounded-xl border border-separator bg-surface p-5 space-y-4">
+          <label className="block text-sm font-semibold" htmlFor="workforce-project">所属项目（必选）</label>
+          <select id="workforce-project" value={projectId} onChange={event => { setProjectId(event.target.value); setError(''); }} className="w-full rounded-lg border border-separator bg-bg p-3 text-text" required>
+            <option value="">请选择项目</option>
+            {projects.map(project => <option key={project.id} value={project.id}>{project.name}（组织 {project.organization_id} / 项目 {project.id}）</option>)}
+          </select>
+          <label className="block text-sm font-semibold" htmlFor="employee-name">员工姓名（可选）</label>
+          <input id="employee-name" value={name} onChange={event => setName(event.target.value)} placeholder="留空则使用模板默认名称" className="w-full rounded-lg border border-separator bg-bg p-3 text-text" />
         </div>
+        <div><h2 className="font-semibold mb-3">选择岗位模板</h2><div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {templates.map(template => <button type="button" key={template.key} onClick={() => { setTemplateKey(template.key); setError(''); }} aria-pressed={template.key === templateKey} className={`text-left rounded-xl border p-5 bg-surface hover:border-accent ${template.key === templateKey ? 'border-accent ring-1 ring-accent' : 'border-separator'}`}>
+            <strong>{template.name}</strong><span className="ml-2 text-xs text-text-secondary">v{template.template_version}</span>
+            <p className="mt-2 text-sm text-text-secondary">{template.description}</p>
+          </button>)}
+        </div></div>
+        {selected && <section className="rounded-xl border border-separator bg-surface p-5 space-y-4" aria-label="模板详情">
+          <h2 className="font-semibold text-lg">{selected.name} · 模板详情</h2>
+          <Detail label="角色目标" value={selected.goal} />
+          <Detail label="禁止事项" value={selected.prohibitions.length ? selected.prohibitions.join('；') : '无额外事项'} />
+          <Detail label="工具白名单" value={selected.allowed_tools.length ? selected.allowed_tools.join('、') : '无可运行工具'} />
+          <Detail label="尚不可运行的能力" value={selected.unavailable_capabilities.length ? selected.unavailable_capabilities.join('、') : '无'} />
+          <Detail label="组织 / 项目数据范围" value={`组织：${selected.data_scope.organization}；项目：${selected.data_scope.project}；跨项目：${selected.data_scope.cross_project ? '允许' : '禁止'}`} />
+          <Detail label="执行上限" value={`${selected.max_steps} 步 · ${selected.timeout_seconds} 秒 · $${selected.max_cost_usd} 费用预算`} />
+          <Detail label="外部写入与发送" value={selected.requires_human_approval_for_external_actions ? '需要人工审核确认；模板本身不授权自动执行' : '按模板策略执行'} />
+          <Detail label="版本" value={`模板 ${selected.template_version} · Prompt ${selected.prompt_version}`} />
+        </section>}
+        <button type="submit" disabled={saving || loading || !projectId || !selected} className="rounded-lg bg-accent px-5 py-3 font-medium text-on-accent disabled:opacity-50">{saving ? '创建中…' : '从模板创建员工'}</button>
+      </form>
+    </>}
+  </div></div>;
+}
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-             
-             {/* Left: Main Configuration (8 cols) */}
-             <div className="lg:col-span-8 flex flex-col gap-6">
-                
-                {/* Identity Section */}
-                <div className="bg-surface border border-separator rounded-xl p-5 shadow-sm hover:border-accent/30 transition-colors">
-                    <h2 className="text-sm font-bold text-accent mb-5 flex items-center gap-2 border-b border-separator pb-2">
-                        <User size={16} strokeWidth={1.75}/> 基础身份
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div className="md:col-span-1">
-                            <label className="block text-xs font-semibold text-text mb-1.5 pl-1">员工姓名</label>
-                            <input 
-                                type="text" 
-                                value={formData.name}
-                                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                                className="w-full bg-bg border border-separator rounded-lg px-3 py-2.5 text-text placeholder-text-tertiary focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all text-sm font-medium"
-                                placeholder="例如：Arthur"
-                            />
-                        </div>
-                        <div className="md:col-span-1">
-                            <label className="block text-xs font-semibold text-text mb-1.5 pl-1">职能角色</label>
-                            <div className="relative">
-                                <select
-                                    value={formData.role}
-                                    onChange={(e) => setFormData({...formData, role: e.target.value})}
-                                    className="w-full bg-bg border border-separator rounded-lg px-3 py-2.5 text-text focus:border-accent outline-none appearance-none text-sm font-medium cursor-pointer hover:border-separator transition-colors"
-                                >
-                                    <option value="strategist">策略专家</option>
-                                    <option value="executor">执行专员</option>
-                                    <option value="archivist">档案管理员</option>
-                                </select>
-                                <div className="absolute right-3 top-3 pointer-events-none text-text-secondary">
-                                    <LayoutTemplate size={14} strokeWidth={1.75} />
-                                </div>
-                            </div>
-                        </div>
-                        <div className="md:col-span-2">
-                            <label className="block text-xs font-semibold text-text mb-1.5 pl-1">一句话描述</label>
-                            <input 
-                                type="text" 
-                                value={formData.description}
-                                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                                className="w-full bg-bg border border-separator rounded-lg px-3 py-2.5 text-text placeholder-text-tertiary focus:border-accent outline-none transition-all text-sm"
-                                placeholder="描述该员工的主要职责..."
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Cognition Section */}
-                <div className="bg-surface border border-separator rounded-xl p-5 shadow-sm hover:border-accent/30 transition-colors">
-                    <h2 className="text-sm font-bold text-accent mb-5 flex items-center gap-2 border-b border-separator pb-2">
-                        <Brain size={16} strokeWidth={1.75} /> 认知设定
-                    </h2>
-                    <div>
-                        <div className="flex justify-between items-center mb-1.5 pl-1">
-                            <label className="block text-xs font-semibold text-text">角色指令</label>
-                            <span className="text-[10px] text-accent bg-accent/10 border border-accent/20 px-2 py-0.5 rounded font-mono">System Prompt</span>
-                        </div>
-                        <textarea 
-                            value={formData.system_prompt}
-                            onChange={(e) => setFormData({...formData, system_prompt: e.target.value})}
-                            className="w-full bg-bg border border-separator rounded-lg px-4 py-3 text-text text-sm font-mono h-[180px] focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all leading-relaxed resize-none placeholder-text-tertiary"
-                            placeholder="你是一个经验丰富的商业分析师，擅长使用 SWOT 分析法..."
-                        />
-                    </div>
-                </div>
-
-                {/* Skills Section */}
-                <div className="bg-surface border border-separator rounded-xl p-5 shadow-sm hover:border-accent/30 transition-colors">
-                    <h2 className="text-sm font-bold text-accent mb-5 flex items-center gap-2 border-b border-separator pb-2">
-                        <Wrench size={16} strokeWidth={1.75} /> 能力工具箱
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {AVAILABLE_SKILLS.map(skill => {
-                            const isSelected = formData.skills.includes(skill.id);
-                            return (
-                                <div 
-                                    key={skill.id}
-                                    onClick={() => toggleSkill(skill.id)}
-                                    className={`relative p-3 rounded-lg border cursor-pointer transition-all flex flex-col gap-2 group select-none ${
-                                        isSelected 
-                                        ? 'bg-accent/10 border-accent/40 shadow-none' 
-                                        : 'bg-bg border-separator hover:border-separator hover:bg-surface-2'
-                                    }`}
-                                >
-                                    <div className="flex justify-between items-start">
-                                        <div className={`text-sm font-bold ${isSelected ? 'text-accent' : 'text-text'}`}>
-                                            {skill.name}
-                                        </div>
-                                        <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-                                            isSelected ? 'bg-accent border-accent' : 'border-separator bg-surface'
-                                        }`}>
-                                            {isSelected && <Check size={10} strokeWidth={2.5} className="text-on-accent" />}
-                                        </div>
-                                    </div>
-                                    <div className={`text-xs leading-snug ${isSelected ? 'text-accent/70' : 'text-text-secondary'}`}>
-                                        {skill.desc}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-
-             </div>
-
-             {/* Right: Templates Sidebar (4 cols) */}
-             <div className="lg:col-span-4 space-y-4">
-                <div className="bg-surface border border-separator rounded-xl p-5 sticky top-6 shadow-sm">
-                    <h3 className="text-sm font-bold text-text mb-4 flex items-center gap-2">
-                        <Sparkles size={16} strokeWidth={1.75} className="text-warning"/> 
-                        快速模板
-                    </h3>
-                    <div className="space-y-3">
-                        {PRESETS.map((preset, i) => (
-                            <div 
-                                key={i} 
-                                onClick={() => loadPreset(preset)}
-                                className="group relative bg-bg border border-separator hover:border-accent/40 p-3 rounded-lg cursor-pointer transition-all hover:shadow-card"
-                            >
-                                <div className="flex items-center gap-3 mb-2">
-                                    <div className="w-10 h-10 rounded-md bg-surface border border-separator flex items-center justify-center text-accent group-hover:bg-accent-hover group-hover:text-on-accent group-hover:border-accent transition-all">
-                                        <Bot size={20} strokeWidth={1.75} />
-                                    </div>
-                                    <div>
-                                        <div className="font-bold text-text text-sm group-hover:text-accent">{preset.name}</div>
-                                        <div className="text-[10px] text-text-secondary uppercase font-semibold tracking-wider group-hover:text-accent transition-colors">{preset.role}</div>
-                                    </div>
-                                </div>
-                                <p className="text-xs text-text-secondary leading-relaxed mb-2 line-clamp-2">
-                                    {preset.description}
-                                </p>
-                                {/* Mini tags */}
-                                <div className="flex flex-wrap gap-1">
-                                    {preset.skills.slice(0, 3).map((s, idx) => (
-                                        <span key={idx} className="text-[9px] bg-surface text-text-secondary border-separator px-1.5 py-0.5 rounded border group-hover:border-separator group-hover:text-text-secondary transition-colors">
-                                            {AVAILABLE_SKILLS.find(as => as.id === s)?.name || s}
-                                        </span>
-                                    ))}
-                                    {preset.skills.length > 3 && (
-                                        <span className="text-[9px] text-text-tertiary px-1">+ {preset.skills.length - 3}</span>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-             </div>
-        </div>
-
-      </div>
-    </div>
-  );
+function Detail({ label, value }: { label: string; value: string }) {
+  return <div className="grid gap-1 text-sm sm:grid-cols-[180px_1fr]"><span className="text-text-secondary">{label}</span><span className="whitespace-pre-wrap break-words">{value}</span></div>;
 }

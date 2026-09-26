@@ -266,8 +266,21 @@ class DigitalEmployee(Base):
     is_visible_on_landing = Column(Boolean, default=False)
     
     # Capabilities can be simple strings or detailed tool configs
-    capabilities = Column(JSON) 
-    
+    capabilities = Column(JSON)
+    template_key = Column(String, nullable=True)
+    template_version = Column(String, nullable=True)
+    prompt_version = Column(String, nullable=True)
+    allowed_tools = Column(JSON, default=list)
+    data_scope = Column(JSON, default=dict)
+    max_steps = Column(Integer, default=5)
+    timeout_seconds = Column(Integer, default=120)
+    max_cost_usd = Column(Float, default=0.25)
+    requires_human_approval_for_external_actions = Column(Boolean, default=True, nullable=False)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    updated_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
     # Relationships
     project = relationship("Project")
     skills = relationship("EmployeeSkill", back_populates="employee", cascade="all, delete-orphan")
