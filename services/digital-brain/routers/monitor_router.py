@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List, Dict, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import platform
 try:
     import psutil
@@ -105,7 +105,6 @@ def get_inspection_stats(db: Session = Depends(get_shared_db)):
         "avg_score": round(avg_score, 1),
         "total_inspections": total_records,
         "critical_sessions": critical_count,
-        # "trend": ... (TODO: Add date aggregation)
     }
 
 @router.post("/inspection/{session_id}")
@@ -210,43 +209,53 @@ def get_rpa_stats(db: Session = Depends(get_shared_db)): # Use shared_db for RPA
     }
 
 @router.get("/llm/usage")
-def get_llm_usage(days: int = 7, db: Session = Depends(get_shared_db)):
-    """Get LLM Token usage aggregated by date"""
-    since = datetime.now() - timedelta(days=days)
-    
-    logs = db.query(LLMRequestLog).filter(LLMRequestLog.created_at >= since).all()
-    
-    # Aggregation in python (Database agnostic)
-    daily_stats = {}
-    provider_stats = {}
-    total_tokens = 0
-    total_calls = 0
-    
-    for log in logs:
-        # Date Aggregation
-        date_str = log.created_at.strftime("%Y-%m-%d")
-        if date_str not in daily_stats:
-            daily_stats[date_str] = {"date": date_str, "tokens": 0, "calls": 0}
-        daily_stats[date_str]["tokens"] += log.total_tokens
-        daily_stats[date_str]["calls"] += 1
-        
-        # Provider Aggregation
-        prov = log.provider or "unknown"
-        if prov not in provider_stats:
-            provider_stats[prov] = 0
-        provider_stats[prov] += log.total_tokens
-        
-        total_tokens += log.total_tokens
-        total_calls += 1
-        
-    return {
-        "summary": {
-            "total_tokens": total_tokens,
-            "total_calls": total_calls,
-        },
-        "daily_trend": sorted(list(daily_stats.values()), key=lambda x: x['date']),
-        "by_provider": provider_stats
+def get_llm_usage(days: int = Query(7, ge=1, le=366), db: Session = Depends(get_shared_db)):
+    """Return the last `days` UTC calendar dates, including today and empty dates.
+
+    Existing database timestamps are timezone-naive; they are interpreted as UTC.
+    The log table has no price or persisted cost, so cost_usd is unknown (null),
+    never an invented zero. Python aggregation avoids dialect-specific date SQL.
+    """
+    today = datetime.now(timezone.utc).date()
+    first_day = today - timedelta(days=days - 1)
+    start = datetime.combine(first_day, datetime.min.time())
+    end = datetime.combine(today + timedelta(days=1), datetime.min.time())
+
+    daily_stats = {
+        (first_day + timedelta(days=offset)).isoformat(): {
+            "date": (first_day + timedelta(days=offset)).isoformat(),
+            "tokens": 0, "calls": 0, "success": 0, "failure": 0,
+            "cost_usd": None,
+        }
+        for offset in range(days)
     }
+    provider_stats = {}
+    summary = {"total_tokens": 0, "total_calls": 0, "success": 0,
+               "failure": 0, "cost_usd": None}
+
+    # Half-open boundaries keep midnight in exactly one UTC calendar bucket.
+    # DateTime columns store naive timestamps; avoid dialect-specific date_trunc/strftime.
+    logs = db.query(LLMRequestLog).filter(
+        LLMRequestLog.created_at >= start, LLMRequestLog.created_at < end
+    ).all()
+    for log in logs:
+        timestamp = log.created_at
+        day = (timestamp.replace(tzinfo=timezone.utc) if timestamp.tzinfo is None
+               else timestamp.astimezone(timezone.utc)).date().isoformat()
+        stats = daily_stats[day]
+        tokens = log.total_tokens or 0
+        outcome = "success" if log.status == "success" else "failure"
+        stats["tokens"] += tokens
+        stats["calls"] += 1
+        stats[outcome] += 1
+        provider = log.provider or "unknown"
+        provider_stats[provider] = provider_stats.get(provider, 0) + tokens
+        summary["total_tokens"] += tokens
+        summary["total_calls"] += 1
+        summary[outcome] += 1
+
+    return {"summary": summary, "daily_trend": list(daily_stats.values()),
+            "by_provider": provider_stats}
 
 @router.get("/llm/logs")
 def get_recent_logs(limit: int = 50, db: Session = Depends(get_shared_db)):
