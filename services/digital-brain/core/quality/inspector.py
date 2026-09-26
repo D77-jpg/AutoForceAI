@@ -5,14 +5,13 @@ from sqlalchemy.orm import Session
 from loguru import logger
 
 from database.shared_models import BrainSession, BrainMessage, QualityRule, InspectionRecord
-from core.llm.factory import ModelFactory
+from core.llm.attribution import UNKNOWN
+from core.llm.runtime import query_default_llm_with_attribution
 
 class SessionInspector:
     def __init__(self, db: Session):
         self.db = db
-        # Initialize LLM (Use a smart model for judging, e.g., GPT-4 or Qwen-Max)
-        # For now we use the default system model factory
-        self.llm = ModelFactory.get_provider(model_type="zhipu", model="glm-4-flash")  # Or use a dedicated "Judge" model
+        # Select the configured model at request time; no hardcoded judge model.
         
     def inspect(self, session_id: int) -> InspectionRecord:
         """
@@ -66,13 +65,11 @@ class SessionInspector:
         # 3. Call LLM
         logger.info("[Inspector] Sending to LLM...")
         try:
-            # Use a slightly lower temperature for deterministic judging
-            messages = [{"role": "user", "content": prompt}]
-            response = self.llm.chat(messages, temperature=0.1)
-            response_text = response.content
-            
-            response_text = self._clean_json(response_text)
-            result = json.loads(response_text)
+            # Keep provenance from the actual remote response, not configuration.
+            attribution = query_default_llm_with_attribution(self.db, prompt, temperature=0.1)
+            result = json.loads(self._clean_json(attribution.content))
+            if not isinstance(result, dict):
+                raise ValueError("Inspection response must be an object")
             
             # 4. Save Record
             record = InspectionRecord(
@@ -81,7 +78,9 @@ class SessionInspector:
                 status=result.get("status", "Warning"),
                 issues=result.get("issues", []),
                 suggestion=result.get("suggestion", ""),
-                model_used="glm-4-flash" # TODO: Get from factory
+                model_used=attribution.model,
+                model_provider=attribution.provider,
+                model_request_id=attribution.request_id,
             )
             
             # Remove old record if exists
@@ -96,9 +95,23 @@ class SessionInspector:
             logger.info(f"[Inspector] Inspection Completed. Score: {record.total_score}")
             return record
 
-        except Exception as e:
-            logger.error(f"[Inspector] Failed: {e}")
-            raise e
+        except Exception:
+            # A rejected/invalid answer is not attributable to a completed response.
+            # Never persist the configured model as if it actually answered.
+            self.db.rollback()
+            failure = InspectionRecord(
+                session_id=session_id, total_score=0, status="Failed", issues=[],
+                suggestion="Inspection failed; no validated evaluation is available.",
+                model_used=UNKNOWN, model_provider=UNKNOWN, model_request_id=None,
+            )
+            previous = self.db.query(InspectionRecord).filter(InspectionRecord.session_id == session_id).first()
+            if previous:
+                self.db.delete(previous)
+            self.db.add(failure)
+            self.db.commit()
+            self.db.refresh(failure)
+            logger.warning("[Inspector] Inspection failed; provider response not attributed")
+            return failure
 
     def _format_transcript(self, messages: List[BrainMessage]) -> str:
         text = ""

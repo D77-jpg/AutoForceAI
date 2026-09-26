@@ -1,4 +1,5 @@
 from typing import Dict, Type, Optional
+from hashlib import sha256
 from .base import BaseLLM, ModelType
 from .providers.qwen import QwenLLM
 from .providers.zhipu import ZhipuLLM
@@ -45,9 +46,10 @@ class ModelFactory:
              provider_key = "openai_generic"
              provider_cls = OpenAIGenericLLM
         
-        # Singleton-like caching for providers
-        # Note: Ideally cache key should include config hash
-        cache_key = f"{provider_key}_{kwargs.get('model', 'default')}"
+        # The same model name may point to different endpoints/credentials after
+        # reconfiguration. Fingerprint config for cache identity without exposing keys.
+        identity = repr((provider_key, sorted(kwargs.items())))
+        cache_key = sha256(identity.encode("utf-8")).hexdigest()
         
         if cache_key not in cls._instances:
             cls._instances[cache_key] = provider_cls(**kwargs)
