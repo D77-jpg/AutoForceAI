@@ -53,4 +53,6 @@ jobs:
           tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
           /tmp/gitleaks version
       - name: Scan entire git history without logging findings or secret values
-        run: /tmp/gitleaks git --quiet --redact --exit-code 1 --log-opts='--all' .
+        # v8.24.3 has --log-level, not --quiet. Restrict output to errors and
+        # redact any finding; a detected secret still returns exit code 1.
+        run: /tmp/gitleaks git --log-level error --no-banner --redact --exit-code 1 --log-opts='--all' .
