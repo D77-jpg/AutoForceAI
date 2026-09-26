@@ -58,6 +58,34 @@ class BackupTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             safe_directory(dir_link)
 
+    def test_manifest_binds_db_and_timestamp_before_restore(self):
+        manifest, archive = self.fixture()
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+        data["created_utc"] = "not-a-timestamp"
+        manifest.write_text(json.dumps(data), encoding="utf-8")
+        with patch("postgres_backup.run") as execute:
+            with self.assertRaises(ValueError):
+                restore(self.root, manifest.name, "qa_rehearsal")
+            execute.assert_not_called()
+        data["created_utc"] = "20260101T000001000000Z"
+        manifest.write_text(json.dumps(data), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "identifier"):
+            verified_manifest(self.root, manifest.name)
+
+    def test_untrusted_report_cannot_overwrite_manifest(self):
+        from postgres_backup import json_atomic
+        manifest, _ = self.fixture()
+        with self.assertRaises(FileExistsError):
+            json_atomic(manifest, {"status": "failed"})
+        self.assertEqual(json.loads(manifest.read_text(encoding="utf-8"))["schema"], 1)
+
+    def test_restore_rejects_mismatched_connection_database(self):
+        manifest, _ = self.fixture()
+        with patch("postgres_backup.query", return_value="wrong_database"), patch("postgres_backup.run") as execute:
+            with self.assertRaisesRegex(ValueError, "does not match"):
+                restore(self.root, manifest.name, "qa_rehearsal")
+            execute.assert_not_called()
+
     def test_backup_atomic_metadata_and_no_secrets(self):
         calls = []
         def fake_run(args, *, out=None):
