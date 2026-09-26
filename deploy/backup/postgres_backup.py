@@ -84,6 +84,8 @@ def backup(directory, db, recipient=None):
             run(["age", "-r", recipient, "-o", str(encrypted), str(raw)])
             raw = encrypted
         sha = digest(raw)
+        if raw.stat().st_size == 0:
+            raise RuntimeError("Backup archive is empty")
         metadata = {"schema": 1, "engine": "postgresql", "database": db, "created_utc": stamp,
                     "archive": archive.name, "sha256": sha, "bytes": raw.stat().st_size,
                     "encrypted": bool(recipient)}
@@ -111,7 +113,7 @@ def verified_manifest(directory, manifest):
         raise ValueError("Unsupported manifest")
     name(data["database"])
     archive_name = data["archive"]
-    if not isinstance(archive_name, str) or Path(archive_name).name != archive_name or not archive_name.startswith(entry.name.removesuffix(".manifest.json") + ".dump"):
+    if not isinstance(archive_name, str) or archive_name not in (entry.name.removesuffix(".manifest.json") + ".dump", entry.name.removesuffix(".manifest.json") + ".dump.age"):
         raise ValueError("Invalid archive name")
     raw_archive = root / archive_name
     if raw_archive.is_symlink() or not raw_archive.is_file():
@@ -119,6 +121,10 @@ def verified_manifest(directory, manifest):
     archive = raw_archive.resolve(strict=True)
     if archive.parent != root:
         raise ValueError("Archive must be a regular file directly inside backup directory")
+    if not isinstance(data.get("bytes"), int) or data["bytes"] < 1 or not isinstance(data.get("sha256"), str) or not re.fullmatch(r"[a-f0-9]{64}", data["sha256"]):
+        raise ValueError("Invalid backup checksum metadata")
+    if data.get("encrypted") not in (True, False) or archive.suffix != (".age" if data["encrypted"] else ".dump"):
+        raise ValueError("Invalid archive encryption metadata")
     if archive.stat().st_size != data["bytes"] or digest(archive) != data["sha256"]:
         raise ValueError("Backup checksum mismatch")
     return data, archive
@@ -130,12 +136,19 @@ def query(db, sql):
     return result.stdout.strip()
 
 
+def current_database(db):
+    """Prevent libpq PG* service/connection overrides from silently redirecting."""
+    if query(db, "SELECT current_database()") != db:
+        raise ValueError("Connected PostgreSQL database does not match requested target")
+
+
 def restore(directory, manifest, target, identity=None):
     target = name(target)
     if "rehearsal" not in target.lower() and "restore_test" not in target.lower():
         raise ValueError("Restore target must contain rehearsal or restore_test")
     data, archive = verified_manifest(directory, manifest)
     start = time.monotonic()
+    current_database(target)
     with tempfile.TemporaryDirectory(prefix=".pg_restore_", dir=safe_directory(directory)) as stage:
         raw = archive
         if data["encrypted"]:
@@ -155,7 +168,7 @@ def restore(directory, manifest, target, identity=None):
         raise RuntimeError("Rehearsal missing critical tables")
     counts = {table: int(query(target, f'SELECT COUNT(*) FROM public."{table}"')) for table in CRITICAL}
     versions = query(target, "SELECT version_num FROM public.alembic_version")
-    if not versions or counts["alembic_version"] != 1:
+    if not versions or counts["alembic_version"] != 1 or not re.fullmatch(r"[a-zA-Z0-9_]+", versions):
         raise RuntimeError("Rehearsal missing Alembic revision")
     mapped_projects = int(query(target, "SELECT COUNT(DISTINCT project_id) FROM public.crm_entity_links WHERE project_id IS NOT NULL"))
     return {"status": "passed", "engine": "postgresql", "source_database": data["database"],

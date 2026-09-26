@@ -75,7 +75,7 @@ class BackupTests(unittest.TestCase):
         manifest, _ = self.fixture()
         with self.assertRaises(ValueError):
             restore(self.root, manifest.name, "production")
-        with patch("postgres_backup.run") as execute, patch("postgres_backup.query", return_value="1"):
+        with patch("postgres_backup.run") as execute, patch("postgres_backup.query", side_effect=["qa_rehearsal", "1"]):
             with self.assertRaisesRegex(ValueError, "empty"):
                 restore(self.root, manifest.name, "qa_rehearsal")
         execute.assert_called_once()
