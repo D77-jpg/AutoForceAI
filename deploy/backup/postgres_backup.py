@@ -52,12 +52,17 @@ def run(argv, *, out=None):
 
 
 def json_atomic(path, data):
-    tmp = path.with_name("." + path.name + ".tmp")
+    if path.is_symlink() or path.exists():
+        raise FileExistsError("Refusing to overwrite an existing report or manifest")
+    fd, temp = tempfile.mkstemp(prefix=".json_stage_", dir=path.parent)
+    tmp = Path(temp)
     try:
-        with tmp.open("x", encoding="utf-8") as f:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
             f.flush()
             os.fsync(f.fileno())
+        if path.exists() or path.is_symlink():
+            raise FileExistsError("Refusing to overwrite an existing report or manifest")
         os.replace(tmp, path)
     finally:
         tmp.unlink(missing_ok=True)
@@ -102,6 +107,8 @@ def backup(directory, db, recipient=None):
 
 def verified_manifest(directory, manifest):
     root = safe_directory(directory)
+    if not isinstance(manifest, (str, os.PathLike)):
+        raise ValueError("Manifest filename is required")
     raw_entry = root / manifest
     if raw_entry.is_symlink() or not raw_entry.is_file():
         raise ValueError("Manifest must be a regular file directly inside backup directory")
@@ -111,7 +118,13 @@ def verified_manifest(directory, manifest):
     data = json.loads(entry.read_text(encoding="utf-8"))
     if data.get("schema") != 1 or data.get("engine") != "postgresql":
         raise ValueError("Unsupported manifest")
-    name(data["database"])
+    db = name(data["database"])
+    stamp = data.get("created_utc")
+    if not isinstance(stamp, str) or not re.fullmatch(r"\d{8}T\d{12}Z", stamp):
+        raise ValueError("Invalid backup timestamp")
+    datetime.strptime(stamp, "%Y%m%dT%H%M%S%fZ")
+    if entry.name != f"postgres_{db}_{stamp}.manifest.json":
+        raise ValueError("Manifest identifier does not match database and timestamp")
     archive_name = data["archive"]
     if not isinstance(archive_name, str) or archive_name not in (entry.name.removesuffix(".manifest.json") + ".dump", entry.name.removesuffix(".manifest.json") + ".dump.age"):
         raise ValueError("Invalid archive name")
@@ -150,18 +163,29 @@ def restore(directory, manifest, target, identity=None):
     start = time.monotonic()
     current_database(target)
     with tempfile.TemporaryDirectory(prefix=".pg_restore_", dir=safe_directory(directory)) as stage:
-        raw = archive
+        # Freeze a verified copy so concurrent retention cannot remove or swap
+        # the archive between checksum validation and pg_restore.
+        frozen = Path(stage) / "verified.backup"
+        with archive.open("rb") as source, frozen.open("xb") as sink:
+            for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                sink.write(chunk)
+        if frozen.stat().st_size != data["bytes"] or digest(frozen) != data["sha256"]:
+            raise ValueError("Backup changed while staging for restore")
+        raw = frozen
         if data["encrypted"]:
             if not identity or not Path(identity).is_file():
                 raise ValueError("Private age identity file is required for encrypted restore")
             raw = Path(stage) / "restore.dump"
-            run(["age", "-d", "-i", identity, "-o", str(raw), str(archive)])
+            run(["age", "-d", "-i", identity, "-o", str(raw), str(frozen)])
         run(["pg_restore", "--list", str(raw)])
         # No --clean / --create: target must preexist and be empty. No production downgrade.
-        existing = query(target, "SELECT COUNT(*) FROM pg_catalog.pg_tables WHERE schemaname NOT IN ('pg_catalog','information_schema')")
-        if int(existing) != 0:
+        # A target containing views, sequences, functions or custom schemas is NOT empty.
+        # Never restore on top of objects; this SQL excludes only system schemas and
+        # built-in plpgsql, and requires an isolated, operator-created target DB.
+        object_count = query(target, "SELECT (SELECT COUNT(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%' AND n.nspname NOT LIKE 'pg_temp%') + (SELECT COUNT(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%' AND n.nspname NOT LIKE 'pg_temp%' AND p.proname <> 'plpgsql_call_handler') + (SELECT COUNT(*) FROM pg_namespace WHERE nspname NOT IN ('public','pg_catalog','information_schema') AND nspname NOT LIKE 'pg_toast%' AND nspname NOT LIKE 'pg_temp%') + (SELECT COUNT(*) FROM pg_extension WHERE extname <> 'plpgsql')")
+        if int(object_count) != 0:
             raise ValueError("Restore target must be an empty database")
-        run(["pg_restore", "--exit-on-error", "--no-owner", "--no-acl", "--dbname", target, str(raw)])
+        run(["pg_restore", "--single-transaction", "--exit-on-error", "--no-owner", "--no-acl", "--dbname", target, str(raw)])
     table_names = set(query(target, "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname='public'").splitlines())
     missing = sorted(set(CRITICAL) - table_names)
     if missing:
@@ -230,7 +254,10 @@ def main(argv=None):
         result["failure_reason"] = exc.__class__.__name__
     result.setdefault("rto_seconds", round(time.monotonic() - start, 3))
     if args.report:
-        json_atomic(Path(args.report), result)
+        report = Path(args.report).expanduser()
+        if report.parent.resolve(strict=True) == safe_directory(args.directory):
+            raise ValueError("Report must be outside backup directory")
+        json_atomic(report, result)
     print(json.dumps(result, ensure_ascii=False))
     return 0 if result["status"] == "passed" else 1
 
