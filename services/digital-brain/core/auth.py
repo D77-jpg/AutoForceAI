@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 import os
 import sys
-from jose import JWTError, jwt
+from jwt import InvalidTokenError, encode, decode
 from passlib.context import CryptContext
 
 # Only local development may use the fallback. Never reveal configured secrets in errors.
@@ -47,12 +47,12 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
         expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, get_jwt_secret(), algorithm=ALGORITHM)
+    encoded_jwt = encode(to_encode, get_jwt_secret(), algorithm=ALGORITHM)
     return encoded_jwt
 
 def decode_token(token: str):
     try:
-        payload = jwt.decode(token, get_jwt_secret(), algorithms=[ALGORITHM])
+        payload = decode(token, get_jwt_secret(), algorithms=[ALGORITHM])
         return payload
-    except JWTError:
+    except InvalidTokenError:
         return None

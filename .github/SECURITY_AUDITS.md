@@ -14,7 +14,7 @@ python .github/scripts/security_audit.py npm apps/web-console services/digital-b
 
 For full history secret scanning on Linux, install the pinned gitleaks release used by the workflow and run `gitleaks git --quiet --redact --exit-code 1 --log-opts='--all' .`. Keep complete git history (`git fetch --unshallow` if applicable). Never print raw finding content.
 
-Python requirements are not fully pinned: pip-audit resolves currently available packages at each run, **not** the deployed environment. Adopt locked dependencies to make Python results reproducible. `pip-audit`'s JSON does not consistently provide severity, so **all** Python advisories fail; npm fails high/critical, including development dependencies. npm scans use committed lockfiles and do not run `npm install` or alter manifests.
+Python requirements are not fully pinned: pip-audit resolves currently available packages at each run, **not** the deployed environment. Adopt locked dependencies to make Python results reproducible. `pip-audit`'s JSON does not consistently provide severity, so **all** Python advisories fail; npm fails high/critical, including development dependencies. npm scans use committed lockfiles and do not run `npm install` or alter manifests. The vulnerable `python-jose`/`ecdsa` stack and Zhipu SDK's `PyJWT<2.9` constraint were removed in favor of `PyJWT==2.14.0` and a fixed-origin OpenAI-compatible Zhipu transport; both Python audits passed locally after the migration.
 
 ## Time-limited exceptions
 

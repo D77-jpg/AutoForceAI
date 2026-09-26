@@ -1,5 +1,5 @@
 import os
-from zhipuai import ZhipuAI
+from core.llm.zhipu_compat import ZhipuAI
 
 class ZhipuClient:
     """
@@ -64,8 +64,8 @@ class ZhipuClient:
             # 获取回答内容
             return response.choices[0].message.content
             
-        except Exception as e:
-            return f"Error querying ZhipuAI: {str(e)}"
+        except Exception:
+            raise RuntimeError("ZhipuAI request failed") from None
 
     def generate_image(self, prompt: str) -> str:
         """
@@ -76,11 +76,11 @@ class ZhipuClient:
             return None
 
         try:
-            response = self.client.images.generations(
-                model="cogview-3", 
+            response = self.client.images.generate(
+                model="cogview-3",
                 prompt=prompt,
             )
             return response.data[0].url
-        except Exception as e:
-            print(f"Error generating image: {str(e)}")
+        except Exception:
+            print("Image generation failed")
             return None
