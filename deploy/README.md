@@ -11,7 +11,7 @@
 
 ## ACME 首次签发：有意先不启动完整生产网关
 
-正式模板引用 `/etc/letsencrypt/live/<domain>/fullchain.pem` 与 `privkey.pem`，无证书时 Nginx **不能**启动。禁止把自签名证书放入生产目录假装签发成功。先在信任的主机上运行一次临时纯 HTTP ACME challenge 网关（可用 `nginx:1.27-alpine`，只挂载 `deploy/nginx/conf.d/acme-bootstrap.conf` 到 `/etc/nginx/conf.d/default.conf:ro` 和 `deploy/certbot/www` 到 `/var/www/certbot:ro`，只映射 `80:80`；将样板文件中的 `app.example.com`/`crm.example.com` 替换成已解析的实际域名**在私有工作副本中**）。用已审核 ACME 客户端 `certbot certonly --webroot -w <path-to-deploy/certbot/www> -d <APP_DOMAIN> -d <CRM_DOMAIN> -m <ACME_EMAIL> --agree-tos --no-eff-email`，确保客户端写入 host `deploy/certbot/conf`（例如 Certbot `--config-dir`）并将证书目录/续期权限仅赋给运维；停止临时网关，再启动正式 Compose。若使用两张独立证书，两个 `live/<domain>/` 目录都要有证书；单一 SAN 证书须为 CRM 域名提供受控目录映射（切勿改文件名造成 renew 断裂）。续期作业先 `certbot renew`，再 `docker compose ... exec nginx nginx -t && docker compose ... exec nginx nginx -s reload`，并监控证书到期、域名与 OCSP/链完整性。纯 HTTP challenge 模板返回 503，**不是**业务站点，也不算 HTTPS 验收。
+正式模板引用 `/etc/letsencrypt/live/<domain>/fullchain.pem` 与 `privkey.pem`，无证书时 Nginx **不能**启动。禁止把自签名证书放入生产目录假装签发成功。先在信任的主机上运行一次临时纯 HTTP ACME challenge 网关（可用 `nginx:1.27-alpine`，只挂载 `deploy/nginx/conf.d/acme-bootstrap.conf` 到 `/etc/nginx/conf.d/default.conf:ro` 和 `deploy/certbot/www` 到 `/var/www/certbot:ro`，只映射 `80:80`；将样板文件中的 `app.example.com`/`crm.example.com` 替换成已解析的实际域名**在私有工作副本中**）。用已审核 ACME 客户端分两次签发（示意：`certbot certonly --webroot -w <path-to-deploy/certbot/www> --cert-name <APP_DOMAIN> -d <APP_DOMAIN> -m <ACME_EMAIL> --agree-tos --no-eff-email`，再以 `<CRM_DOMAIN>` 为 `--cert-name` 和 `-d` 重复）；确保客户端写入 host `deploy/certbot/conf`（例如 Certbot `--config-dir`），两个 `live/<domain>/` 目录均存在，并将证书目录/续期权限仅赋给运维；停止临时网关，再启动正式 Compose。续期作业先 `certbot renew`，再 `docker compose ... exec nginx nginx -t && docker compose ... exec nginx nginx -s reload`，并监控证书到期、域名与 OCSP/链完整性。纯 HTTP challenge 模板返回 503，**不是**业务站点，也不算 HTTPS 验收。
 
 ## 初装和升级
 
@@ -23,7 +23,8 @@ export ENV_FILE=deploy/.env.production
 # docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" config --quiet
 # 全新 volume 创建后 PostgreSQL 基线为空。优先只启 DB，再运行 Alembic。
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d postgres mongo
-# 等两库 healthy；后端容器独立一次性运行，失败必须停止部署。
+# 等两库 healthy；先构建后端，再使用同一版本镜像运行升级；失败必须停止部署。
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" build backend
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" run --rm --no-deps backend alembic upgrade head
 # 验证两个真实 ACME 证书已装载，再构建/启动；不要运行 docker compose down -v。
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up --build -d
