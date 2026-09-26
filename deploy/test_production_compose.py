@@ -14,7 +14,7 @@ class ProductionComposeChecks(unittest.TestCase):
         except ImportError:
             self.skipTest("PyYAML not installed; docker compose config still required")
         result = subprocess.run(
-            ["docker", "compose", "--env-file", str(ROOT / ".env.production.example"),
+            ["docker", "compose", "--env-file", str(ROOT / "production.env.example"),
              "-f", str(ROOT / "compose.yaml"), "config"],
             capture_output=True, text=True, check=True,
         )
@@ -46,7 +46,7 @@ class ProductionComposeChecks(unittest.TestCase):
         self.assertIn("client_max_body_size", config)
         self.assertIn("_next/webpack-hmr", config)
         self.assertNotRegex(config, r"proxy_set_header\s+Upgrade\s+\$http_upgrade")
-        template = (ROOT / ".env.production.example").read_text(encoding="utf-8")
+        template = (ROOT / "production.env.example").read_text(encoding="utf-8")
         for key in ("JWT_SECRET", "GENESIS_JWT_SECRET", "POSTGRES_PASSWORD", "MONGO_ROOT_PASSWORD"):
             self.assertRegex(template, rf"(?m)^{key}=REPLACE_")
         self.assertNotIn("PRIVATE KEY-----", template)
