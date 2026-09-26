@@ -51,3 +51,12 @@ production build 通过。AutoForceAI PR #5 已合并，远程 3/3 checks passed
 第二张报价。PDF 代理返回 94,356 字节、版本 1 与 ETag，Genesis 深链指向正确客户。
 旧 `phase2-trial` 凭证已撤销，当前连接使用新最小权限加密凭证，health 返回
 `quotation-draft.v1` 能力及 `quotations:draft` / `quotations:read` scope。
+
+## H-14 候选发布双仓快照（待 PR 合并后重新锁定 SHA）
+
+| 仓库 | H-13 已合并的主线（H-14 开始时） | 合约状态 | 发布门禁 |
+|---|---|---|---|
+| AutoForceAI | `origin/main@7b29a04`，含 H-13 PR #20 | v1.0 + quotation-draft.v1 哈希不变 | H-14 本地后端 247 passed、合同/迁移 32 passed、Web 13/13 + typecheck/build；CI 尚待本次 PR |
+| Genesis_CRM | `origin/main@2213b45`，含 H-13 PR #11 | 相同冻结合同及扩展哈希 | H-14 本地服务端 integration 23、mail 79、template 3、scratchpad 3、agent 32、security 5，全为 skip=0；Web build、备份/容器 7/7；CI 尚待本次 PR |
+
+上表是**基线时点**而非未来候选 tag 目标；H-14 PR 合并后需先取得双仓 `origin/main` 新 SHA 并核实远程 Actions 全绿，才能决定候选 tag。冻结契约实现基线 `e2e3486` / `491b1d3` 仍固定，不得用 H-14 文档提交覆盖。两仓实际域名 HTTPS、从零容器/双前端登录、跨仓线索/报价 E2E、隔离库恢复、24 小时生产试运行尚无 H-14 实测记录，不声称生产上线完成。

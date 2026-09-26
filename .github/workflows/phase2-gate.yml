@@ -25,14 +25,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest alembic
-      - name: CRM 相关及新增测试（全量后端回归）
-        run: python -m pytest tests/ -q
-      - name: 契约测试（仓库内冻结副本，skip=0 强制）
+      - name: 全量后端回归（skip=0）
         shell: pwsh
         run: |
-          $out = python -m pytest tests/test_crm_contract.py -q -rs 2>&1 | Out-String
+          $out = python -m pytest tests/ -q -rs 2>&1 | Out-String
+          $code = $LASTEXITCODE
           $out
-          if ($out -match '\d+ skipped') { Write-Error "契约测试出现 skip，门禁失效"; exit 1 }
+          if ($code -ne 0 -or $out -match '\b[1-9][0-9]* skipped\b') { Write-Error "后端失败或存在跳过测试"; exit 1 }
+      - name: 冻结及报价扩展契约（skip=0）
+        shell: pwsh
+        run: |
+          $out = python -m pytest tests/test_crm_contract.py tests/test_phase4_quotation_contract.py -q -rs 2>&1 | Out-String
+          $code = $LASTEXITCODE
+          $out
+          if ($code -ne 0 -or $out -match '\b[1-9][0-9]* skipped\b') { Write-Error "契约测试失败或存在跳过"; exit 1 }
       - name: Alembic 空库升级 + 阶段1库升级 + downgrade（test_migrations.py 内含）
         run: python -m pytest tests/test_migrations.py -q
       - name: PostgreSQL 离线 DDL（显式 PG dialect，断言方言与关键对象）
@@ -41,6 +47,7 @@ jobs:
         shell: pwsh
         run: |
           python -m alembic -x "url=postgresql+psycopg://gate:gate@127.0.0.1:9/phase2_gate" upgrade head --sql > "$env:TEMP\pg_ddl.sql"
+          if ($LASTEXITCODE -ne 0) { Write-Error "Alembic 离线生成失败"; exit 1 }
           $ddl = Get-Content "$env:TEMP\pg_ddl.sql" -Raw
           foreach ($needle in @("SERIAL NOT NULL", "CREATE EXTENSION IF NOT EXISTS vector", "CREATE TYPE taskstatus", "CREATE TABLE crm_worker_state", "outcome_lease_owner", "uq_crm_link_org_lead_project", "uq_crm_config_provider_project", "TIMESTAMP WITHOUT TIME ZONE")) {
             if (-not $ddl.Contains($needle)) { Write-Error "离线 DDL 缺少: $needle"; exit 1 }
@@ -67,19 +74,40 @@ jobs:
       - name: Production build
         run: npm run build
 
+  operations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: PostgreSQL backup and symlink safety (skip=0)
+        run: python -m unittest discover -s deploy/backup -p test_postgres_backup.py -v
+      - name: Deploy compose unit tests and static config
+        run: |
+          python -m pip install PyYAML
+          python -m unittest discover -s deploy -p test_production_compose.py -v
+          docker compose --env-file deploy/production.env.example -f deploy/compose.yaml config --quiet
+
   hygiene:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: 敏感信息检查（全历史不得出现 service token）
+      - name: 敏感信息检查（可达历史；绝不输出匹配文本）
         shell: bash
         run: |
-          if git grep -nE 'gci_[0-9a-f]{20,}' $(git rev-list origin/main..HEAD 2>/dev/null || git rev-list HEAD) -- . | grep -v 'tests/test_crm_credentials.py'; then
-            echo "::error::发现疑似 service token 进入提交历史"; exit 1
-          fi
-          echo "OK: 历史中无 service token"
+          # The PR-only origin/main..HEAD range is empty on main. Scan all
+          # reachable commits, suppress source lines, keep fixture scoped.
+          set -euo pipefail
+          while IFS= read -r commit; do
+            if git grep -q -E 'gci_[0-9a-f]{20,}' "$commit" -- ':!services/digital-brain/tests/test_crm_credentials.py'; then
+              echo "::error::发现疑似 service token 进入可达历史（不披露凭证）"
+              exit 1
+            fi
+          done < <(git rev-list --all)
+          echo "OK: 可达历史中无非测试 service token"
       - name: 禁止提交 .env / 数据库文件 / 日志
         shell: bash
         run: |
