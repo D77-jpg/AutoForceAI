@@ -33,6 +33,7 @@ class ProductionComposeChecks(unittest.TestCase):
         for name in ("postgres", "mongo", "backend", "web", "genesis-server", "genesis-web"):
             self.assertIn("healthcheck", services[name], name)
         self.assertTrue(document["networks"]["data"]["internal"])
+        self.assertIn("server", services["genesis-server"]["networks"]["app"]["aliases"])
         self.assertIn("pgvector/pgvector", services["postgres"]["image"])
 
     def test_tls_domains_and_no_dev_websocket(self):

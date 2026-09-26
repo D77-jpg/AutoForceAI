@@ -149,7 +149,10 @@ services:
       retries: 5
     depends_on:
       mongo: { condition: service_healthy }
-    networks: [data, app]
+    networks:
+      data: {}
+      app:
+        aliases: [server]
     logging: *log
     mem_limit: 2g
     cpus: 2.0
