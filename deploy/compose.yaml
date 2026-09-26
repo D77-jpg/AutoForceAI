@@ -109,7 +109,7 @@ services:
       context: ..
       dockerfile: deploy/web.Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ""
+        NEXT_PUBLIC_API_URL: https://${APP_DOMAIN:?Set app public DNS}
         INTERNAL_API_URL: http://backend:8010
     restart: unless-stopped
     depends_on:
