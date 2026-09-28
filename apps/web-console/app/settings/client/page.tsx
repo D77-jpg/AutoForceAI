@@ -13,8 +13,12 @@ const generateConfig = () => {
     // 优先使用环境变量中的 API 地址，否则回退 to hardcoded production value to fix user issue
     // removing trailing slash if present to avoid double slash with /api/v1
     const envUrl = process.env.NEXT_PUBLIC_API_URL;
-    // Fallback logic improved: if env is missing, use default dev URL
-    const baseUrl = (envUrl || "http://localhost:8010").replace(/\/$/, "");
+    // This value is written into the downloaded worker config, which runs on another
+    // machine, so it must stay absolute. Fall back to this page's own origin (which
+    // proxies /api/v1 to the backend) rather than telling the operator's worker to
+    // call its own localhost.
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const baseUrl = (envUrl || origin).replace(/\/$/, "");
 
     return {
         "GEO_SERVER_URL": `${baseUrl}/api/v1`, 

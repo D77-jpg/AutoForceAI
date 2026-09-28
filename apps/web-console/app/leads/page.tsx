@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from "@/components/ui/table";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8010";
+// Same-origin by default: Next.js and nginx both proxy /api to the backend, so a
+// build without NEXT_PUBLIC_API_URL never makes a visitor call their own localhost.
+const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
 function auth(){ return { Authorization: "Bearer " + (localStorage.getItem("token")||"") }; }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -49,7 +51,7 @@ export default function LeadsPage() {
   const [status, setStatus] = useState("");
   const [q, setQ] = useState("");
   const load = async () => {
-    const u = new URL(API + "/api/v1/leads");
+    const u = new URL(API + "/api/v1/leads", window.location.origin);
     if (status) u.searchParams.set("status", status);
     if (q) u.searchParams.set("q", q);
     const res = await fetch(u.toString(), { headers: auth() });

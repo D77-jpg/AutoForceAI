@@ -5,7 +5,9 @@ import { ExternalLink, RefreshCw, Settings } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8010";
+// Same-origin by default: Next.js and nginx both proxy /api to the backend, so a
+// build without NEXT_PUBLIC_API_URL never makes a visitor call their own localhost.
+const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
 function auth() {
   return { Authorization: "Bearer " + (localStorage.getItem("token") || "") };
 }

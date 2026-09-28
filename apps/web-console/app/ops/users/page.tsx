@@ -48,7 +48,9 @@ export default function UsersPage() {
     const [editActive, setEditActive] = useState(true);
     const [saving, setSaving] = useState(false);
 
-    const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8010'}/api/v1/admin`;
+    // Same-origin by default so a build without NEXT_PUBLIC_API_URL still reaches
+    // the admin API through the Next.js/nginx proxy.
+    const API_BASE = `${(process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '')}/api/v1/admin`;
 
     const fetchUsers = async () => {
         if (!token) return;

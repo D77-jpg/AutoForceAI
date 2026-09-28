@@ -8,12 +8,10 @@ import { useToast } from "../../contexts/ToastContext";
 import { useAuth } from "../../contexts/AuthContext"; 
 import { BrainCircuit, Sparkles, Zap, BarChart3, ScanLine, ShieldCheck, ArrowLeft, Mail, Lock, User as UserIcon } from 'lucide-react';
 
+// Same-origin by default: Next.js and nginx both proxy /auth to the backend, so a
+// remote visitor is never pointed at a loopback address of their own machine.
 function getApiBase(): string {
-    const envApiUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (envApiUrl) return envApiUrl;
-    const protocol = window.location.protocol;
-    const hostname = window.location.hostname;
-    return `${protocol}//${hostname}:8010`;
+    return (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
 }
 
 export default function LoginPage() {

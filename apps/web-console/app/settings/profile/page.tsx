@@ -6,6 +6,10 @@ import { useToast } from "@/contexts/ToastContext";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/ui/empty-state";
 
+// Same-origin by default: Next.js and nginx both proxy /auth and /api to the backend,
+// so a build without NEXT_PUBLIC_API_URL never makes a visitor call their own localhost.
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
+
 export default function UserProfilePage() {
     const router = useRouter();
     const { showToast } = useToast();
@@ -42,7 +46,7 @@ export default function UserProfilePage() {
                 return;
             }
 
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8010'}/auth/me`, {
+            const res = await fetch(`${API_BASE}/auth/me`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -84,7 +88,7 @@ export default function UserProfilePage() {
         setSaving(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8010'}/auth/profile`, {
+            const res = await fetch(`${API_BASE}/auth/profile`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -132,7 +136,7 @@ export default function UserProfilePage() {
         
         try {
              const token = localStorage.getItem('token');
-             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8010'}/api/v1/storage/upload/avatar`, {
+             const res = await fetch(`${API_BASE}/api/v1/storage/upload/avatar`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -142,7 +146,7 @@ export default function UserProfilePage() {
             
             if (res.ok) {
                 const data = await res.json();
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8010';
+                const apiUrl = API_BASE;
                 
                 const fullUrl = data.url.startsWith('http') ? data.url : `${apiUrl}${data.url}`;
                 
@@ -166,7 +170,7 @@ export default function UserProfilePage() {
     
     const updateProfileAvatar = async (avatarUrl: string) => {
         const token = localStorage.getItem('token');
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8010'}/auth/profile`, {
+        await fetch(`${API_BASE}/auth/profile`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -191,7 +195,7 @@ export default function UserProfilePage() {
         
         try {
              const token = localStorage.getItem('token');
-             await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8010'}/auth/profile`, {
+             await fetch(`${API_BASE}/auth/profile`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

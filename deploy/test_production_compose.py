@@ -1,5 +1,6 @@
 """H-13 offline safety checks: no production service may expose private ports."""
 import pathlib
+import re
 import subprocess
 import unittest
 
@@ -50,12 +51,48 @@ class ProductionComposeChecks(unittest.TestCase):
         self.assertIn("PLAYWRIGHT_BROWSERS_PATH=0", worker)
         self.assertIn("playwright install --with-deps chromium", worker)
         # Production builds use same-origin browser API, never visitor localhost.
-        quote = (ROOT.parent / "apps/web-console/lib/quotation-api.ts").read_text(encoding="utf-8")
-        self.assertNotIn('http://localhost:8010', quote)
+        # Every browser call must reach the backend through the console's own origin
+        # (Next.js rewrites, then the nginx ingress), so no console source may point
+        # the API port at a loopback address.
+        console = ROOT.parent / "apps/web-console"
+        allowed_api_loopback = {
+            # Default text of the rpa-worker service-address form. It is a worker
+            # endpoint, not a browser API base, and the form has no backend yet.
+            "app/platform/skills/page.tsx",
+        }
+        offenders = []
+        for source in sorted(console.rglob("*")):
+            if source.suffix not in (".ts", ".tsx") or source.is_symlink():
+                continue
+            if any(part in ("node_modules", ".next") for part in source.parts):
+                continue
+            if re.search(r"(?:localhost|127\.0\.0\.1):8010\b", source.read_text(encoding="utf-8")):
+                relative = source.relative_to(console).as_posix()
+                if relative not in allowed_api_loopback:
+                    offenders.append(relative)
+        self.assertEqual(offenders, [], f"visitor-localhost API base in {offenders}")
         web_image = (ROOT / "web.Dockerfile").read_text(encoding="utf-8")
         self.assertIn('CMD ["node", "server.js"]', web_image)
         self.assertIn('/workspace/apps/web-console/.next/static ./.next/static', web_image)
         self.assertIn('/workspace/apps/web-console/public ./public', web_image)
+
+    def test_legacy_root_routers_reach_backend_same_origin(self):
+        """The digital-employee and content modules call root-mounted routers.
+
+        The backend mounts /agents and /content outside /api/v1, so both the
+        ingress and the Next.js proxy must forward them; otherwise the browser
+        gets a 404 from the web container instead of the API.
+        """
+        config = (ROOT / "nginx/conf.d/production.conf.template").read_text(encoding="utf-8")
+        backend_location = next(line for line in config.splitlines() if "proxy_pass http://backend:8010" in line)
+        self.assertIn("backend:8010", backend_location)
+        ingress = next(line for line in config.splitlines()
+                       if line.strip().startswith("location ~ ^/(?:") and "api/" in line)
+        for prefix in ("api/", "auth/", "agents/", "content/"):
+            self.assertIn(prefix, ingress, prefix)
+        next_config = (ROOT.parent / "apps/web-console/next.config.js").read_text(encoding="utf-8")
+        for source in ("/api/:path*", "/auth/:path*", "/agents/:path*", "/content/:path*", "/uploads/:path*"):
+            self.assertIn(f"source: '{source}'", next_config, source)
 
 
 if __name__ == "__main__":
