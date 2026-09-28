@@ -1,15 +1,21 @@
 
 "use client";
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/PageHeader";
 
 export default function BookmarkletSetup() {
-  // 生成书签代码：加载远程 JS 并执行
-  // 注意：实际生产中 localhost 应替换为您的真实域名
-  const scriptUrl = "http://localhost:3000/rpa-bookmarklet.js"; 
-  const bookmarkHref = `javascript:(function(){var s=document.createElement('script');s.src='${scriptUrl}?t='+new Date().getTime();document.body.appendChild(s);})();`;
+  // 书签脚本会在小红书/抖音等第三方页面里执行，相对路径会被解析成那个页面的域名，
+  // 因此必须使用本控制台的绝对地址。origin 只能在浏览器中获取，放到挂载后再计算，
+  // 避免预渲染出的 HTML 与客户端首帧不一致。
+  const [scriptUrl, setScriptUrl] = useState('');
+  useEffect(() => {
+    setScriptUrl(`${window.location.origin}/rpa-bookmarklet.js`);
+  }, []);
+  const bookmarkHref = scriptUrl
+    ? `javascript:(function(){var s=document.createElement('script');s.src='${scriptUrl}?t='+new Date().getTime();document.body.appendChild(s);})();`
+    : '';
 
   return (
     <div className="apple-page max-w-4xl">
@@ -30,10 +36,11 @@ export default function BookmarkletSetup() {
             <div className="flex justify-center p-6 border-2 border-dashed rounded-lg bg-surface-2">
               {/* 这是一个特殊的链接，拖动它就是添加书签 */}
               <a 
-                href={bookmarkHref}
-                className="px-6 py-3 bg-accent text-on-accent font-bold rounded-pill hover:bg-accent-hover shadow-card cursor-grab active:cursor-grabbing"
+                href={bookmarkHref || '#'}
+                aria-disabled={!bookmarkHref}
+                className={`px-6 py-3 bg-accent text-on-accent font-bold rounded-pill shadow-card ${bookmarkHref ? 'hover:bg-accent-hover cursor-grab active:cursor-grabbing' : 'opacity-50 cursor-not-allowed'}`}
                 onClick={(e) => e.preventDefault()} // 防止点击跳转
-                title="拖动我到书签栏"
+                title={bookmarkHref ? "拖动我到书签栏" : "正在生成书签…"}
               >
                 GlobalPilot RPA
               </a>
