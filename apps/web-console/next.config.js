@@ -11,10 +11,30 @@ const nextConfig = {
       const apiUrl = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8010';
       console.log(`[Next.js] Proxying API requests to: ${apiUrl}`);
       
+      // Legacy routers are mounted at the backend root (/auth, /agents, /content)
+      // rather than under /api/v1, and uploaded files are served from /uploads.
+      // Proxy all of them from the same origin too, so the browser never needs a
+      // baked NEXT_PUBLIC_API_URL and stays CORS-free.
       return [
         {
           source: '/api/:path*',
           destination: `${apiUrl}/api/:path*`, 
+        },
+        {
+          source: '/auth/:path*',
+          destination: `${apiUrl}/auth/:path*`,
+        },
+        {
+          source: '/agents/:path*',
+          destination: `${apiUrl}/agents/:path*`,
+        },
+        {
+          source: '/content/:path*',
+          destination: `${apiUrl}/content/:path*`,
+        },
+        {
+          source: '/uploads/:path*',
+          destination: `${apiUrl}/uploads/:path*`,
         },
       ]
     },

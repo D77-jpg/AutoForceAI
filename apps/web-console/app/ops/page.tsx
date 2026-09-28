@@ -10,7 +10,9 @@ import { useToast } from '@/contexts/ToastContext';
 import { PageHeader } from '@/components/PageHeader';
 import { EmptyState } from '@/components/ui/empty-state';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8010';
+// Same-origin by default: Next.js and nginx both proxy /api to the backend, so a
+// build without NEXT_PUBLIC_API_URL never makes a visitor call their own localhost.
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
 
 interface SystemStatus {
   status: string;

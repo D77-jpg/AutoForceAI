@@ -26,9 +26,10 @@ export default function OrganizationGate({ children }: { children: React.ReactNo
     const [joinName, setJoinName] = useState('');
     const [joinCode, setJoinCode] = useState('');
     
-    // Check if API_URL is defined, otherwise fallback
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8010';
-    const API_BASE = `${API_URL}/auth/organization`; // Use config if available
+    // Same-origin by default: Next.js and nginx both proxy /auth to the backend, so a
+    // build without NEXT_PUBLIC_API_URL never makes a visitor call their own localhost.
+    const API_URL = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
+    const API_BASE = `${API_URL}/auth/organization`;
 
     const refreshUser = async () => {
         try {
