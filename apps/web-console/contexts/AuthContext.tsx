@@ -1,6 +1,7 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect, ReactNode, Suspense } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { AUTH_SESSION_EXPIRED_EVENT } from '../lib/auth-session';
 
 interface User {
     id: number;
@@ -31,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
+    const isPublicPath = ['/login', '/landing', '/solution'].includes(pathname || '');
 
     // Persist redirect param to handle OAuth callbacks that might strip params
     useEffect(() => {
@@ -45,22 +47,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const storedToken = localStorage.getItem('token');
         const storedUser = localStorage.getItem('user');
 
-        if (storedToken && storedUser) {
-            setToken(storedToken);
-            setUser(JSON.parse(storedUser));
+        try {
+            const parsedUser = storedUser ? JSON.parse(storedUser) : null;
+            if (storedToken && parsedUser?.id && parsedUser?.username) {
+                setToken(storedToken);
+                setUser(parsedUser);
+            } else {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+            }
+        } catch {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
         }
         setIsLoading(false);
+
+        const onSessionExpired = () => {
+            setToken(null);
+            setUser(null);
+        };
+        window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, onSessionExpired);
+        return () => window.removeEventListener(AUTH_SESSION_EXPIRED_EVENT, onSessionExpired);
     }, []);
 
     useEffect(() => {
         if (!isLoading) {
-            // Public paths that don't satisfy authentication
-            const publicPaths = ['/login', '/landing', '/solution'];
-            const isPublicPath = publicPaths.includes(pathname || '');
-
             // If not authenticated and not on a public page, redirect
             if (!token && !isPublicPath) {
-                router.push('/login');
+                router.replace('/login');
             }
             // If authenticated and on login page, redirect to home or requested page
             if (token && pathname === '/login') {
@@ -73,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 router.push(finalRedirect);
             }
         }
-    }, [token, isLoading, pathname, router, searchParams]);
+    }, [token, isLoading, pathname, router, searchParams, isPublicPath]);
 
     const login = (newToken: string, newUser: User) => {
         localStorage.setItem('token', newToken);
@@ -92,10 +106,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         router.push('/login');
     };
 
-    // Prevent rendering children until check is done (simple protection)
-    // In a real app you might show a loading spinner here
-    // But we allowing rendering for now, the useEffect will handle redirect
-    
+    // Do not mount protected pages (and their API requests) before restoring auth.
+    if (isLoading || (!token && !isPublicPath)) return null;
+
     return (
         <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token }}>
             {children}
