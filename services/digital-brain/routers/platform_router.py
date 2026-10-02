@@ -6,6 +6,9 @@ from pydantic import BaseModel
 from core.dependencies import get_current_user
 from core.db_manager import get_shared_db
 from database.shared_models import LLMProvider, LLMModel
+from database.shared_models import LLMRequestLog
+from sqlalchemy import func
+from datetime import datetime, timedelta
 
 
 def require_platform_admin(user: dict = Depends(get_current_user)) -> dict:
@@ -24,6 +27,54 @@ def commit_configuration(db: Session) -> None:
         raise HTTPException(status_code=400, detail="Unable to save model configuration") from None
 
 router = APIRouter(prefix="/api/v1/platform", tags=["Platform & Models"])
+
+
+@router.get("/capabilities")
+def runtime_capabilities(admin: dict = Depends(require_platform_admin)):
+    """Configuration evidence only. Never probe a provider or expose a secret."""
+    import os
+    import importlib.util
+    from core.wordpress import is_configured
+    def configured(*keys):
+        return all(bool(os.getenv(key, '').strip()) for key in keys)
+    items = [
+        ("web_search", "联网搜索", configured('SERPER_API_KEY'), "需要服务端 SERPER_API_KEY；当前搜索适配器使用 Serper。"),
+        ("image_generation", "营销文生图", configured('DASHSCOPE_API_KEY'), "需要服务端 DASHSCOPE_API_KEY，并验证生成结果。"),
+        ("geo_perplexity", "GEO Perplexity", configured('PERPLEXITY_API_KEY'), "需要服务端 PERPLEXITY_API_KEY，并验证真实搜索引用。"),
+        ("geo_qwen", "GEO 通义千问", configured('DASHSCOPE_API_KEY'), "需要服务端 DASHSCOPE_API_KEY。"),
+        ("geo_zhipu", "GEO 智谱", configured('ZHIPUAI_API_KEY'), "需要服务端 ZHIPUAI_API_KEY。"),
+        ("wordpress", "WordPress 分发", is_configured(), "需要站点地址、账号及应用密码；dry-run 不算发布成功。"),
+        ("wechat", "微信登录", configured('WECHAT_APP_ID', 'WECHAT_APP_SECRET', 'WECHAT_REDIRECT_URI'), "需要微信应用与回调地址；开发模拟登录不算验收通过。"),
+        ("ppt_generator", "PPT 导出依赖", importlib.util.find_spec('pptx') is not None, "还需生成并打开实际 PPT 文件验收。"),
+        ("rpa", "RPA Worker 鉴权", configured('WORKER_SECRET'), "需另行启动 Worker 并验证任务完成；配置密钥不代表 Worker 在线。"),
+    ]
+    return {"items": [{"id": key, "name": name, "configured": ready, "detail": detail} for key, name, ready, detail in items], "verified": False}
+
+
+@router.get("/overview")
+def platform_overview(db: Session = Depends(get_shared_db), admin: dict = Depends(require_platform_admin)):
+    """Observed usage and configured models; configuration is not a health probe."""
+    start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    end = start + timedelta(days=1)
+    today = db.query(LLMRequestLog).filter(LLMRequestLog.created_at >= start, LLMRequestLog.created_at < end)
+    total = today.count()
+    success = today.filter(LLMRequestLog.status == "success").count()
+    latency = today.filter(LLMRequestLog.status == "success", LLMRequestLog.latency_ms > 0).with_entities(func.avg(LLMRequestLog.latency_ms)).scalar()
+    models = db.query(LLMModel).order_by(LLMModel.id).all()
+    return {
+        "observed_at": datetime.now().isoformat(),
+        "period_start": start.isoformat(),
+        "requests_today": total,
+        "successful_requests_today": success,
+        "failed_requests_today": today.filter(LLMRequestLog.status == "error").count(),
+        "average_latency_ms": round(latency) if latency is not None else None,
+        "success_rate": round(success / total * 100, 1) if total else None,
+        "active_models": sum(bool(m.is_active and (not m.provider or m.provider.is_active)) for m in models),
+        "total_models": len(models),
+        "models": [{"id": m.id, "name": m.display_name or m.name, "type": m.type,
+                    "enabled": bool(m.is_active and (not m.provider or m.provider.is_active)),
+                    "is_default": m.is_default} for m in models],
+    }
 
 # --- Schemas ---
 
@@ -273,53 +324,6 @@ def delete_model(model_id: int, db: Session = Depends(get_shared_db), admin: dic
     db.delete(db_model)
     commit_configuration(db)
     return {"message": "Model deleted"}
-
-
-# --- Skills (Tool Registry) ---
-
-# Tools that are built into the platform (System) vs business tools (Business)
-_SYSTEM_TOOLS = {"web_search", "rpa_browser", "ppt_generator"}
-_TOOL_TAGS = {
-    "check_order_status": ["Unsupported", "No order contract"],
-    "get_crm_customer_status": ["Business", "Bound context", "Read-only"],
-    "get_crm_quotation_status": ["Business", "Bound context", "Read-only"],
-    "web_search": ["System", "Built-in"],
-    "rpa_browser": ["System", "Built-in"],
-    "ppt_generator": ["System", "Built-in"],
-}
-
-@router.get("/skills")
-def list_skills():
-    """
-    List all registered agent skills/tools from the runtime ToolRegistry.
-    This is the single source of truth for the 技能工具箱 page.
-    """
-    from core.tools.registry import ToolRegistry
-
-    schemas = ToolRegistry.get_all_schemas()
-    skills = []
-    for s in schemas:
-        fn = s.get("function", s)  # tolerate both OpenAI-style and flat schemas
-        name = fn.get("name", "unknown")
-        params = fn.get("parameters", {}) or {}
-        required = params.get("required", [])
-        properties = params.get("properties", {}) or {}
-        skills.append({
-            "name": name,
-            "description": fn.get("description", ""),
-            "category": "system" if name in _SYSTEM_TOOLS else "business",
-            "tags": _TOOL_TAGS.get(name, ["Business", "Python"]),
-            "parameters": [
-                {
-                    "name": pname,
-                    "type": pdef.get("type", "string"),
-                    "description": pdef.get("description", ""),
-                    "required": pname in required,
-                }
-                for pname, pdef in properties.items()
-            ],
-        })
-    return {"skills": skills, "total": len(skills)}
 
 
 # --- Skills (Tool Registry) ---

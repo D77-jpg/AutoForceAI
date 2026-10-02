@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { AlertCircle, DatabaseZap, Eye } from 'lucide-react';
+import { AlertCircle, DatabaseZap } from 'lucide-react';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import TopBar from '@/components/dashboard/TopBar';
 import CommandConsole from '@/components/dashboard/CommandConsole';
@@ -9,11 +9,8 @@ import InboxPanel from '@/components/dashboard/InboxPanel';
 import KpiStrip from '@/components/dashboard/KpiStrip';
 import ActivityFeed from '@/components/dashboard/ActivityFeed';
 import TaskPipeline from '@/components/dashboard/TaskPipeline';
-import AgentRoster from '@/components/dashboard/AgentRoster';
-import AgentCard from '@/components/dashboard/AgentCard';
+import EmployeeSummary from '@/components/dashboard/EmployeeSummary';
 import { fetchDashboardData, INITIAL_DASHBOARD_DATA } from '@/lib/dashboard-api';
-import { DASHBOARD_QUICK_COMMANDS } from '@/lib/dashboard-mock';
-import type { Agent } from '@/lib/dashboard-types';
 
 export default function HomePage() {
   const [mounted, setMounted] = useState(false);
@@ -38,11 +35,6 @@ export default function HomePage() {
 
   if (!mounted) return null;
 
-  // 重点员工：三种状态各取一名代表
-  const featured = (['running', 'needs_action', 'idle'] as const)
-    .map((s) => dashboard.agents.find((a) => a.status === s))
-    .filter((a): a is Agent => Boolean(a));
-
   return (
     <div className="min-h-dvh bg-bg text-text font-sans w-full overflow-x-hidden">
       <a
@@ -57,7 +49,7 @@ export default function HomePage() {
       </div>
 
       <AppSidebar
-        agentCount={dashboard.agents.length}
+        agentCount={dashboard.employees.length}
         leadCount={dashboard.newLeadCount}
         mobileOpen={mobileNavOpen}
         onClose={() => setMobileNavOpen(false)}
@@ -82,16 +74,12 @@ export default function HomePage() {
                 暂不可用：{dashboard.sources.unavailableSections.join('、')}
               </span>
             )}
-            <span className="inline-flex items-center gap-1.5">
-              <Eye size={14} className="text-accent" aria-hidden="true" />
-              功能预览：{dashboard.sources.previewSections.join('、')}
-            </span>
           </div>
 
           {/* 第一行：指挥台 2 : 1 待我处理 */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
             <div className="lg:col-span-2">
-              <CommandConsole quickCommands={DASHBOARD_QUICK_COMMANDS} />
+              <CommandConsole />
             </div>
             <InboxPanel items={dashboard.inbox} />
           </div>
@@ -105,26 +93,7 @@ export default function HomePage() {
             <TaskPipeline tasks={dashboard.pipeline} />
           </div>
 
-          {/* 重点员工（三种状态示例卡） */}
-          {featured.length > 0 && (
-            <section aria-label="重点数字员工" className="flex flex-col gap-3">
-              <div className="flex items-baseline gap-2 px-1">
-                <h2 className="text-sm font-semibold text-text tracking-tight">重点员工</h2>
-                <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent">
-                  功能预览
-                </span>
-                <span className="text-xs text-text-tertiary">等待数字员工聚合接口接入</span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 items-start">
-                {featured.map((agent) => (
-                  <AgentCard key={agent.id} agent={agent} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* 数字员工花名册 */}
-          <AgentRoster agents={dashboard.agents} />
+          <EmployeeSummary employees={dashboard.employees} loading={dashboard.sources.loading} unavailable={dashboard.sources.unavailableSections.includes('数字员工')} />
         </div>
       </main>
     </div>

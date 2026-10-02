@@ -18,6 +18,21 @@ export default function WorkforcePage() {
   const [loading, setLoading] = useState(true);
   const [employeesLoading, setEmployeesLoading] = useState(false);
   const [error, setError] = useState('');
+  const [projectName, setProjectName] = useState('');
+  const [creating, setCreating] = useState(false);
+
+  async function createProject() {
+    if (!projectName.trim() || creating) return;
+    setCreating(true);
+    setError('');
+    try {
+      const { data } = await api.post<WorkforceProject>('/agents/projects', { name: projectName.trim() });
+      setProjects(previous => [...previous, data]);
+      setProjectId(String(data.id));
+      setProjectName('');
+    } catch (err) { setError(`项目创建失败：${errorMessage(err)}`); }
+    finally { setCreating(false); }
+  }
 
   useEffect(() => {
     let active = true;
@@ -59,6 +74,10 @@ export default function WorkforcePage() {
     } />
     {loading ? <EmptyState icon={Loader2} size="sm" title="正在加载授权项目" description="请稍候…" /> : <>
       {error && <p role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-600">{error}</p>}
+      <form onSubmit={event => { event.preventDefault(); void createProject(); }} className="rounded-xl border border-separator bg-surface p-4 space-y-3">
+        <label htmlFor="new-project-name" className="block text-sm font-semibold">新建自己的项目</label>
+        <div className="flex flex-wrap gap-3"><input id="new-project-name" maxLength={120} value={projectName} disabled={creating} onChange={event => setProjectName(event.target.value)} className="min-w-0 flex-1 rounded-lg border border-separator bg-bg p-3 text-text" placeholder="例如：外贸增长验收" /><Button type="submit" disabled={creating || !projectName.trim()}>{creating ? '正在创建' : '创建项目'}</Button></div>
+      </form>
       {projects.length === 0 ? <p className="text-text-secondary">没有可访问的项目，无法加载数字员工。</p> : <div className="rounded-xl border border-separator bg-surface p-4">
         <label htmlFor="workforce-project" className="block mb-2 text-sm font-semibold">当前项目（必选）</label>
         <select id="workforce-project" className="w-full max-w-md rounded-lg border border-separator bg-bg p-3 text-text" value={projectId} onChange={event => selectProject(event.target.value)}>

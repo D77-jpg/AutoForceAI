@@ -24,7 +24,9 @@ class OpenAIGenericLLM(BaseLLM):
             
         self.client = OpenAI(
             api_key=self.api_key,
-            base_url=self.base_url
+            base_url=self.base_url,
+            timeout=60,
+            max_retries=1,
         )
         self.default_model = kwargs.get("model", "gpt-3.5-turbo")
 
@@ -67,7 +69,9 @@ class OpenAIGenericLLM(BaseLLM):
         stream = self.client.chat.completions.create(
             model=model,
             messages=messages,
-            stream=True
+            stream=True,
+            temperature=kwargs.get("temperature", 0.7),
+            max_tokens=kwargs.get("max_tokens", 2500),
         )
         for chunk in stream:
             delta = chunk.choices[0].delta

@@ -110,4 +110,4 @@ class ZhipuLLM(BaseLLM):
                     
         except Exception:
             print("[ZhipuLLM] Stream failed")
-            yield "[Error: model request failed]"
+            raise RuntimeError("Model request failed") from None
