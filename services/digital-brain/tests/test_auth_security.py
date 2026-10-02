@@ -117,3 +117,32 @@ def test_production_requires_strong_non_default_jwt(monkeypatch):
     strong = "a-unique-non-default-secret-with-adequate-length-2026"
     monkeypatch.setenv("JWT_SECRET", strong)
     assert auth.get_jwt_secret() == strong
+
+
+def test_jwt_upgrade_preserves_sessions_and_rejects_expiry_and_bad_signatures(monkeypatch):
+    from datetime import timedelta
+    import core.auth as auth
+    import jwt
+
+    monkeypatch.setenv("JWT_SECRET", "test-only-jwt-compatibility-key-with-adequate-length")
+    claims = {"sub": "compat-user", "user_id": 7, "role": "user"}
+    token = auth.create_access_token(claims)
+    assert auth.decode_token(token)["user_id"] == 7
+    assert auth.decode_token(auth.create_access_token(claims, timedelta(seconds=-1))) is None
+    forged = jwt.encode(claims, "different-test-only-key-with-adequate-length", algorithm="HS256")
+    assert auth.decode_token(forged) is None
+
+
+def test_recursive_jwt_payload_raises_expected_invalid_token_error():
+    import base64
+    import jwt
+
+    def b64url(value):
+        return base64.urlsafe_b64encode(value).rstrip(b"=")
+
+    header = b64url(b'{"alg":"HS256","typ":"JWT"}')
+    payload = b64url(b"[" * 20000 + b"]" * 20000)
+    token = b".".join([header, payload, b64url(b"invalid-signature")]).decode()
+    # PYSEC-2026-4141: before 2.15.0 a raw RecursionError escapes this path.
+    with pytest.raises(jwt.InvalidTokenError):
+        jwt.decode(token, options={"verify_signature": False})

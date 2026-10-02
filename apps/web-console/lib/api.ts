@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { expireAuthSession } from './auth-session';
 
 const api = axios.create({
     // Use env var or default to relative root
@@ -37,8 +38,11 @@ api.interceptors.response.use(
             const status = error.response.status;
             if (status === 401) {
                 if (typeof window !== 'undefined') {
-                    console.warn("Unauthorized, redirecting...");
-                    window.location.href = '/login'; 
+                    const authorization = error.config?.headers?.Authorization;
+                    const requestToken = typeof authorization === 'string' && authorization.startsWith('Bearer ')
+                        ? authorization.slice(7)
+                        : null;
+                    expireAuthSession(requestToken);
                 }
             }
         } else if (error.request) {
