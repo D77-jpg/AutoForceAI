@@ -13,6 +13,7 @@ import sqlite3
 import secrets
 import sys
 import tempfile
+from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 SERVICE = ROOT / 'services' / 'digital-brain'
@@ -23,6 +24,7 @@ def run():
     parser.add_argument('--model-source', type=Path, default=SERVICE / 'geo_mind_v2.db')
     parser.add_argument('--serve', action='store_true')
     parser.add_argument('--real-llm', action='store_true', help='Explicitly enable the configured model call with synthetic data only')
+    parser.add_argument('--allowed-model-origin', help='Approved model origin, required with --real-llm; rejects a different configured destination')
     parser.add_argument('--port', type=int, default=8011)
     args = parser.parse_args()
     # Read-only connection; do not import the live application's configured engine.
@@ -46,6 +48,14 @@ def run():
         key_name = 'DASHSCOPE_API_KEY' if 'qwen' in name else 'ZHIPUAI_API_KEY' if 'glm' in name or 'zhipu' in name else 'DEEPSEEK_API_KEY' if 'deepseek' in name else 'OPENAI_API_KEY'
         model['api_key'] = model['api_key'] or (provider['api_key'] if provider else None) or os.getenv(key_name)
         model['base_url'] = model['base_url'] or (provider['base_url'] if provider else None) or os.getenv('OPENAI_BASE_URL')
+        approved = urlsplit(args.allowed_model_origin or '')
+        destination = urlsplit(model['base_url'] or '')
+        def origin(url):
+            return (url.scheme, url.hostname, url.port or (443 if url.scheme == 'https' else 80))
+        if (approved.scheme not in ('http', 'https') or not approved.hostname
+                or approved.username or approved.password or destination.username or destination.password
+                or origin(destination) != origin(approved)):
+            raise RuntimeError('Model destination must match the explicitly approved origin')
     # Embedding fallback must not silently send even synthetic data to a second
     # provider. This run verifies lexical retrieval; semantic retrieval is separate.
     for key in ('OPENAI_API_KEY', 'DASHSCOPE_API_KEY', 'ZHIPUAI_API_KEY', 'DEEPSEEK_API_KEY'):
@@ -97,14 +107,18 @@ def run():
                     doc = db.query(KnowledgeDoc).one()
                     upload_paths.append(Path(doc.file_path).resolve())
                     assert doc.status in ('indexed', 'embedded') and doc.chunk_count > 0
-                response = client.post('/api/v1/brain/chat', json={'query': 'What is MOQ for Acceptance_widget?', 'kb_ids': [library['id']]})
+                response = client.post('/api/v1/brain/chat', json={'query': 'What are the MOQ and lead time for Acceptance_widget? Cite the uploaded document.', 'kb_ids': [library['id']]})
                 events = [json.loads(line) for line in response.text.splitlines()]
+                print(json.dumps({'chat_events': {kind: sum(event['t'] == kind for event in events) for kind in {event['t'] for event in events}}, 'retrieved_sources': sum(len(event.get('sources', [])) for event in events if event['t'] == 'meta')}, ensure_ascii=False), flush=True)
                 session_id = events[0]['session_id']
                 history = checked(client.get(f'/api/v1/brain/sessions/{session_id}/messages'))
                 if args.real_llm:
                     assert events[-1]['t'] == 'done', 'Real model call did not complete; no fallback is accepted'
                     answer = ''.join(event.get('chunk', '') for event in events if event['t'] == 'token')
+                    print(json.dumps({'synthetic_answer': answer}, ensure_ascii=False), flush=True)
                     assert '73' in answer, 'Answer did not use the uploaded facts'
+                    assert '19' in answer, 'Answer did not use the uploaded lead time'
+                    assert '[1]' in answer, 'Answer did not cite the document inline'
                     assert any(event.get('sources') for event in events if event['t'] == 'meta'), 'Missing document citations'
                     assert history[-1]['content'] == answer and history[-1]['citations']
                 else:
@@ -116,6 +130,8 @@ def run():
                 scope = ['email login', 'organization JWT', 'project create', 'employee create/edit/reload', 'knowledge upload/index', 'saved history reload', 'platform overview']
                 scope += ['real model answer', 'citations'] if args.real_llm else ['unconfigured model fails without fake success']
                 print(json.dumps({'status': 'passed', 'scope': scope, 'retrieval': doc.status, 'real_model_verified': args.real_llm, 'mock_used': False}, ensure_ascii=False), flush=True)
+                if args.real_llm:
+                    print(json.dumps({'answer': answer, 'citations_saved': len(history[-1]['citations']), 'history_restored': True}, ensure_ascii=False), flush=True)
             if args.serve:
                 import uvicorn
                 print(f'Isolated browser acceptance: http://127.0.0.1:{args.port}', flush=True)
@@ -133,7 +149,9 @@ def run():
 if __name__ == '__main__':
     try:
         run()
-    except Exception:
+    except Exception as error:
         # Vendor/driver errors can contain endpoint credentials. Keep output safe.
-        print('Local functional acceptance failed. No mock or fallback counted as success.', file=sys.stderr)
+        print(f'Local functional acceptance failed ({type(error).__name__}). No mock or fallback counted as success.', file=sys.stderr)
+        if isinstance(error, AssertionError):
+            print(str(error), file=sys.stderr)
         sys.exit(1)
