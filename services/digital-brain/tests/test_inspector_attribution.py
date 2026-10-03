@@ -72,6 +72,15 @@ def _default_model(db, *, name, provider="OpenAI"):
     db.commit()
 
 
+def test_default_embedding_is_not_selected_for_text_generation(db):
+    db.add_all([
+        LLMModel(name='embedding-only', type='Embedding', is_default=True, is_active=True),
+        LLMModel(name='text-model', type='LLM', is_default=False, is_active=True),
+    ])
+    db.commit()
+    assert runtime.get_default_llm_model(db).name == 'text-model'
+
+
 def _assert_saved(db, returned, *, model, provider, request_id):
     db.expire_all()
     saved = db.query(InspectionRecord).filter_by(session_id=101).one()
@@ -104,6 +113,44 @@ def test_inspector_openai_generic_uses_response_model_not_requested_model(db, mo
     assert calls[0]["model"] == "custom-local-judge"
     assert calls[0]["messages"][-1]["role"] == "user"
     _assert_saved(db, record, model="actual-judge-v2", provider="openai_compatible", request_id="req-openai-01")
+
+
+@pytest.mark.parametrize('finish', ['stop', 'length', None])
+def test_structured_stream_requires_complete_output_and_keeps_provenance(db, monkeypatch, finish):
+    _default_model(db, name='custom-local-judge')
+    calls = []
+
+    class Chunks:
+        def __enter__(self):
+            return iter([
+                NS(model='actual-stream-model', _request_id='stream-receipt', usage=None,
+                   choices=[NS(delta=NS(content='{"title":'), finish_reason=None)]),
+                NS(model='actual-stream-model', _request_id='stream-receipt', usage=NS(prompt_tokens=9, completion_tokens=6),
+                   choices=[NS(delta=NS(content='"Terms"}'), finish_reason=finish)]),
+            ])
+
+        def __exit__(self, *args):
+            pass
+
+    def create(**params):
+        assert params['stream'] is True
+        calls.append(params)
+        return Chunks()
+
+    client = NS(chat=NS(completions=NS(create=create)))
+    def with_options(**options):
+        assert options == {'timeout': 30, 'max_retries': 0}
+        return client
+    client.with_options = with_options
+    monkeypatch.setattr('core.llm.providers.openai_generic.OpenAI', lambda **kwargs: client)
+    if finish == 'stop':
+        result = runtime.query_default_llm_with_attribution(db, 'Fictional terms', stream=True)
+        assert result.content == '{"title":"Terms"}'
+        assert result.model == 'actual-stream-model' and result.request_id == 'stream-receipt'
+    else:
+        with pytest.raises(Exception, match='incomplete|complete output'):
+            runtime.query_default_llm_with_attribution(db, 'Fictional terms', stream=True)
+    assert len(calls) == 1
 
 
 def test_inspector_qwen_uses_response_model_and_request_id(db, monkeypatch):

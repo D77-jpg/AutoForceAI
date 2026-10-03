@@ -83,6 +83,17 @@ class LLMRequestLog(SharedBase):
 
     created_at = Column(DateTime, default=datetime.now)
 
+class SolutionDraft(SharedBase):
+    __tablename__ = "solution_drafts"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    title = Column(String(500), nullable=False)
+    state = Column(JSON, nullable=False)
+    created_at = Column(DateTime, default=datetime.now, nullable=False)
+    updated_at = Column(DateTime, default=datetime.now, nullable=False)
+
+
 class KnowledgeBase(SharedBase):
     """知识库 (Knowledge Base) - 存储 RAG 知识集合"""
     __tablename__ = "knowledge_bases"

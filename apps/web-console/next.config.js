@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     output: 'standalone',
+    // AI generation has its own bounded deadlines (PPT 120s, image 240s).
+    // The default 30s rewrite proxy must not cut a valid task off first.
+    experimental: { proxyTimeout: 250000 },
     // Clean redirects/rewrites to standard Next.js routing
     // / -> Portal Page (app/page.tsx)
     // /geo -> GEO Dashboard (app/geo/page.tsx)

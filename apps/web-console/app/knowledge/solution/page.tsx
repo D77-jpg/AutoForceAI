@@ -7,6 +7,7 @@ import {
   ContextItem, ContextResult, DraftPage, Generation, OutlineResult, PageContent, Settings,
   editOutline, generateOutline, generatePageContent, generatePpt, listKnowledgeBases,
   movePage, renumberPages, retrieveContext,
+  getSolutionDraft, listSolutionDrafts, saveSolutionDraft, SavedSolution,
 } from '@/lib/solution-api';
 
 const field = 'w-full rounded-md border border-separator bg-bg p-2 text-text disabled:opacity-50';
@@ -41,6 +42,8 @@ export default function Page() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [download, setDownload] = useState('');
+  const [draftId, setDraftId] = useState<number | null>(null);
+  const [drafts, setDrafts] = useState<Pick<SavedSolution, 'id' | 'title' | 'updated_at'>[]>([]);
   const downloadRef = useRef('');
   const active = useRef<AbortController | null>(null);
   const version = useRef(0);
@@ -51,6 +54,12 @@ export default function Page() {
     downloadRef.current = '';
     setDownload('');
   };
+  useEffect(() => {
+    const controller = new AbortController();
+    listSolutionDrafts({ signal: controller.signal }).then(result => setDrafts(result.items))
+      .catch(error => { if (!controller.signal.aborted) setError(message(error)); });
+    return () => controller.abort();
+  }, []);
   useEffect(() => {
     const controller = new AbortController();
     setLoadingBases(true); setBasesError('');
@@ -87,6 +96,25 @@ export default function Page() {
     try { await action(controller.signal, valid); }
     catch (err) { if (valid()) setError(message(err)); }
     finally { if (valid()) { active.current = null; setBusy(''); } }
+  }
+  function save() {
+    if (!settings.topic.trim()) return;
+    void run('正在保存方案草稿…', async (signal, valid) => {
+      const saved = await saveSolutionDraft({ settings, context, outline, pages }, draftId, { signal });
+      const history = await listSolutionDrafts({ signal });
+      if (valid()) { setDraftId(saved.id); setDrafts(history.items); setNotice('方案草稿已保存，刷新后可从历史恢复。'); }
+    });
+  }
+  function loadDraft(id: number) {
+    void run('正在读取方案草稿…', async (signal, valid) => {
+      const saved = await getSolutionDraft(id, { signal });
+      if (valid()) {
+        clearDownload(); setDraftId(saved.id); setSettings(saved.state.settings);
+        setContext(saved.state.context); setOutline(saved.state.outline); setPages(saved.state.pages);
+        nextId.current = Math.max(0, ...saved.state.pages.map(page => Number(page.id) || 0));
+        setNotice('已恢复保存的方案草稿；编辑后请再次保存。');
+      }
+    });
   }
   function retrieve() {
     if (!settings.topic.trim()) { setError('主题不能为空'); return; }
@@ -140,7 +168,7 @@ export default function Page() {
     if (!canExport) return;
     void run('正在组装 PPTX 文件，请稍候…', async (signal, valid) => {
       clearDownload();
-      const blob = await generatePpt(settings.topic, pages.map(page => ({ ...page.content!, page: page.outline.page, type: page.outline.type })), { signal });
+      const blob = await generatePpt(settings.topic, pages.map(page => ({ ...page.content!, page: page.outline.page })), { signal });
       if (!valid()) return;
       const url = URL.createObjectURL(blob);
       downloadRef.current = url; setDownload(url); setNotice('PPTX 文件已生成，点击下载。');
@@ -157,6 +185,18 @@ export default function Page() {
         {error || basesError} {(error || basesError).includes('登录') && <a href="/login" className="ml-2 underline">前往登录</a>}
       </div>}
       <div role="status" aria-live="polite" className="text-sm text-text-secondary">{busy || notice}</div>
+      <section className={panel} aria-label="方案草稿">
+        <h2 className="text-lg font-semibold">方案草稿</h2>
+        <p className="text-sm text-text-secondary">点击保存后，设置、大纲和页面内容会存入当前账号。刷新后从历史恢复，导出文件可重新生成。</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button disabled={locked || !settings.topic.trim()} onClick={save}>保存方案</Button>
+          <Button variant="outline" disabled={locked} onClick={() => { changeSettings({ topic: '' }); setDraftId(null); }}>新方案</Button>
+          <label>已保存方案 <select className={field} disabled={locked} value={draftId ?? ''} onChange={event => { if (event.target.value) loadDraft(Number(event.target.value)); }}>
+            <option value="">选择历史方案</option>
+            {drafts.map(draft => <option key={draft.id} value={draft.id}>{draft.title}</option>)}
+          </select></label>
+        </div>
+      </section>
       <section className={panel} aria-label="方案设置">
         <h2 className="text-lg font-semibold">1. 方案设置</h2>
         <fieldset disabled={locked} className="space-y-4">

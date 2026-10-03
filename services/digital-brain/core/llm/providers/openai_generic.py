@@ -1,6 +1,7 @@
 import os
 from openai import OpenAI
 from typing import List, Dict, Any
+from time import monotonic
 from ..base import BaseLLM, LLMResponse
 
 class OpenAIGenericLLM(BaseLLM):
@@ -44,6 +45,39 @@ class OpenAIGenericLLM(BaseLLM):
         }
 
         try:
+            if kwargs.get('stream'):
+                # Longer structured outputs can exceed the gateway's buffered
+                # response wait. Accumulate actual deltas, with a total deadline.
+                parts = []
+                last = None
+                usage = None
+                completed = False
+                deadline = monotonic() + 85
+                # A stalled read can take at most another 30s; no hidden retry
+                # may outlive the presentation UI's 120s request limit.
+                client = self.client.with_options(timeout=30, max_retries=0)
+                with client.chat.completions.create(**params, stream=True) as chunks:
+                    for chunk in chunks:
+                        if monotonic() > deadline:
+                            raise TimeoutError('Model generation deadline exceeded')
+                        last = chunk
+                        if getattr(chunk, 'usage', None):
+                            usage = chunk.usage
+                        if not chunk.choices:
+                            continue
+                        choice = chunk.choices[0]
+                        if choice.delta.content:
+                            parts.append(choice.delta.content)
+                        if choice.finish_reason:
+                            if choice.finish_reason != 'stop':
+                                raise ValueError('Model output was incomplete')
+                            completed = True
+                if not completed or not parts:
+                    raise ValueError('Model stream ended without a complete output')
+                return LLMResponse(
+                    content=''.join(parts), raw_response=last, model_name=model,
+                    usage={'input_tokens': usage.prompt_tokens, 'output_tokens': usage.completion_tokens} if usage else {},
+                )
             response = self.client.chat.completions.create(**params)
             
             content = response.choices[0].message.content
@@ -53,8 +87,8 @@ class OpenAIGenericLLM(BaseLLM):
                 raw_response=response,
                 model_name=model,
                 usage={
-                    "input_tokens": response.usage.prompt_tokens,
-                    "output_tokens": response.usage.completion_tokens
+                    "input_tokens": response.usage.prompt_tokens if response.usage else 0,
+                    "output_tokens": response.usage.completion_tokens if response.usage else 0
                 }
             )
         except Exception as e:

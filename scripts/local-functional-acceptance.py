@@ -25,9 +25,14 @@ def run():
     parser.add_argument('--serve', action='store_true')
     parser.add_argument('--real-llm', action='store_true', help='Explicitly enable the configured model call with synthetic data only')
     parser.add_argument('--external-services', action='store_true', help='Test Beijing embedding and Wanx plus Serper using public facts only')
+    parser.add_argument('--solution', action='store_true', help='Test real presentation outline/content, saved draft and PPTX export')
+    parser.add_argument('--model-name', help='Explicit model override in the isolated acceptance DB only; source configuration is unchanged')
+    parser.add_argument('--evidence-dir', type=Path, help='Optional destination for the generated acceptance PPTX and safe receipt')
     parser.add_argument('--allowed-model-origin', help='Approved model origin, required with --real-llm; rejects a different configured destination')
     parser.add_argument('--port', type=int, default=8011)
     args = parser.parse_args()
+    if args.solution and (not args.real_llm or args.external_services):
+        raise RuntimeError('Solution acceptance requires the approved real LLM and the synthetic product fixture')
     # Read-only connection; do not import the live application's configured engine.
     model = None
     provider = None
@@ -60,6 +65,16 @@ def run():
                 or approved.username or approved.password or destination.username or destination.password
                 or origin(destination) != origin(approved)):
             raise RuntimeError('Model destination must match the explicitly approved origin')
+        if args.model_name:
+            import httpx
+            response = httpx.get(model['base_url'].rstrip('/') + '/models', headers={'Authorization': 'Bearer ' + model['api_key']}, timeout=15)
+            response.raise_for_status()
+            available = {item['id'] for item in response.json().get('data', [])}
+            if args.model_name not in available:
+                raise RuntimeError('Requested acceptance model is not offered by the approved gateway')
+            model['name'] = args.model_name
+            model['display_name'] = args.model_name
+        print(json.dumps({'acceptance_model': model['name'], 'source_configuration_unchanged': True}), flush=True)
     # Embedding fallback must not silently send even synthetic data to a second
     # provider. This run verifies lexical retrieval; semantic retrieval is separate.
     for key in ('OPENAI_API_KEY', 'DASHSCOPE_API_KEY', 'ZHIPUAI_API_KEY', 'DEEPSEEK_API_KEY'):
@@ -81,7 +96,7 @@ def run():
         from core.db_manager import SHARED_ENGINE, SharedSessionLocal
         from database.base import Base
         from database.shared_models import LLMModel, LLMProvider, KnowledgeDoc, KnowledgeChunk
-        from routers import auth_router, agent_router, kb_router, brain_router, platform_router, marketing_router
+        from routers import auth_router, agent_router, kb_router, brain_router, platform_router, marketing_router, solution_router
         # All uploaded/generated files also stay inside the temporary run directory.
         kb_router.UPLOAD_ROOT = str(Path(temporary) / 'documents')
         import core.marketing_images as images
@@ -96,11 +111,11 @@ def run():
                 db.add(LLMModel(**model))
             db.commit()
         app = FastAPI()
-        for module in (auth_router, agent_router, kb_router, brain_router, platform_router, marketing_router):
+        for module in (auth_router, agent_router, kb_router, brain_router, platform_router, marketing_router, solution_router):
             app.include_router(module.router)
         def checked(response, code=200):
             if response.status_code != code:
-                raise RuntimeError(f'HTTP workflow failed: {response.status_code}')
+                raise RuntimeError(f'HTTP workflow failed: {response.request.url.path} ({response.status_code})')
             return response.json()
         try:
             with TestClient(app) as client:
@@ -155,6 +170,44 @@ def run():
                     assert events[-1]['t'] == 'error' and all(e['t'] != 'done' for e in events)
                     assert not any(m['role'] == 'assistant' for m in history)
                 assert checked(client.get('/api/v1/brain/sessions'))[0]['id'] == session_id
+                if args.solution:
+                    settings = {'topic': 'Acceptance_widget MOQ lead time', 'target_audience': 'Overseas buyers', 'style': 'Concise English; use only the uploaded fictional facts', 'kb_ids': [library['id']]}
+                    context = checked(client.post('/api/v1/solution/context', json=settings))
+                    assert context['items'] and '73' in context['items'][0]['content']
+                    outline = checked(client.post('/api/v1/solution/outline', json=settings))
+                    assert outline['generation_mode'] == 'llm' and outline['knowledge_used'] and outline['sources']
+                    print(json.dumps({'solution_outline': 'passed', 'outline_pages': len(outline['pages']), 'sources': len(outline['sources'])}), flush=True)
+                    pages = []
+                    # Acceptance edits the generated outline to three slides to bound model calls.
+                    for index, page in enumerate(outline['pages'][:3], 1):
+                        content = checked(client.post('/api/v1/solution/page/content', json={**settings, 'page_title': page['title'], 'page_type': page['type'], 'context_hint': page.get('key_points_hint')}))
+                        assert content['generation_mode'] == 'llm' and content['bullets'] and content['sources']
+                        pages.append({'id': str(index), 'outline': {**page, 'page': index}, 'content': content})
+                        print(json.dumps({'solution_page': index, 'status': 'passed', 'sources': len(content['sources'])}), flush=True)
+                    state = {'settings': settings, 'context': context, 'outline': outline, 'pages': pages}
+                    draft = checked(client.post('/api/v1/solution/drafts', json=state), 201)
+                    state['pages'][1]['content']['title'] = 'MOQ and delivery terms'
+                    checked(client.put(f"/api/v1/solution/drafts/{draft['id']}", json=state))
+                    restored = checked(client.get(f"/api/v1/solution/drafts/{draft['id']}"))
+                    assert restored['state']['pages'][1]['content']['title'] == 'MOQ and delivery terms'
+                    assert checked(client.get('/api/v1/solution/drafts'))['items'][0]['id'] == draft['id']
+                    exported = client.post('/api/v1/solution/generate', json={'topic': settings['topic'], 'pages': [{**p['content'], 'page': index, 'type': p['outline']['type']} for index, p in enumerate(restored['state']['pages'], 1)]})
+                    assert exported.status_code == 200 and exported.content[:2] == b'PK'
+                    from io import BytesIO
+                    import zipfile
+                    import xml.etree.ElementTree as ET
+                    with zipfile.ZipFile(BytesIO(exported.content)) as archive:
+                        assert archive.testzip() is None
+                        presentation = ET.fromstring(archive.read('ppt/presentation.xml'))
+                        assert len(presentation.findall('.//{http://schemas.openxmlformats.org/presentationml/2006/main}sldId')) == 3
+                        slide_text = ' '.join(archive.read(name).decode('utf-8') for name in archive.namelist() if name.startswith('ppt/slides/slide') and name.endswith('.xml'))
+                        assert '73' in slide_text and '19' in slide_text
+                    receipt = {'solution': 'passed', 'real_model_verified': True, 'sources_verified': True, 'saved_draft_restored': True, 'editing_restored': True, 'exported_slides': 3, 'pptx_bytes': len(exported.content), 'mock_used': False}
+                    if args.evidence_dir:
+                        args.evidence_dir.mkdir(parents=True, exist_ok=True)
+                        (args.evidence_dir / 'local-acceptance-solution.pptx').write_bytes(exported.content)
+                        (args.evidence_dir / 'solution-api-receipt.json').write_text(json.dumps(receipt, indent=2), encoding='utf-8')
+                    print(json.dumps(receipt), flush=True)
                 if args.external_services:
                     from core.tools.web_search import WebSearchTool
                     search = json.loads(WebSearchTool().run({'query': 'Alibaba Cloud Model Studio official documentation', 'num': 3}))
@@ -221,5 +274,7 @@ if __name__ == '__main__':
         # Vendor/driver errors can contain endpoint credentials. Keep output safe.
         print(f'Local functional acceptance failed ({type(error).__name__}). No mock or fallback counted as success.', file=sys.stderr)
         if isinstance(error, AssertionError):
+            print(str(error), file=sys.stderr)
+        if isinstance(error, RuntimeError) and str(error).startswith('HTTP workflow failed:'):
             print(str(error), file=sys.stderr)
         sys.exit(1)
