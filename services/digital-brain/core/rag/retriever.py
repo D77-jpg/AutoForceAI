@@ -27,6 +27,7 @@ _ENGLISH_STOP_WORDS = frozenset({
     'for', 'from', 'how', 'in', 'is', 'it', 'of', 'on', 'or', 'please',
     'that', 'the', 'this', 'to', 'was', 'were', 'what', 'when', 'where',
     'which', 'who', 'with', 'would', 'you', 'your',
+    'according', 'cite', 'citing', 'document', 'documents', 'uploaded', 'source', 'sources',
 })
 
 
@@ -139,7 +140,14 @@ class KnowledgeRetriever:
         scored = []
         for c in chunks:
             vec = c.embedding
-            if not vec or not isinstance(vec, (list, tuple)):
+            # pgvector returns numpy arrays even when stored in SQLite. Their
+            # truth value is ambiguous; checking it caused all vector searches
+            # to fall back to lexical matching after successful embedding.
+            if vec is None:
+                continue
+            if hasattr(vec, "tolist"):
+                vec = vec.tolist()
+            if not isinstance(vec, (list, tuple)) or len(vec) == 0:
                 continue
             n = min(len(vec), len(qvec))
             if n == 0:

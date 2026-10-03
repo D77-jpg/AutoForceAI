@@ -50,3 +50,25 @@ def test_natural_question_retrieves_uploaded_facts_in_scope(retriever, question,
 def test_common_words_or_unrelated_questions_do_not_create_sources(retriever, question):
     search, library_id = retriever
     assert search.search_multi_kb([library_id], question) == []
+
+
+def test_sqlite_vector_search_uses_pgvector_numpy_values(retriever, monkeypatch):
+    search, library_id = retriever
+    chunk = search.db.query(KnowledgeChunk).join(KnowledgeDoc).filter(KnowledgeDoc.kb_id == library_id).first()
+    chunk.embedding = [1.0] + [0.0] * 1023
+    search.db.commit()
+    search.db.expire_all()
+    # Query deliberately has no lexical overlap, so a fallback cannot pass.
+    monkeypatch.setattr(search.embedder, 'embed_query', lambda _: [1.0] + [0.0] * 1023)
+    hits = search._vector_search([library_id], 'semantic-only', 5)
+    assert len(hits) == 1 and hits[0]['score'] == pytest.approx(1.0)
+    assert hits[0]['kb_id'] == library_id
+
+
+def test_source_instructions_do_not_dilute_public_fact_retrieval(retriever):
+    search, library_id = retriever
+    doc = search.db.query(KnowledgeDoc).filter_by(kb_id=library_id).first()
+    search.db.add(KnowledgeChunk(doc_id=doc.id, chunk_index=3, chunk_text='Paris is the capital of France.'))
+    search.db.commit()
+    hits = search.search_multi_kb([library_id], 'According to the uploaded document, what is the capital of France? Cite the source.')
+    assert hits and hits[0]['content'] == 'Paris is the capital of France.'

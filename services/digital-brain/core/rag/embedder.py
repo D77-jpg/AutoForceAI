@@ -265,7 +265,16 @@ class EmbeddingClient:
                         continue
 
                 if resp.status_code >= 500:
-                    raise RuntimeError(f"HTTP {resp.status_code}: {resp.text[:200]}")
+                    raise RuntimeError(f"Embedding service HTTP {resp.status_code}")
+                if 400 <= resp.status_code < 500 and resp.status_code != 429:
+                    try:
+                        code = resp.json().get("error", {}).get("code")
+                    except Exception:
+                        code = None
+                    message = "嵌入服务拒绝请求，请检查模型配置、权限与额度"
+                    if code == "AllocationQuota.FreeTierOnly":
+                        message = "嵌入模型免费额度已耗尽，且当前仅允许免费额度"
+                    raise EmbeddingUnavailable(message)
                 resp.raise_for_status()
 
                 data = resp.json()
@@ -278,17 +287,19 @@ class EmbeddingClient:
                 items = sorted(items, key=lambda d: d.get("index", 0))
                 return [_fit_dim(list(item["embedding"]), self.model_name or "") for item in items]
 
+            except EmbeddingUnavailable:
+                raise
             except Exception as exc:
                 last_error = exc
                 if attempt < _MAX_RETRIES - 1:
                     sleep_for = _RETRY_BACKOFF ** attempt
                     logger.warning(
                         "[Embedder] 调用失败（第 %d 次）：%s，%.1fs 后重试",
-                        attempt + 1, exc, sleep_for,
+                        attempt + 1, type(exc).__name__, sleep_for,
                     )
                     time.sleep(sleep_for)
 
-        raise EmbeddingUnavailable(f"嵌入调用失败：{last_error}")
+        raise EmbeddingUnavailable(f"嵌入调用失败：{type(last_error).__name__}")
 
 
 def get_embedding_client(db=None) -> EmbeddingClient:
