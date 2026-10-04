@@ -18,6 +18,26 @@ Python requirements are not fully pinned: pip-audit resolves currently available
 
 ## Time-limited exceptions
 
+### Local source remediation for CVE-2026-93687 (2026-10-05)
+
+`braces@3.0.3` has no official fixed npm release for GHSA-vfj7-8cjw-p6xm. The
+frontend instead installs the explicitly named, private MIT source fork
+`@autoforce/guarded-braces@3.0.3-afai.1` from `packages/guarded-braces`, under the
+dependency key `braces`. A root override applies it to all consumers, including
+Tailwind/chokidar and Next ESLint/fast-glob/micromatch. This is a code remediation,
+not a vulnerability exception or an official upstream version bump.
+
+The parser, recursive AST walkers, array helpers and parent traversal enforce a
+fixed depth ceiling. The package README records original npm integrity, source
+hashes, license, exact changes and the remaining expansion-size limitation. npm
+does not assess private source; a green advisory scan alone is insufficient.
+The existing web CI runs installed-consumer resolution, deep/cyclic input,
+normal glob and watcher regression tests in `tests/guarded-braces.test.cjs`.
+Node 20/npm 10 clean installation, frontend tests, typecheck and production build
+must also pass. The high/critical gate and empty exception registry stay intact.
+Replace the local fork with a reviewed upstream fix once released, after the same
+regressions; do not remove the tests merely to obtain a green check.
+
 The registry `.github/security-audit-exceptions.json` is deliberately empty. Prefer upgrading dependencies. A temporary exception needs a security reviewer and a PR that adds an **individual advisory** object (never an entire package or severity bypass):
 
 ```json
