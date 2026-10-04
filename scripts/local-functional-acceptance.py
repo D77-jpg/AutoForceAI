@@ -1,7 +1,8 @@
 """Exercise real local workflows in a fresh database, using the configured LLM.
 
 Run with services/digital-brain/venv/Scripts/python.exe. --serve retains this
-isolated instance on loopback for browser checks; no CRM/publishing worker starts.
+isolated instance on loopback for browser checks. Only the --crm launcher enables
+the isolated CRM worker; no publishing or messaging worker starts.
 Only the selected model configuration is read from the source DB. No live business
 records are copied or changed. The temporary model credentials are removed on exit.
 """
@@ -26,11 +27,14 @@ def run():
     parser.add_argument('--real-llm', action='store_true', help='Explicitly enable the configured model call with synthetic data only')
     parser.add_argument('--external-services', action='store_true', help='Test Beijing embedding and Wanx plus Serper using public facts only')
     parser.add_argument('--solution', action='store_true', help='Test real presentation outline/content, saved draft and PPTX export')
+    parser.add_argument('--crm', action='store_true', help='Real isolated Genesis fixture required; run through local-genesis-acceptance.cjs')
     parser.add_argument('--model-name', help='Explicit model override in the isolated acceptance DB only; source configuration is unchanged')
     parser.add_argument('--evidence-dir', type=Path, help='Optional destination for the generated acceptance PPTX and safe receipt')
     parser.add_argument('--allowed-model-origin', help='Approved model origin, required with --real-llm; rejects a different configured destination')
     parser.add_argument('--port', type=int, default=8011)
     args = parser.parse_args()
+    if args.crm and (not os.getenv('ACCEPTANCE_CRM_TOKEN') or args.external_services or args.solution):
+        raise RuntimeError('CRM acceptance requires the isolated Genesis launcher')
     if args.solution and (not args.real_llm or args.external_services):
         raise RuntimeError('Solution acceptance requires the approved real LLM and the synthetic product fixture')
     # Read-only connection; do not import the live application's configured engine.
@@ -85,9 +89,12 @@ def run():
     sys.path.insert(0, str(SERVICE))
     upload_paths = []
     external_failures = []
-    with tempfile.TemporaryDirectory(prefix='autoforce-local-acceptance-') as temporary:
+    temporary_parent = Path(os.environ['ACCEPTANCE_TEMP_ROOT']).resolve() if args.crm else Path(tempfile.gettempdir()).resolve()
+    if args.crm and (temporary_parent.parent != Path(tempfile.gettempdir()).resolve() or not temporary_parent.name.startswith('autoforce-genesis-')):
+        raise RuntimeError('CRM fixture must use its own isolated temporary root')
+    with tempfile.TemporaryDirectory(prefix='autoforce-local-acceptance-', dir=temporary_parent) as temporary:
         # Cleanup may only target the exact directory created for this run.
-        assert Path(temporary).resolve().parent == Path(tempfile.gettempdir()).resolve()
+        assert Path(temporary).resolve().parent == temporary_parent
         os.environ['DATABASE_URL'] = 'sqlite:///' + str(Path(temporary) / 'acceptance.db').replace('\\', '/')
         os.environ['APP_ENV'] = 'development'
         os.environ['JWT_SECRET'] = secrets.token_urlsafe(48)
@@ -97,6 +104,10 @@ def run():
         from database.base import Base
         from database.shared_models import LLMModel, LLMProvider, KnowledgeDoc, KnowledgeChunk
         from routers import auth_router, agent_router, kb_router, brain_router, platform_router, marketing_router, solution_router
+        if args.crm:
+            from cryptography.fernet import Fernet
+            os.environ['CRM_CREDENTIAL_ENCRYPTION_KEY'] = Fernet.generate_key().decode()
+            from routers import lead_router, crm_integration_router, quotation_router
         # All uploaded/generated files also stay inside the temporary run directory.
         kb_router.UPLOAD_ROOT = str(Path(temporary) / 'documents')
         import core.marketing_images as images
@@ -113,6 +124,9 @@ def run():
         app = FastAPI()
         for module in (auth_router, agent_router, kb_router, brain_router, platform_router, marketing_router, solution_router):
             app.include_router(module.router)
+        if args.crm:
+            for module in (lead_router, crm_integration_router, quotation_router):
+                app.include_router(module.router)
         def checked(response, code=200):
             if response.status_code != code:
                 raise RuntimeError(f'HTTP workflow failed: {response.request.url.path} ({response.status_code})')
@@ -148,28 +162,29 @@ def run():
                             hits = retriever._vector_search([library['id']], '法国的首都是哪座城市？', 5)
                             assert hits and 'Paris' in hits[0]['content']
                             print(json.dumps({'embedding': 'passed', 'dimensions': 1024, 'semantic_only_hits': len(hits)}), flush=True)
-                question = 'According to the uploaded document, what is the capital of France? Cite the source.' if args.external_services else 'What are the MOQ and lead time for Acceptance_widget? Cite the uploaded document.'
-                response = client.post('/api/v1/brain/chat', json={'query': question, 'kb_ids': [library['id']]})
-                events = [json.loads(line) for line in response.text.splitlines()]
-                print(json.dumps({'chat_events': {kind: sum(event['t'] == kind for event in events) for kind in {event['t'] for event in events}}, 'retrieved_sources': sum(len(event.get('sources', [])) for event in events if event['t'] == 'meta')}, ensure_ascii=False), flush=True)
-                session_id = events[0]['session_id']
-                history = checked(client.get(f'/api/v1/brain/sessions/{session_id}/messages'))
-                if args.real_llm:
-                    assert events[-1]['t'] == 'done', 'Real model call did not complete; no fallback is accepted'
-                    answer = ''.join(event.get('chunk', '') for event in events if event['t'] == 'token')
-                    print(json.dumps({'synthetic_answer': answer}, ensure_ascii=False), flush=True)
-                    if args.external_services:
-                        assert 'Paris' in answer, 'Answer did not use the public uploaded facts'
+                if not args.crm:
+                    question = 'According to the uploaded document, what is the capital of France? Cite the source.' if args.external_services else 'What are the MOQ and lead time for Acceptance_widget? Cite the uploaded document.'
+                    response = client.post('/api/v1/brain/chat', json={'query': question, 'kb_ids': [library['id']]})
+                    events = [json.loads(line) for line in response.text.splitlines()]
+                    print(json.dumps({'chat_events': {kind: sum(event['t'] == kind for event in events) for kind in {event['t'] for event in events}}, 'retrieved_sources': sum(len(event.get('sources', [])) for event in events if event['t'] == 'meta')}, ensure_ascii=False), flush=True)
+                    session_id = events[0]['session_id']
+                    history = checked(client.get(f'/api/v1/brain/sessions/{session_id}/messages'))
+                    if args.real_llm:
+                        assert events[-1]['t'] == 'done', 'Real model call did not complete; no fallback is accepted'
+                        answer = ''.join(event.get('chunk', '') for event in events if event['t'] == 'token')
+                        print(json.dumps({'synthetic_answer': answer}, ensure_ascii=False), flush=True)
+                        if args.external_services:
+                            assert 'Paris' in answer, 'Answer did not use the public uploaded facts'
+                        else:
+                            assert '73' in answer, 'Answer did not use the uploaded facts'
+                            assert '19' in answer, 'Answer did not use the uploaded lead time'
+                        assert '[1]' in answer, 'Answer did not cite the document inline'
+                        assert any(event.get('sources') for event in events if event['t'] == 'meta'), 'Missing document citations'
+                        assert history[-1]['content'] == answer and history[-1]['citations']
                     else:
-                        assert '73' in answer, 'Answer did not use the uploaded facts'
-                        assert '19' in answer, 'Answer did not use the uploaded lead time'
-                    assert '[1]' in answer, 'Answer did not cite the document inline'
-                    assert any(event.get('sources') for event in events if event['t'] == 'meta'), 'Missing document citations'
-                    assert history[-1]['content'] == answer and history[-1]['citations']
-                else:
-                    assert events[-1]['t'] == 'error' and all(e['t'] != 'done' for e in events)
-                    assert not any(m['role'] == 'assistant' for m in history)
-                assert checked(client.get('/api/v1/brain/sessions'))[0]['id'] == session_id
+                        assert events[-1]['t'] == 'error' and all(e['t'] != 'done' for e in events)
+                        assert not any(m['role'] == 'assistant' for m in history)
+                    assert checked(client.get('/api/v1/brain/sessions'))[0]['id'] == session_id
                 if args.solution:
                     settings = {'topic': 'Acceptance_widget MOQ lead time', 'target_audience': 'Overseas buyers', 'style': 'Concise English; use only the uploaded fictional facts', 'kb_ids': [library['id']]}
                     context = checked(client.post('/api/v1/solution/context', json=settings))
@@ -208,6 +223,9 @@ def run():
                         (args.evidence_dir / 'local-acceptance-solution.pptx').write_bytes(exported.content)
                         (args.evidence_dir / 'solution-api-receipt.json').write_text(json.dumps(receipt, indent=2), encoding='utf-8')
                     print(json.dumps(receipt), flush=True)
+                if args.crm:
+                    from crm_acceptance_workflow import verify_crm
+                    crm_receipt = verify_crm(client, checked, SharedSessionLocal, args, library['id'])
                 if args.external_services:
                     from core.tools.web_search import WebSearchTool
                     search = json.loads(WebSearchTool().run({'query': 'Alibaba Cloud Model Studio official documentation', 'num': 3}))
@@ -247,15 +265,21 @@ def run():
                 overview = checked(client.get('/api/v1/platform/overview'))
                 assert overview['total_models'] == (1 if args.real_llm else 0)
                 scope = ['email login', 'organization JWT', 'project create', 'employee create/edit/reload', 'knowledge upload/index', 'saved history reload', 'platform overview']
-                scope += ['real model answer', 'citations'] if args.real_llm else ['unconfigured model fails without fake success']
-                print(json.dumps({'status': 'partial' if external_failures else 'passed', 'external_failures': external_failures, 'scope': scope, 'retrieval': doc.status, 'real_model_verified': args.real_llm, 'mock_used': False}, ensure_ascii=False), flush=True)
-                if args.real_llm:
+                scope += ['real Genesis delivery/retry/outcomes/quotation/PDF'] if args.crm else (['real model answer', 'citations'] if args.real_llm else ['unconfigured model fails without fake success'])
+                print(json.dumps({'status': 'partial' if external_failures or (args.crm and crm_receipt['pending']) else 'passed', 'external_failures': external_failures, 'pending': crm_receipt['pending'] if args.crm else [], 'scope': scope, 'retrieval': doc.status, 'real_model_verified': args.real_llm, 'mock_used': False}, ensure_ascii=False), flush=True)
+                if args.real_llm and not args.crm:
                     print(json.dumps({'answer': answer, 'citations_saved': len(history[-1]['citations']), 'history_restored': True}, ensure_ascii=False), flush=True)
             if args.serve:
                 import uvicorn
+                if args.crm:
+                    from core.crm.dispatcher import start_dispatcher
+                    start_dispatcher()
                 print(f'Isolated browser acceptance: http://127.0.0.1:{args.port}', flush=True)
                 uvicorn.run(app, host='127.0.0.1', port=args.port, log_level='warning')
         finally:
+            if args.crm:
+                from core.crm.dispatcher import stop_dispatcher
+                stop_dispatcher()
             with SharedSessionLocal() as db:
                 upload_paths.extend(Path(d.file_path).resolve() for d in db.query(KnowledgeDoc).all() if d.file_path)
             upload_root = (SERVICE / kb_router.UPLOAD_ROOT).resolve()
@@ -265,6 +289,8 @@ def run():
             SHARED_ENGINE.dispose()
     if external_failures:
         raise RuntimeError('Some external workflows failed; no full acceptance claimed')
+    if args.crm and crm_receipt['pending']:
+        raise RuntimeError('CRM has pending acceptance items; see the safe receipt')
 
 
 if __name__ == '__main__':

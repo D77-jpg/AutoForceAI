@@ -32,9 +32,13 @@ import {
   type QuotationProposal,
   type QuotationResult,
   type SyncedLead,
+  listLeadQuotations,
+  getQuotation,
+  type QuotationHistoryItem,
 } from "@/lib/quotation-api";
 
 const CURRENCIES = ["USD", "EUR", "GBP", "CNY", "JPY", "HKD", "AUD", "CAD", "CHF", "SGD", "AED", "NZD"];
+const QUOTATION_STATUS = { draft: '草稿', sent: '已发送', negotiating: '协商中', accepted: '已接受', rejected: '已拒绝', expired: '已过期' };
 
 const fieldClass = "w-full rounded-md border border-transparent bg-surface-2 px-3.5 py-2 text-base text-text placeholder:text-text-tertiary focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-accent/30 focus-visible:border-accent/50 sm:text-[15px]";
 const linkButtonClass = "inline-flex h-11 items-center justify-center rounded-md border border-separator bg-transparent px-4 text-sm font-medium text-text transition-all duration-fast ease-apple hover:bg-text/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 active:scale-[0.96]";
@@ -66,8 +70,23 @@ export default function NewQuotationPage() {
   const [downloading, setDownloading] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [history, setHistory] = useState<QuotationHistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+
+  const openQuotation = async (id: string) => {
+    setRestoring(true); setError(null);
+    try {
+      setResult(await getQuotation(id));
+      const url = new URL(window.location.href); url.searchParams.set('quotation', id);
+      window.history.replaceState(null, '', url.toString());
+    } catch (err) { setError(err instanceof Error ? err.message : '读取报价失败'); }
+    finally { setRestoring(false); }
+  };
 
   useEffect(() => {
+    const savedId = new URL(window.location.href).searchParams.get('quotation');
+    if (savedId) void openQuotation(savedId);
     listSyncedLeads()
       .then((items) => {
         setLeads(items);
@@ -76,6 +95,17 @@ export default function NewQuotationPage() {
       .catch((err) => setError(err instanceof Error ? err.message : "加载线索失败"))
       .finally(() => setLoadingLeads(false));
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    setHistory([]);
+    if (!leadId) { setHistoryLoading(false); return; }
+    setHistoryLoading(true);
+    listLeadQuotations(Number(leadId)).then(items => { if (active) setHistory(items); })
+      .catch(err => { if (active) setError(err instanceof Error ? err.message : '读取报价历史失败'); })
+      .finally(() => { if (active) setHistoryLoading(false); });
+    return () => { active = false; };
+  }, [leadId]);
 
   const selectedLead = leads.find((lead) => String(lead.id) === leadId);
   const missing = useMemo(() => liveMissing(proposal), [proposal]);
@@ -87,6 +117,7 @@ export default function NewQuotationPage() {
       return;
     }
     setGenerating(true);
+    setProposal(null);
     setError(null);
     setResult(null);
     try {
@@ -127,7 +158,10 @@ export default function NewQuotationPage() {
     setConfirming(true);
     setError(null);
     try {
-      setResult(await confirmQuotation(proposal));
+      const created = await confirmQuotation(proposal);
+      setResult(created);
+      const url = new URL(window.location.href); url.searchParams.set('quotation', created.quotation.quotationId);
+      window.history.replaceState(null, '', url.toString());
       setConfirmOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "创建 Genesis 报价草稿失败");
@@ -153,7 +187,7 @@ export default function NewQuotationPage() {
   if (result) {
     return (
       <main className="min-h-dvh bg-bg p-5 text-text md:p-8">
-        <PageHeader title="报价草稿已创建" description="权威编号、金额与 PDF 均来自 Genesis CRM。" />
+        <PageHeader title="Genesis 报价" description="编号、金额、状态与 PDF 均读取自 Genesis CRM。" />
         <Card className="mx-auto max-w-3xl overflow-hidden">
           <div className="border-b border-separator bg-success/10 p-6 md:p-8">
             <div className="flex items-start gap-4">
@@ -161,7 +195,7 @@ export default function NewQuotationPage() {
                 <CheckCircle2 size={26} />
               </div>
               <div>
-                <Badge variant="outline" className="mb-3 border-success/30 text-success">DRAFT · v{result.quotation.version}</Badge>
+                  <Badge variant="outline" className="mb-3 border-success/30 text-success">{result.quotation.status.toUpperCase()} · v{result.quotation.version}</Badge>
                 <h2 className="text-2xl font-semibold tracking-tight">{result.quotation.quotationNo}</h2>
                 <p className="mt-1 text-sm text-text-secondary">{result.quotation.title}</p>
               </div>
@@ -175,7 +209,7 @@ export default function NewQuotationPage() {
               </div>
               <div className="rounded-xl bg-surface-2 p-4">
                 <p className="text-xs text-text-secondary">状态</p>
-                <p className="mt-1 text-xl font-semibold">草稿</p>
+                <p className="mt-1 text-xl font-semibold">{QUOTATION_STATUS[result.quotation.status] || result.quotation.status}</p>
               </div>
               <div className="rounded-xl bg-surface-2 p-4">
                 <p className="text-xs text-text-secondary">版本</p>
@@ -184,9 +218,11 @@ export default function NewQuotationPage() {
             </div>
             <Alert>
               <ShieldCheck size={17} />
-              <AlertTitle>已完成权威重算</AlertTitle>
-              <AlertDescription>行金额和总金额由 Genesis 重新计算；AutoForceAI 未提交任何总额或状态字段。</AlertDescription>
+              <AlertTitle>报价已保存到 CRM</AlertTitle>
+              <AlertDescription>金额按已确认的数量和单价计算。{result.quotation.status === 'draft' ? '这份草稿尚未发送给客户，可在 Genesis 中继续编辑与审核。' : '当前状态来自 Genesis 的最新记录。'}</AlertDescription>
             </Alert>
+            {result.quotation.items?.length > 0 && <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b border-separator"><th className="py-2">产品</th><th className="py-2 text-right">数量</th><th className="py-2 text-right">单价</th><th className="py-2 text-right">金额</th></tr></thead><tbody>{result.quotation.items.map((item, index) => <tr key={index} className="border-b border-separator"><td className="py-3">{item.productName}</td><td className="text-right">{item.quantity}</td><td className="text-right">{item.unitPrice.toFixed(2)}</td><td className="text-right">{item.amount.toFixed(2)}</td></tr>)}</tbody></table></div>}
+            <dl className="grid gap-3 text-sm sm:grid-cols-2"><div><dt className="text-text-secondary">最低起订量</dt><dd>{result.quotation.moq || '未填写'}</dd></div><div><dt className="text-text-secondary">交期</dt><dd>{result.quotation.leadTime || '未填写'}</dd></div></dl>
             {error && <Alert variant="destructive"><AlertTriangle size={17} /><AlertDescription>{error}</AlertDescription></Alert>}
             <div className="flex flex-col gap-3 sm:flex-row">
               <Button onClick={download} disabled={downloading} className="min-h-11 flex-1">
@@ -198,7 +234,7 @@ export default function NewQuotationPage() {
                   <ExternalLink size={17} className="mr-2" />在 Genesis 中继续
                 </a>
               )}
-              <Button variant="ghost" className="min-h-11" onClick={() => { setResult(null); setProposal(null); }}>
+              <Button variant="ghost" className="min-h-11" onClick={() => { setResult(null); setProposal(null); const url = new URL(window.location.href); url.searchParams.delete('quotation'); window.history.replaceState(null, '', url.toString()); if (leadId) void listLeadQuotations(Number(leadId)).then(setHistory).catch(err => setError(err.message)); }}>
                 再建一份
               </Button>
             </div>
@@ -217,6 +253,7 @@ export default function NewQuotationPage() {
       />
 
       {error && <Alert variant="destructive" className="mb-5"><AlertTriangle size={17} /><AlertTitle>操作未完成</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+      {restoring && <p role="status" className="mb-4">正在读取 Genesis 报价…</p>}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-6">
@@ -233,21 +270,23 @@ export default function NewQuotationPage() {
             <CardContent className="grid gap-4 md:grid-cols-[minmax(0,1fr)_140px]">
               <div className="space-y-2">
                 <Label htmlFor="lead">已同步客户</Label>
-                <select id="lead" className={`${fieldClass} min-h-11 cursor-pointer`} value={leadId} onChange={(event) => { setLeadId(event.target.value); setProposal(null); }} disabled={loadingLeads}>
+                <select id="lead" className={`${fieldClass} min-h-11 cursor-pointer`} value={leadId} onChange={(event) => { setLeadId(event.target.value); setProposal(null); }} disabled={loadingLeads || generating || confirming || restoring}>
                   <option value="">{loadingLeads ? "正在加载…" : "请选择客户"}</option>
                   {leads.map((lead) => <option key={lead.id} value={lead.id}>{lead.company || lead.name || `线索 #${lead.id}`} · {lead.products || "未填写产品"}</option>)}
                 </select>
                 {!loadingLeads && leads.length === 0 && <p className="text-sm text-warning">暂无已同步客户，请先在线索池完成 CRM 交接。</p>}
+                {historyLoading && <p role="status" className="text-sm text-text-secondary">读取报价历史…</p>}
+                {!historyLoading && history.length > 0 && <div className="space-y-2"><p className="text-sm text-text-secondary">已创建的报价</p>{history.map(item => <Button key={item.quotationId} variant="outline" disabled={restoring} onClick={() => void openQuotation(item.quotationId)}>{item.quotationNo || item.quotationId} · {item.currency} {item.totalAmount?.toFixed(2)} · {item.status}</Button>)}</div>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="currency">报价币种</Label>
-                <select id="currency" className={`${fieldClass} min-h-11 cursor-pointer`} value={currency} onChange={(event) => setCurrency(event.target.value)}>
+                <select id="currency" className={`${fieldClass} min-h-11 cursor-pointer`} value={currency} disabled={generating || confirming || restoring} onChange={(event) => { setCurrency(event.target.value); setProposal(null); }}>
                   {CURRENCIES.map((code) => <option key={code}>{code}</option>)}
                 </select>
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="instructions">补充要求（可选）</Label>
-                <textarea id="instructions" className={`${fieldClass} min-h-24 resize-y`} maxLength={1000} value={instructions} onChange={(event) => setInstructions(event.target.value)} placeholder="例如：优先使用知识库中的 FOB 厦门条款；不要估算认证费用。" />
+                <textarea id="instructions" className={`${fieldClass} min-h-24 resize-y`} maxLength={1000} disabled={generating || confirming || restoring} value={instructions} onChange={(event) => { setInstructions(event.target.value); setProposal(null); }} placeholder="例如：优先使用知识库中的 FOB 厦门条款；不要估算认证费用。" />
               </div>
               <div className="md:col-span-2 flex justify-end">
                 <Button onClick={generate} disabled={!leadId || generating || leads.length === 0} className="min-h-11 min-w-36">

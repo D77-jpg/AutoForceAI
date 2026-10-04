@@ -13,10 +13,11 @@ from core.crm.quotation import (
     GenerateQuotationProposalRequest,
     confirm_quotation,
     generate_quotation_proposal,
+    QuotationGenerationError,
 )
 from core.db_manager import get_shared_db
 from core.dependencies import get_current_user
-from database.shared_models import CrmIntegrationConfig, User
+from database.shared_models import CrmIntegrationConfig, CrmEntityLink, Lead, User
 
 router = APIRouter(prefix="/api/v1/crm/quotations", tags=["AI Quotations"])
 
@@ -57,6 +58,53 @@ def _crm_http_error(exc: CrmApiError) -> HTTPException:
     })
 
 
+def _mapped_customer(db: Session, user: User, cfg: CrmIntegrationConfig, customer_id: str):
+    if not db.query(CrmEntityLink.id).filter(
+        CrmEntityLink.organization_id == user.organization_id,
+        CrmEntityLink.provider == "genesis_crm",
+        CrmEntityLink.project_id == cfg.project_id,
+        CrmEntityLink.remote_customer_id == customer_id,
+        CrmEntityLink.archived_at.is_(None),
+    ).first():
+        raise HTTPException(404, "报价不属于当前企业的有效客户交接")
+
+
+@router.get("/leads/{lead_id}")
+def quotation_history(lead_id: int, payload: dict = Depends(get_current_user), db: Session = Depends(get_shared_db)):
+    user = _member(payload, db)
+    cfg = _config(db, user.organization_id)
+    lead = db.query(Lead).filter(Lead.id == lead_id, Lead.organization_id == user.organization_id).first()
+    if not lead:
+        raise HTTPException(404, "线索不存在")
+    if not db.query(CrmEntityLink.id).filter(
+        CrmEntityLink.lead_id == lead_id, CrmEntityLink.organization_id == user.organization_id,
+        CrmEntityLink.provider == "genesis_crm",
+        CrmEntityLink.project_id == cfg.project_id, CrmEntityLink.archived_at.is_(None),
+    ).first():
+        raise HTTPException(409, "线索尚未同步到当前 Genesis 项目")
+    try:
+        return client_from_config(cfg, db=db).get_customer_quotations(f"lead:{lead_id}")
+    except CredentialError as exc:
+        raise HTTPException(409, detail={"code": exc.code, "message": str(exc)}) from exc
+    except CrmApiError as exc:
+        raise _crm_http_error(exc) from exc
+
+
+@router.get("/{quotation_id}")
+def quotation_detail(quotation_id: str, payload: dict = Depends(get_current_user), db: Session = Depends(get_shared_db)):
+    user = _member(payload, db)
+    cfg = _config(db, user.organization_id)
+    try:
+        remote = client_from_config(cfg, db=db).get_quotation(quotation_id)
+        _mapped_customer(db, user, cfg, remote.customerId)
+        base = _web_base(cfg)
+        return {"quotation": remote, "pdfUrl": f"/api/v1/crm/quotations/{remote.quotationId}/pdf", "genesisUrl": f"{base}/customers/{remote.customerId}" if base else None}
+    except CredentialError as exc:
+        raise HTTPException(409, detail={"code": exc.code, "message": str(exc)}) from exc
+    except CrmApiError as exc:
+        raise _crm_http_error(exc) from exc
+
+
 @router.post("/proposals")
 def create_proposal(
     body: GenerateQuotationProposalRequest,
@@ -68,6 +116,8 @@ def create_proposal(
         return generate_quotation_proposal(db, user.organization_id, body)
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
+    except QuotationGenerationError as exc:
+        raise HTTPException(exc.status_code, str(exc)) from exc
 
 
 @router.post("/confirm")
@@ -103,6 +153,8 @@ def quotation_pdf(
     cfg = _config(db, user.organization_id)
     try:
         client = client_from_config(cfg, db=db)
+        remote = client.get_quotation(quotation_id)
+        _mapped_customer(db, user, cfg, remote.customerId)
         pdf = client.download_quotation_pdf(quotation_id, if_none_match)
     except CredentialError as exc:
         raise HTTPException(409, detail={"code": exc.code, "message": str(exc)}) from exc
