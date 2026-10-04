@@ -24,6 +24,7 @@ from core.crm.quotation import (  # noqa: E402
     GenerateQuotationProposalRequest,
     confirm_quotation,
     generate_quotation_proposal,
+    QuotationGenerationError,
 )
 from core.db_manager import SHARED_ENGINE, SharedSessionLocal  # noqa: E402
 from database.base import Base  # noqa: E402
@@ -32,6 +33,7 @@ from database.shared_models import (  # noqa: E402
     CrmIntegrationConfig,
     Lead,
     Organization,
+    LLMModel,
 )
 
 
@@ -114,7 +116,9 @@ def context(db):
 
 def test_proposal_uses_explicit_lead_numbers_and_never_writes_genesis(db, context, monkeypatch):
     org, lead, _cfg, _link = context
-    monkeypatch.setattr("core.crm.quotation.query_default_llm", lambda *a, **k: "")
+    db.add(LLMModel(name="configured-quotation", display_name="Quotation", type="LLM", is_active=True, is_default=True))
+    db.commit()
+    monkeypatch.setattr("core.crm.quotation.query_default_llm", lambda *a, **k: '{"title":"Evidence based quotation","items":[{"productName":"Recycled canvas bag"}]}')
     proposal = generate_quotation_proposal(
         db, org.id,
         GenerateQuotationProposalRequest(leadId=lead.id, currency="USD"),
@@ -130,6 +134,7 @@ def test_proposal_uses_explicit_lead_numbers_and_never_writes_genesis(db, contex
 def test_llm_invented_price_is_removed_when_sources_do_not_support_it(db, context, monkeypatch):
     org, lead, _cfg, _link = context
     lead.intent_json = {"summary": "客户询问帆布袋，但没有数量或价格。"}
+    db.add(LLMModel(name="configured-quotation", display_name="Quotation", type="LLM", is_active=True, is_default=True))
     db.commit()
     monkeypatch.setattr(
         "core.crm.quotation.query_default_llm",
@@ -150,9 +155,38 @@ def test_llm_invented_price_is_removed_when_sources_do_not_support_it(db, contex
     assert proposal.leadTime is None
     assert proposal.paymentTerms is None
     assert proposal.notes == "客户询问帆布袋，但没有数量或价格。"
-    assert proposal.model == "environment-default"
+    assert proposal.model == "configured-quotation"
     assert "items.0.quantity" in proposal.missingFields
     assert "items.0.unitPrice" in proposal.missingFields
+
+
+def test_proposal_missing_or_failed_model_never_returns_fallback(db, context, monkeypatch):
+    org, lead, _, _ = context
+    body = GenerateQuotationProposalRequest(leadId=lead.id, currency="USD")
+    with pytest.raises(QuotationGenerationError) as missing:
+        generate_quotation_proposal(db, org.id, body)
+    assert missing.value.status_code == 503
+    db.add(LLMModel(name="configured-quotation", display_name="Quotation", type="LLM", is_active=True, is_default=True))
+    db.commit()
+    for result in ('', 'not json', '{"title":"No items"}', '{"title":"Empty items","items":[]}'):
+        monkeypatch.setattr("core.crm.quotation.query_default_llm", lambda *a, **k: result)
+        with pytest.raises(QuotationGenerationError):
+            generate_quotation_proposal(db, org.id, body)
+    def failed(*args, **kwargs):
+        raise RuntimeError('vendor secret must not be exposed')
+    monkeypatch.setattr("core.crm.quotation.query_default_llm", failed)
+    with pytest.raises(QuotationGenerationError) as failure:
+        generate_quotation_proposal(db, org.id, body)
+    assert 'secret' not in str(failure.value)
+
+
+def test_moq_and_delivery_numbers_cannot_become_quantity_or_price():
+    from core.crm.quotation import _supported_commercial_number, _supported_number
+    assert _supported_number(7, 'MOQ 73 units') is None
+    assert _supported_commercial_number(73, 'MOQ 73 units; lead time 19 days', 'quantity') is None
+    assert _supported_commercial_number(19, 'MOQ 73 units; lead time 19 days', 'price') is None
+    assert _supported_commercial_number(73, 'order quantity: 73 units', r'order\s*quantity') == 73
+    assert _supported_commercial_number(2.5, 'unit price: USD 2.50', r'unit\s*price') == 2.5
 
 
 class FakeQuotationClient:

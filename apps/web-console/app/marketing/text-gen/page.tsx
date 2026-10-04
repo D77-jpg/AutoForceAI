@@ -29,6 +29,22 @@ export default function TextGenPage() {
   const [result, setResult] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [copied, setCopied] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editedTitle, setEditedTitle] = useState("");
+  const [editedBody, setEditedBody] = useState("");
+
+  const saveEdits = async () => {
+    setLoading(true);
+    try {
+      const response = await api.patch(`/api/v1/marketing/text/${result.id}`, { title: editedTitle, body: editedBody });
+      setResult(response.data);
+      setEditing(false);
+      showToast("修改已保存", "success");
+      await loadHistory();
+    } catch (error: any) {
+      showToast(typeof error?.response?.data?.detail === "string" ? error.response.data.detail : "保存失败，请检查内容后重试", "error");
+    } finally { setLoading(false); }
+  };
 
   const loadHistory = async () => {
     try {
@@ -53,9 +69,10 @@ export default function TextGenPage() {
         selling_points: sellingPoints,
         audience,
         language: "en",
-      });
+      }, { timeout: 90000 });
       setResult(res.data);
-      showToast(res.data.mock ? "已生成（模型未配置，使用可发布模板）" : "英文内容已生成", "success");
+      setEditing(false);
+      showToast("英文内容已生成并保存", "success");
       loadHistory();
     } catch (e: any) {
       showToast(e?.response?.data?.detail || "生成失败", "error");
@@ -149,7 +166,7 @@ export default function TextGenPage() {
               {history.map((h) => (
                 <button
                   key={h.id}
-                  onClick={() => setResult(h)}
+                  onClick={() => { setResult(h); setEditing(false); }}
                   className="w-full text-left text-xs p-2 rounded-md bg-text/5 hover:bg-text/10 truncate"
                 >
                   <span className="text-text-secondary mr-2">{typeLabel(h.content_type)}</span>
@@ -177,32 +194,36 @@ export default function TextGenPage() {
               <div className="flex items-start justify-between gap-3 mb-3 shrink-0">
                 <div>
                   <div className="text-[10px] text-text-secondary mb-1">
-                    {typeLabel(result.content_type)} · <span className="tabular-nums">{result.word_count || 0}</span> 词
-                    {result.mock ? " · 模板回退" : ""}
+                    {typeLabel(result.content_type)} · <span className="tabular-nums">{result.word_count ?? result.body?.match(/[A-Za-z0-9']+/g)?.length ?? 0}</span> 词
+                    {result.mock || result.extra?.mock ? " · 历史模板，需重新生成验收" : ""}
                   </div>
-                  <h2 className="text-xl font-bold text-text">{result.title}</h2>
-                  {result.subject && (
-                    <p className="text-sm text-text-secondary mt-1">主题：{result.subject}</p>
+                  {editing ? <Input aria-label="文案标题" value={editedTitle} onChange={event => setEditedTitle(event.target.value)} /> : <h2 className="text-xl font-bold text-text">{result.title}</h2>}
+                  {(result.subject || result.extra?.subject) && (
+                    <p className="text-sm text-text-secondary mt-1">主题：{result.subject || result.extra?.subject}</p>
                   )}
                 </div>
                 <div className="flex gap-2">
+                  {editing ? <>
+                    <Button size="sm" disabled={loading} onClick={saveEdits}>保存修改</Button>
+                    <Button variant="outline" size="sm" disabled={loading} onClick={() => setEditing(false)}>取消编辑</Button>
+                  </> : <Button variant="outline" size="sm" disabled={!result.id || loading} onClick={() => { setEditedTitle(result.title); setEditedBody(result.body); setEditing(true); }}>编辑</Button>}
                   <Button variant="outline" size="sm" onClick={copyBody}>
                     {copied ? <Check size={12} strokeWidth={1.75} className="mr-1" /> : <Copy size={12} strokeWidth={1.75} className="mr-1" />} 复制
                   </Button>
                   <Button size="sm" onClick={() => sendTo("linkedin")}>
                     <Share2 size={12} strokeWidth={1.75} className="mr-1" /> LinkedIn
                   </Button>
-                  <Button size="sm" onClick={() => sendTo("wordpress")}>
-                    WordPress
+                  <Button size="sm" disabled>
+                    独立站（待接入）
                   </Button>
                   <Button variant="secondary" size="sm" onClick={() => sendTo("x")}>
                     X
                   </Button>
                 </div>
               </div>
-              <pre className="flex-1 overflow-y-auto whitespace-pre-wrap text-sm text-text leading-relaxed font-sans bg-bg/20 rounded-lg p-4 border border-separator">
+              {editing ? <textarea aria-label="文案正文" className="flex-1 min-h-48 bg-bg/20 rounded-lg p-4 border border-separator text-sm" value={editedBody} onChange={event => setEditedBody(event.target.value)} /> : <pre className="flex-1 overflow-y-auto whitespace-pre-wrap text-sm text-text leading-relaxed font-sans bg-bg/20 rounded-lg p-4 border border-separator">
                 {result.body}
-              </pre>
+              </pre>}
               {result.tags?.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-3 shrink-0">
                   {result.tags.map((t: string, i: number) => (

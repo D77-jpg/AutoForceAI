@@ -1,3 +1,4 @@
+import { expireAuthSession } from './auth-session';
 // Empty means same-origin HTTPS ingress; never call the visitor's localhost in production.
 const API = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -58,6 +59,11 @@ export type QuotationResult = {
     totalAmount: number;
     status: string;
     version: number;
+    items?: { productName: string; quantity: number; unitPrice: number; amount: number }[];
+    leadTime?: string | null;
+    moq?: string | null;
+    paymentTerms?: string | null;
+    notes?: string | null;
   };
   pdfUrl: string;
   genesisUrl?: string | null;
@@ -85,9 +91,29 @@ async function errorMessage(response: Response): Promise<string> {
   }
 }
 
+async function checkedFetch(path: string, options: RequestInit = {}): Promise<Response> {
+  const token = localStorage.getItem('token');
+  const response = await fetch(`${API}${path}`, { ...options, headers: { ...tokenHeaders(), ...options.headers } });
+  if (!response.ok) {
+    if (response.status === 401) expireAuthSession(token);
+    throw new Error(await errorMessage(response));
+  }
+  return response;
+}
+
+export type QuotationHistoryItem = { quotationId: string; quotationNo?: string; status: string; totalAmount?: number; currency?: string };
+
+export async function listLeadQuotations(leadId: number): Promise<QuotationHistoryItem[]> {
+  const response = await checkedFetch(`/api/v1/crm/quotations/leads/${leadId}`);
+  return (await response.json()).items;
+}
+
+export async function getQuotation(quotationId: string): Promise<QuotationResult> {
+  return (await checkedFetch(`/api/v1/crm/quotations/${encodeURIComponent(quotationId)}`)).json();
+}
+
 export async function listSyncedLeads(): Promise<SyncedLead[]> {
-  const response = await fetch(`${API}/api/v1/leads`, { headers: tokenHeaders(false) });
-  if (!response.ok) throw new Error(await errorMessage(response));
+  const response = await checkedFetch('/api/v1/leads');
   const payload = await response.json();
   return (payload.items || []).filter((lead: SyncedLead) => lead.crm?.synced);
 }
@@ -97,17 +123,16 @@ export async function generateQuotationProposal(input: {
   currency: string;
   instructions?: string;
 }): Promise<QuotationProposal> {
-  const response = await fetch(`${API}/api/v1/crm/quotations/proposals`, {
+  const response = await checkedFetch('/api/v1/crm/quotations/proposals', {
     method: "POST",
     headers: tokenHeaders(),
     body: JSON.stringify(input),
   });
-  if (!response.ok) throw new Error(await errorMessage(response));
   return response.json();
 }
 
 export async function confirmQuotation(proposal: QuotationProposal): Promise<QuotationResult> {
-  const response = await fetch(`${API}/api/v1/crm/quotations/confirm`, {
+  const response = await checkedFetch('/api/v1/crm/quotations/confirm', {
     method: "POST",
     headers: tokenHeaders(),
     body: JSON.stringify({
@@ -133,13 +158,12 @@ export async function confirmQuotation(proposal: QuotationProposal): Promise<Quo
       },
     }),
   });
-  if (!response.ok) throw new Error(await errorMessage(response));
   return response.json();
 }
 
 export async function downloadQuotationPdf(pdfUrl: string, quotationNo: string): Promise<void> {
-  const response = await fetch(`${API}${pdfUrl}`, { headers: tokenHeaders(false) });
-  if (!response.ok) throw new Error(await errorMessage(response));
+  const response = await checkedFetch(pdfUrl);
+  if (!response.headers.get('content-type')?.includes('application/pdf')) throw new Error('服务未返回有效 PDF');
   const blob = await response.blob();
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
@@ -148,5 +172,5 @@ export async function downloadQuotationPdf(pdfUrl: string, quotationNo: string):
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }

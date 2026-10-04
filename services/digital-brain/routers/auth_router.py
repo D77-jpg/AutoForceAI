@@ -184,18 +184,8 @@ def create_organization(
     user.role = UserRole.ENTERPRISE_ADMIN.value
     db.commit()
     
-    # Return updated user info (LoginResponse style)
-    return {
-        "access_token": "valid_session", # Frontend should keeping using current token
-        "token_type": "bearer",
-        "user_id": user.id,
-        "username": user.username,
-        "nickname": user.nickname,
-        "role": user.role,
-        "organization_id": new_org.id,
-        "organization_name": new_org.name,
-        "invite_code": new_org.invite_code
-    }
+    # Refresh the token's organization and role after membership changes.
+    return _build_login_response(user, db)
 
 @router.get("/me", response_model=LoginResponse)
 def get_current_user_info(

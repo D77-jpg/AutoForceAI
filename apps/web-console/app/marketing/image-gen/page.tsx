@@ -14,6 +14,41 @@ const PRESETS = [
   { id: "social", label: "社媒配图" },
 ];
 
+function SavedImage({ image }: { image: any }) {
+  const [source, setSource] = useState("");
+  const [error, setError] = useState("");
+  useEffect(() => {
+    let active = true;
+    let objectUrl = "";
+    const url = image.url || image.image_url;
+    setSource("");
+    setError("");
+    if (!url) {
+      setError("该历史记录没有图片文件，请重新生成");
+      return;
+    }
+    if (!url.startsWith("/api/v1/marketing/images/")) {
+      setSource(url);
+      return;
+    }
+    api.get(url, { responseType: "blob" }).then((response) => {
+      if (active) {
+        objectUrl = URL.createObjectURL(response.data);
+        setSource(objectUrl);
+      }
+    }).catch(() => { if (active) setError("图片读取失败，请刷新或重新生成"); });
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [image.url, image.image_url]);
+  return <>
+    {source ? <img src={source} alt={image.title || "生成图片"} className="w-full h-40 object-cover" /> :
+      <div className="h-40 flex items-center justify-center p-3 text-xs text-text-secondary text-center" role="status">{error || "正在读取图片..."}</div>}
+    {source && <a href={source} download={`marketing-${image.id || "image"}.png`} className="block px-3 py-2 text-xs text-accent">下载图片</a>}
+  </>;
+}
+
 export default function ImageGenPage() {
   const { showToast } = useToast();
   const [preset, setPreset] = useState("product_scene");
@@ -43,9 +78,9 @@ export default function ImageGenPage() {
         product_name: productName,
         prompt: prompt || undefined,
         preset,
-      });
+      }, { timeout: 240000 });
       setLatest(res.data);
-      showToast(res.data.mock ? "已保存提示词（未配置文生图 Key）" : "图片已生成", "success");
+      showToast("图片已生成并保存", "success");
       load();
     } catch (e: any) {
       showToast(e?.response?.data?.detail || "生成失败", "error");
@@ -58,7 +93,7 @@ export default function ImageGenPage() {
     <div className="h-full w-full p-6 text-text flex flex-col gap-4 overflow-hidden">
       <PageHeader
         title="文生图 · 获客视觉"
-        description="产品场景图 / Banner / 社媒配图。接入 DashScope Wanx，无 Key 时保存提示词。"
+        description="生成产品场景图、Banner 和社媒配图，保存后可在历史中查看和下载。"
         className="mb-0 shrink-0"
         actions={
           <Button onClick={generate} disabled={loading}>
@@ -117,13 +152,7 @@ export default function ImageGenPage() {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {(latest ? [latest, ...items.filter((i) => i.id !== latest.id)] : items).map((img, idx) => (
                 <div key={img.id || idx} className="rounded-lg border border-separator bg-surface-2 overflow-hidden">
-                  {img.url || img.image_url ? (
-                    <img src={img.url || img.image_url} alt={img.title} className="w-full h-40 object-cover" />
-                  ) : (
-                    <div className="h-40 flex items-center justify-center bg-text/5 text-xs text-text-secondary p-3 text-center">
-                      {img.mock ? "待配置 DASHSCOPE_API_KEY" : "无预览"}
-                    </div>
-                  )}
+                  <SavedImage image={img} />
                   <div className="p-2 text-[11px] text-text-secondary truncate">{img.title || img.preset}</div>
                 </div>
               ))}

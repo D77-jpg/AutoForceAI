@@ -425,12 +425,12 @@ def brain_chat(
 
             # Call Factory
             provider_args = {
-                "api_key": active_model.api_key or api_key,
-                "base_url": active_model.base_url,
+                "api_key": active_model.api_key or (active_model.provider.api_key if active_model.provider else None) or api_key,
+                "base_url": active_model.base_url or (active_model.provider.base_url if active_model.provider else None),
                 "context_window": active_model.context_window,
                 "model": active_model.name
             }
-            llm = ModelFactory.get_provider(active_model.name or "qwen", **provider_args)
+            llm = ModelFactory.get_provider(active_model.name or "qwen", **{k: v for k, v in provider_args.items() if v is not None})
             
             # --- Chat Call ---
             # Reconstruct message list for provider (System + History + User)
@@ -477,8 +477,11 @@ def brain_chat(
                              if "content" in chunk_data and chunk_data["content"]:
                                  yield pack_json({"t": "token", "chunk": chunk_data["content"]})
                                  full_answer += chunk_data["content"]
-            except Exception as e:
-                print("Model inference failed")
+            except Exception:
+                raise RuntimeError("Model inference failed") from None
+
+            if not full_answer.strip():
+                raise RuntimeError("Model returned an empty answer")
                 
             # Save Assistant Reply
             new_msg = BrainMessage(
@@ -493,18 +496,17 @@ def brain_chat(
             try:
                  save_db.add(new_msg)
                  save_db.commit()
-            except Exception as e:
-                 print("Message persistence failed")
+            except Exception:
+                 save_db.rollback()
+                 raise RuntimeError("Message persistence failed") from None
             finally:
                  save_db.close()
             
             yield pack_json({"t": "done"})
 
-        except Exception as e:
-            print(f"Generator Fatal: {e}")
-            import traceback
-            traceback.print_exc()
-            yield pack_json({"t": "error", "msg": str(e)})
+        except Exception:
+            # No vendor errors, credentials or prompts are returned to the browser.
+            yield pack_json({"t": "error", "msg": "回答未完成或未保存，请检查模型配置后重试。"})
         finally:
             gen_db.close()
 

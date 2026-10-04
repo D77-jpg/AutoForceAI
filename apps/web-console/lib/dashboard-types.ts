@@ -50,9 +50,18 @@ export interface DashboardData {
   kpis: KpiMetric[];
   activities: ActivityEvent[];
   pipeline: PipelineTask[];
-  agents: Agent[];
+  employees: DashboardEmployee[];
   newLeadCount: number;
   sources: DashboardSourceState;
+}
+
+export interface DashboardEmployee {
+  id: number;
+  project_id: number;
+  name: string;
+  role: string;
+  description: string;
+  project_name: string;
 }
 
 /** 指挥台快捷指令 */

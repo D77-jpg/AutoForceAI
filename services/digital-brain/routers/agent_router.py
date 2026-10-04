@@ -41,6 +41,11 @@ class FromTemplate(StrictPayload):
     name: Optional[str] = None
 
 
+class ProjectCreate(StrictPayload):
+    name: str = Field(min_length=1, max_length=120)
+    description: str = Field(default="", max_length=2000)
+
+
 class AgentPatch(StrictPayload):
     name: Optional[str] = None
     description: Optional[str] = None
@@ -121,6 +126,23 @@ def list_projects(db: Session = Depends(get_db), user_id: int = Depends(get_curr
     actor = _actor(db, user_id)
     projects = db.query(Project).filter(Project.user_id == actor.id).all()
     return [{"id": p.id, "name": p.name, "organization_id": actor.organization_id} for p in projects]
+
+
+@router.post("/projects", status_code=201)
+def create_project(body: ProjectCreate, db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)):
+    actor = _actor(db, user_id)
+    name = body.name.strip()
+    if not name:
+        raise HTTPException(status_code=422, detail="Project name is required")
+    project = Project(user_id=actor.id, name=name, description=body.description.strip())
+    db.add(project)
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Unable to create project") from None
+    db.refresh(project)
+    return {"id": project.id, "name": project.name, "organization_id": actor.organization_id}
 
 
 @router.get("/role-templates")

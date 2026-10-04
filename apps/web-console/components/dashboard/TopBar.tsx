@@ -195,9 +195,6 @@ export default function TopBar({
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start mb-0.5 gap-2">
                           <h4 className="text-sm font-semibold text-text">{prod.name}</h4>
-                          <span className="text-[10px] font-medium bg-surface-2 px-1.5 py-0.5 rounded-full text-text-secondary shrink-0 tabular-nums">
-                            {prod.keyData}
-                          </span>
                         </div>
                         <p className="text-[11px] font-medium text-text-secondary mb-0.5">{prod.slogan}</p>
                         <p className="text-xs text-text-secondary leading-relaxed line-clamp-2">{prod.desc}</p>

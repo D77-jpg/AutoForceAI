@@ -9,6 +9,7 @@ import hashlib
 import json
 import re
 import uuid
+import logging
 from datetime import datetime
 from typing import List, Literal, Optional
 
@@ -38,6 +39,12 @@ from database.shared_models import (
     KnowledgeDoc,
     Lead,
 )
+
+
+class QuotationGenerationError(RuntimeError):
+    def __init__(self, message: str, status_code: int = 502):
+        super().__init__(message)
+        self.status_code = status_code
 
 
 class QuotationProposalItem(BaseModel):
@@ -163,7 +170,18 @@ def _supported_number(value: object, evidence: str) -> Optional[float]:
         return None
     variants = {str(number), f"{number:g}", f"{number:.2f}"}
     compact = evidence.replace(",", "")
-    return number if any(v in compact for v in variants) else None
+    return number if any(re.search(rf"(?<![\d.]){re.escape(v)}(?![\d.])", compact) for v in variants) else None
+
+
+def _supported_commercial_number(value: object, evidence: str, labels: str) -> Optional[float]:
+    """A MOQ/lead-time number is not evidence of an order quantity/unit price."""
+    number = _number(value)
+    if number is None:
+        return None
+    for match in re.finditer(rf'(?:{labels})[\s:=："\-]*((?:USD|EUR|GBP|CNY|JPY|HKD|AUD|CAD|CHF|SGD|AED|NZD|[$€£¥])\s*)?([0-9][0-9,]*(?:\.[0-9]+)?)(?![\d.])', evidence, re.I):
+        if float(match.group(2).replace(',', '')) == number:
+            return number
+    return None
 
 
 def _trim(value: object, limit: int) -> Optional[str]:
@@ -211,7 +229,7 @@ def generate_quotation_proposal(
 
     kb_query = db.query(KnowledgeBase).filter(or_(
         KnowledgeBase.organization_id == organization_id,
-        KnowledgeBase.is_public.is_(True),
+        (KnowledgeBase.organization_id.is_(None) & KnowledgeBase.is_public.is_(True)),
     ))
     if body.knowledgeBaseIds:
         kb_query = kb_query.filter(KnowledgeBase.id.in_(body.knowledgeBaseIds))
@@ -239,7 +257,9 @@ JSON 字段：title, items[productName,model,quantity,unitPrice], paymentTerms, 
 线索证据：{lead_evidence[:2500]}
 知识库证据：{knowledge_evidence[:5000] or '无'}"""
     model = get_default_llm_model(db)
-    model_name = model.name if model else "environment-default"
+    if not model:
+        raise QuotationGenerationError("请先在模型管理配置可用的文字模型", 503)
+    model_name = model.name
     llm_data: dict = {}
     warnings: List[str] = []
     try:
@@ -247,30 +267,29 @@ JSON 字段：title, items[productName,model,quantity,unitPrice], paymentTerms, 
             db, prompt,
             system="你是外贸报价建议助手。关键商业数字只能来自提供的证据，禁止自行补全。",
             temperature=0.2, max_tokens=1800,
+            stream=True,
         ))
-        if not llm_data:
-            model_name = "rules-fallback"
-    except Exception:
-        model_name = "rules-fallback"
-        warnings.append("AI 模型暂不可用，已使用线索中的明确字段生成基础草稿")
+        if (not isinstance(llm_data.get('title'), str) or not llm_data['title'].strip()
+                or not isinstance(llm_data.get('items'), list) or not llm_data['items']
+                or not all(isinstance(item, dict) for item in llm_data['items'])):
+            raise QuotationGenerationError("模型未返回有效报价建议，请重试")
+    except QuotationGenerationError:
+        raise
+    except Exception as exc:
+        cause = exc.__cause__ or exc.__context__ or exc
+        logging.getLogger("crm.quotation").warning("Quotation model failed (%s)", type(cause).__name__)
+        raise QuotationGenerationError("报价模型调用失败或超时，请检查模型连接后重试") from exc
 
     explicit_quantity = _number(intent.get("quantity") or intent.get("expected_quantity"))
     explicit_price = _number(intent.get("target_price"))
     explicit_currency = _currency(intent.get("target_price"))
     raw_items = llm_data.get("items") if isinstance(llm_data.get("items"), list) else []
-    if not raw_items:
-        raw_items = [{
-            "productName": lead.products or intent.get("product_name") or "",
-            "model": intent.get("product_model"),
-            "quantity": explicit_quantity,
-            "unitPrice": explicit_price,
-        }]
     items: List[QuotationProposalItem] = []
     for index, raw in enumerate(raw_items[:20]):
         if not isinstance(raw, dict):
             continue
-        quantity = explicit_quantity if index == 0 and explicit_quantity is not None else _supported_number(raw.get("quantity"), evidence)
-        unit_price = explicit_price if index == 0 and explicit_price is not None else _supported_number(raw.get("unitPrice"), knowledge_evidence)
+        quantity = explicit_quantity if index == 0 and explicit_quantity is not None else _supported_commercial_number(raw.get("quantity"), lead_evidence, r'quantity|order\s*quantity|订购数量|采购数量|订购|采购')
+        unit_price = explicit_price if index == 0 and explicit_price is not None else _supported_commercial_number(raw.get("unitPrice"), knowledge_evidence, r'unit\s*price|price|单价|售价|价格')
         items.append(QuotationProposalItem(
             productName=(
                 _trim(lead.products or intent.get("product_name"), 200)
@@ -291,6 +310,8 @@ JSON 字段：title, items[productName,model,quantity,unitPrice], paymentTerms, 
     ) or ""
     if explicit_currency and explicit_currency != body.currency:
         warnings.append(f"线索目标价币种为 {explicit_currency}，当前选择为 {body.currency}，请人工核对")
+    if explicit_price is not None:
+        warnings.append("线索目标价是客户期望价格，请核对企业实际单价后再确认")
     for value in llm_data.get("warnings", []) if isinstance(llm_data.get("warnings"), list) else []:
         text = _trim(value, 300)
         if text:
@@ -334,7 +355,7 @@ def _validate_sources(db: Session, organization_id: int, lead: Lead, link: CrmEn
                 continue
             doc = db.query(KnowledgeDoc).join(KnowledgeBase).filter(
                 KnowledgeDoc.id == int(match.group(1)),
-                or_(KnowledgeBase.organization_id == organization_id, KnowledgeBase.is_public.is_(True)),
+                or_(KnowledgeBase.organization_id == organization_id, KnowledgeBase.organization_id.is_(None) & KnowledgeBase.is_public.is_(True)),
             ).first()
             if doc:
                 valid.append(source)

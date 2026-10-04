@@ -18,7 +18,7 @@ def get_default_llm_model(db: Session) -> Optional[LLMModel]:
     Priority: system default > any active LLM.
     """
     model = db.query(LLMModel).filter(
-        LLMModel.is_active == True, LLMModel.is_default == True  # noqa: E712
+        LLMModel.is_active == True, LLMModel.is_default == True, LLMModel.type == "LLM"  # noqa: E712
     ).first()
     if model:
         return model
@@ -34,6 +34,7 @@ def query_default_llm_with_attribution(
     system: Optional[str] = None,
     temperature: float = 0.6,
     max_tokens: int = 2500,
+    stream: bool = False,
 ) -> LLMAttribution:
     """Call the configured model and attribute only the actual provider response.
 
@@ -55,7 +56,10 @@ def query_default_llm_with_attribution(
         kwargs = {key: value for key, value in kwargs.items() if value}
         try:
             llm = ModelFactory.get_provider(model.name, **kwargs)
-            response = llm.chat(messages, temperature=temperature, max_tokens=max_tokens)
+            options = {"temperature": temperature, "max_tokens": max_tokens}
+            if stream:
+                options["stream"] = True
+            response = llm.chat(messages, **options)
             # A configured label is not proof that the remote server used that model.
             provider = (getattr(llm, "provider_name", None) or
                         ("qwen" if llm.__class__.__name__ == "QwenLLM" else
@@ -112,8 +116,9 @@ def query_default_llm(
     system: Optional[str] = None,
     temperature: float = 0.6,
     max_tokens: int = 2500,
+    stream: bool = False,
 ) -> str:
     """Return content from the metered attributed call; never invent a mock."""
     return query_default_llm_with_attribution(
-        db, prompt, system=system, temperature=temperature, max_tokens=max_tokens,
+        db, prompt, system=system, temperature=temperature, max_tokens=max_tokens, stream=stream,
     ).content

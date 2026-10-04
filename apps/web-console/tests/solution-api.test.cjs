@@ -8,6 +8,14 @@ const filename = path.resolve(__dirname, '../lib/solution-api.ts');
 const mod = new Module(filename, module);
 mod.filename = filename;
 mod.paths = module.paths;
+const requireOriginal = mod.require.bind(mod);
+mod.require = id => {
+  if (id !== './auth-session') return requireOriginal(id);
+  const source = path.resolve(__dirname, '../lib/auth-session.ts');
+  const auth = new Module(source, module);
+  auth._compile(ts.transpileModule(fs.readFileSync(source, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, source);
+  return auth.exports;
+};
 mod._compile(ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText, filename);
 const api = mod.exports;
 const settings = { topic: '  方案  ', target_audience: '客户', style: '商务', kb_ids: [7] };
@@ -51,6 +59,26 @@ test('HTTP 401, 403, validation and binary errors remain actionable', async () =
   for (const [status, detail, expected] of [[401, 'expired', /登录/], [403, '知识库无权限', /403.*知识库无权限/], [422, [{ msg: '非法 ID' }], /422.*非法 ID/], [500, '导出失败', /500.*导出失败/]]) {
     global.fetch = async () => Response.json({ detail }, { status });
     await assert.rejects(api.generatePpt('方案', [{ title: '有效标题' }]), expected);
+  }
+});
+
+test('parallel solution 401s clear the expired login and navigate once', async () => {
+  let navigations = 0;
+  let expiredEvents = 0;
+  const previousStorage = global.localStorage;
+  global.localStorage = { getItem: () => token, removeItem: key => { if (key === 'token') token = ''; } };
+  global.window = { dispatchEvent: () => expiredEvents++, location: { pathname: '/knowledge/solution', replace: url => { assert.equal(url, '/login'); navigations++; } } };
+  global.fetch = async () => Response.json({ detail: 'expired' }, { status: 401 });
+  try {
+    const results = await Promise.allSettled([api.listKnowledgeBases(), api.listSolutionDrafts()]);
+    assert.ok(results.every(result => result.status === 'rejected'));
+    assert.equal(token, '');
+    assert.equal(expiredEvents, 1);
+    assert.equal(navigations, 1);
+  } finally {
+    delete global.window;
+    global.localStorage = previousStorage;
+    token = 'secret';
   }
 });
 

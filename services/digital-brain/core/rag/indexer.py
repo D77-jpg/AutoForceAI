@@ -48,15 +48,18 @@ def index_document(db: Session, doc: KnowledgeDoc, organization_id: Optional[int
         db.query(KnowledgeChunk).filter(KnowledgeChunk.doc_id == doc.id).delete()
 
         vectors = None
+        embedding_error = None
         try:
             from core.rag.embedder import EmbeddingClient
             client = EmbeddingClient(db)
             if client.available:
                 vectors = client.embed_documents(chunks)
         except EmbeddingUnavailable as exc:
-            logger.info("[Indexer] 无嵌入模型，仅保存文本块：%s", exc)
+            embedding_error = "嵌入模型不可用，请检查模型配置、权限与额度；当前仅支持词法检索"
+            logger.info("[Indexer] 嵌入模型不可用：%s", type(exc).__name__)
         except Exception as exc:
-            logger.warning("[Indexer] 向量化失败，仅保存文本块：%s", exc)
+            embedding_error = "向量化调用失败，请检查模型权限或额度；当前仅支持词法检索"
+            logger.warning("[Indexer] 向量化失败：%s", type(exc).__name__)
 
         for i, chunk in enumerate(chunks):
             embedding = vectors[i] if vectors and i < len(vectors) else None
@@ -70,13 +73,13 @@ def index_document(db: Session, doc: KnowledgeDoc, organization_id: Optional[int
 
         doc.chunk_count = len(chunks)
         doc.status = "embedded" if vectors else "indexed"
-        doc.error_msg = None if vectors else "未配置嵌入模型，已启用词法检索"
+        doc.error_msg = None if vectors else embedding_error or "未配置嵌入模型，已启用词法检索"
         db.commit()
         db.refresh(doc)
         return doc
     except Exception as exc:
         doc.status = "failed"
-        doc.error_msg = str(exc)[:500]
+        doc.error_msg = "文档解析失败，请检查文件格式、内容及文件是否仍存在"
         db.commit()
-        logger.exception("[Indexer] 文档 %s 解析失败", doc.id)
+        logger.warning("[Indexer] 文档 %s 解析失败：%s", doc.id, type(exc).__name__)
         return doc

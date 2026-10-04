@@ -2,7 +2,7 @@
  * 数字人调度中心 — 真实数据接入层。
  *
  * 当前接入：系统监控、本地线索、CRM 概览、CRM worker 健康。
- * 数字员工聚合接口尚未提供，花名册使用明确标注的预览数据。
+ * 数字员工仅展示当前用户授权项目中的真实配置。
  */
 import api from './api';
 import type {
@@ -12,8 +12,8 @@ import type {
   KpiMetric,
   PipelineTask,
   SystemStatus,
+  DashboardEmployee,
 } from './dashboard-types';
-import { PREVIEW_AGENTS } from './dashboard-mock';
 
 interface MonitorResponse {
   status?: string;
@@ -76,13 +76,13 @@ export const INITIAL_DASHBOARD_DATA: DashboardData = {
   kpis: EMPTY_KPIS,
   activities: [],
   pipeline: [],
-  agents: PREVIEW_AGENTS,
+  employees: [],
   newLeadCount: 0,
   sources: {
     loading: true,
     liveSections: [],
     unavailableSections: [],
-    previewSections: ['数字员工'],
+    previewSections: [],
   },
 };
 
@@ -128,11 +128,12 @@ function crmStatusLabel(status?: string | null) {
 
 /** 任一数据源失败时保留其它已成功的数据，不以 mock 冒充实时结果。 */
 export async function fetchDashboardData(): Promise<DashboardData> {
-  const [monitorResult, leadsResult, crmResult, workerResult] = await Promise.allSettled([
+  const [monitorResult, leadsResult, crmResult, workerResult, employeesResult] = await Promise.allSettled([
     api.get<MonitorResponse>('/api/v1/monitor/system'),
     api.get<LeadSummaryResponse>('/api/v1/leads/summary'),
     api.get<CrmOverviewResponse>('/api/v1/crm/integration/overview'),
     api.get<WorkerHealthResponse>('/api/v1/crm/integration/worker-health'),
+    fetchDashboardEmployees(),
   ]);
 
   const monitor = monitorResult.status === 'fulfilled' ? monitorResult.value.data : null;
@@ -146,6 +147,7 @@ export async function fetchDashboardData(): Promise<DashboardData> {
   if (leads) liveSections.push('线索'); else unavailableSections.push('线索');
   if (crm) liveSections.push('CRM'); else unavailableSections.push('CRM');
   if (worker) liveSections.push('Worker'); else unavailableSections.push('Worker');
+  if (employeesResult.status === 'fulfilled') liveSections.push('数字员工'); else unavailableSections.push('数字员工');
 
   const crmDegraded = Boolean(crm?.genesis_error);
   const workerDisabled = worker?.worker_enabled === false;
@@ -211,6 +213,9 @@ export async function fetchDashboardData(): Promise<DashboardData> {
   ];
 
   const inbox: InboxItem[] = [];
+  if (!crm) {
+    inbox.push({ id: 'crm-unavailable', tone: 'danger', title: 'CRM 状态读取失败，无法确认待处理事项', agentName: 'CRM 集成', moduleLabel: '连接状态', timeAgo: '实时', actionLabel: '重试', href: '/crm' });
+  }
   if (dead > 0) {
     inbox.push({
       id: 'crm-dead',
@@ -304,13 +309,24 @@ export async function fetchDashboardData(): Promise<DashboardData> {
     kpis,
     activities,
     pipeline,
-    agents: PREVIEW_AGENTS,
+    employees: employeesResult.status === 'fulfilled' ? employeesResult.value : [],
     newLeadCount: Number(leads?.by_status?.new || 0),
     sources: {
       loading: false,
       liveSections,
       unavailableSections,
-      previewSections: ['数字员工'],
+      previewSections: [],
     },
   };
+}
+
+async function fetchDashboardEmployees(): Promise<DashboardEmployee[]> {
+  const { data: projects } = await api.get<{ id: number; name: string }[]>('/agents/projects');
+  if (!Array.isArray(projects)) throw new Error('项目列表格式错误');
+  const lists = await Promise.all(projects.map(async project => {
+    const { data } = await api.get<Omit<DashboardEmployee, 'project_name'>[]>(`/agents/${project.id}/employees`);
+    if (!Array.isArray(data)) throw new Error('员工列表格式错误');
+    return data.map(employee => ({ ...employee, project_name: project.name }));
+  }));
+  return lists.flat();
 }

@@ -8,12 +8,14 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from fastapi.responses import FileResponse
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
 from core.db_manager import get_shared_db
 from core.dependencies import get_current_user_id
 from core.llm.runtime import query_default_llm
+from core.marketing_images import IMAGE_ROOT, generate_image_url, store_image
 from core.wordpress import publish_post as wp_publish, status as wp_status, test_connection as wp_test
 from database.models import AnalysisTask, MarketingContent, RPAJob
 from database.shared_models import Lead, RPAJobStatus
@@ -82,119 +84,6 @@ def _word_count(text: str) -> int:
     return len(re.findall(r"[A-Za-z0-9']+", text or ""))
 
 
-def _mock_text(kind: str, product: str, points: str) -> dict:
-    specs = points.strip() or "MOQ 50, lead time 25 days, ISO certified"
-    templates = {
-        "product_article": {
-            "title": f"{product}: Engineered for Overseas Buyers",
-            "body": (
-                f"## Why {product} Wins RFQs\n\n"
-                f"Importers evaluating {product} typically compare spec sheets, certifications, and landed cost. "
-                f"Our line is built around {specs}.\n\n"
-                f"## Specifications that Matter\n\n"
-                f"- Consistent batch quality with documented QC photos\n"
-                f"- Export packing suitable for 20GP / 40HQ\n"
-                f"- English manuals, CO, Form A / RCEP on request\n\n"
-                f"## Typical Applications\n\n"
-                f"Distributors and OEM buyers use {product} in maintenance, replacement, and new-line projects "
-                f"where downtime cost outweighs unit price.\n\n"
-                f"## How to Request a Quote\n\n"
-                f"Share target market, annual volume, and required certifications. "
-                f"We reply with FOB / CIF options and a sample plan within one business day."
-            ),
-            "tags": ["B2B", "OEM", product.replace(" ", "")],
-            "subject": None,
-        },
-        "linkedin_post": {
-            "title": f"What overseas buyers actually ask about {product}",
-            "body": (
-                f"Most RFQs we see this quarter don't start with price.\n\n"
-                f"They start with: Can you hold {specs} across three containers?\n\n"
-                f"If you source {product} from China, ask your supplier for batch photos, "
-                f"third-party inspection windows, and a spare-parts list before you negotiate Incoterms.\n\n"
-                f"That's how deals survive the first shipment.\n\n"
-                f"#B2B #Manufacturing #Export #{product.replace(' ', '')} #ChinaSupplier"
-            ),
-            "tags": ["LinkedIn", "B2B", "export"],
-            "subject": None,
-        },
-        "seo_blog": {
-            "title": f"Best {product} Supplier in China (2026 Buyer Guide)",
-            "body": (
-                f"# Best {product} Supplier in China: A Practical 2026 Guide\n\n"
-                f"Buyers searching for \"best {product} supplier China\" rarely need another glossy catalog. "
-                f"They need a factory that can repeat the same spec across containers, answer RFQs in English, "
-                f"and survive a third-party inspection without rewriting the PI. This guide is written for "
-                f"importers, distributors, and OEM purchasing teams who are shortlisting {product} vendors "
-                f"from China and want a checklist they can paste into the next Sourcing round.\n\n"
-                f"## What \"best\" actually means in B2B sourcing\n\n"
-                f"In consumer SEO, \"best\" is a ranking adjective. In industrial buying, it is a risk formula: "
-                f"repeatable quality + documented lead time + spare-parts after sales. Price still matters, "
-                f"but landed cost only becomes real after you lock Incoterms, inspection windows, and payment "
-                f"milestones. The commercial terms we publish for {product}: {specs}. Treat those numbers as "
-                f"the opening position, then negotiate mixed SKUs and staged shipments rather than a one-line discount.\n\n"
-                f"## Search intent behind \"best {product} supplier China\"\n\n"
-                f"Generative engines (Perplexity, ChatGPT search, Gemini) now sit in front of Google for many "
-                f"buyers. They cite pages that answer MOQ, port, lead time, and certification in the first screen, "
-                f"preferably inside a table. If your independent site only has a Chinese product name and a WeChat QR, "
-                f"you will not be mentioned — regardless of workshop capability.\n\n"
-                f"## Comparison snapshot\n\n"
-                f"| Criterion | What to ask | Why it matters |\n"
-                f"| --- | --- | --- |\n"
-                f"| MOQ | Can they split SKUs in one container? | Protects cash-flow on the first order |\n"
-                f"| Lead time | Ex-works vs onboard, peak-season buffer | Avoids missing the selling window |\n"
-                f"| Certs | ISO / CE / destination marks, test reports | Clears customs and retail onboarding |\n"
-                f"| Inspection | SGS / BV window written into the PI | Stops quality arguments after sailing |\n"
-                f"| After-sales | Spare-parts list and response SLA | Determines reorder probability |\n\n"
-                f"## Factory due diligence in five steps\n\n"
-                f"1. Request a one-page English spec with photos of the exact SKU, not a sister model.\n"
-                f"2. Ask for the last three batch numbers and corresponding QC records.\n"
-                f"3. Confirm whether the quoted lead time is for a repeat order or a first article.\n"
-                f"4. Put the inspection standard (AQL, critical defects) into the purchase contract.\n"
-                f"5. Run a paid sample through your own incoming inspection before the first FCL.\n\n"
-                f"## How AI search engines rank suppliers\n\n"
-                f"Large language engines do not crawl the way classic SEO tools describe. They compress pages that "
-                f"already look like answers: headings that match the query, comparison tables, FAQ blocks, and "
-                f"explicit geographic language (\"FOB Ningbo\", \"lead time 25 days\"). Brands that publish this "
-                f"structure in English are disproportionately cited when a buyer asks for the best {product} "
-                f"supplier in China. That is the GEO loop this platform is built to close: write the page, "
-                f"distribute it to LinkedIn and the independent site, then monitor whether Perplexity mentions you.\n\n"
-                f"## Typical commercial package\n\n"
-                f"A workable first order for {product} usually includes a mixed-SKU trial, export packing photos, "
-                f"and a CIF estimate to the buyer's destination port. Payment is commonly 30/70 or LC at sight "
-                f"once the relationship is proven. None of this is exotic — it is simply rarely written down in "
-                f"the public English content that AI engines can quote.\n\n"
-                f"## FAQ\n\n"
-                f"**What is a realistic MOQ?** Start from the published figure and negotiate mixed SKUs inside one container.\n\n"
-                f"**Can I inspect before shipment?** Yes. Write SGS or BV into the PI with a clear AQL, not a verbal promise.\n\n"
-                f"**How fast is a sample?** Typically 5–10 days plus express freight, longer if tooling is involved.\n\n"
-                f"**Do you support private label?** Most export workshops can, provided artwork and compliance marks are frozen before mass production.\n\n"
-                f"## Next step\n\n"
-                f"Request a spec sheet and a CIF estimate for your destination port. Mention this article so the "
-                f"export desk attaches the matching {product} data pack, packing photos, and the latest lead-time calendar. "
-                f"If you already have a competitor quote, send the spec — we will mark where the two bills of materials diverge."
-            ),
-            "tags": ["SEO", "supplier", product.replace(" ", ""), "China"],
-            "subject": None,
-        },
-        "outreach_email": {
-            "title": f"Quick question on {product} supply",
-            "body": (
-                f"Hi {{{{FirstName}}}},\n\n"
-                f"I noticed your company sources components in the same category as our {product} line. "
-                f"We currently run {specs}, with English documentation and third-party inspection on request.\n\n"
-                f"Would it be useful if I sent a one-page spec + FOB reference for your next RFQ cycle?\n\n"
-                f"Best regards,\nExport Team"
-            ),
-            "tags": ["outreach", "email"],
-            "subject": f"Spec sheet for {product} — MOQ & lead time",
-        },
-    }
-    data = templates.get(kind, templates["product_article"])
-    data["mock"] = True
-    return data
-
-
 class TextGenRequest(BaseModel):
     content_type: str = Field(..., description="product_article | linkedin_post | seo_blog | outreach_email")
     product_name: str
@@ -212,6 +101,18 @@ class ImageGenRequest(BaseModel):
     save: bool = True
 
 
+class TextEditRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=300)
+    body: str = Field(min_length=1, max_length=50000)
+
+    @field_validator('title', 'body')
+    @classmethod
+    def nonblank(cls, value):
+        if not value.strip():
+            raise ValueError('内容不能为空')
+        return value.strip()
+
+
 class PublishRequest(BaseModel):
     platform: str  # linkedin | wordpress | x | twitter | website
     title: str
@@ -219,33 +120,6 @@ class PublishRequest(BaseModel):
     content_id: Optional[int] = None
     image_url: Optional[str] = None
     wp_status: str = "draft"
-
-
-def _generate_image_url(prompt: str, resolution: str) -> dict:
-    dash_key = os.getenv("DASHSCOPE_API_KEY")
-    if not dash_key:
-        return {
-            "success": True,
-            "url": None,
-            "mock": True,
-            "prompt": prompt,
-            "msg": "DASHSCOPE_API_KEY 未配置，已保存提示词。配置后可真实出图。",
-        }
-    try:
-        import dashscope
-        dashscope.api_key = dash_key
-        rsp = dashscope.ImageSynthesis.call(
-            model=os.getenv("WANX_MODEL", "wanx-v1"),
-            prompt=prompt,
-            n=1,
-            size=resolution or "1024*1024",
-        )
-        if getattr(rsp, "status_code", None) == 200:
-            url = rsp.output.results[0].url
-            return {"success": True, "url": url, "mock": False, "prompt": prompt}
-        return {"success": False, "error": getattr(rsp, "message", "image gen failed"), "prompt": prompt}
-    except Exception as exc:
-        return {"success": False, "error": str(exc), "prompt": prompt}
 
 
 @router.post("/text/generate")
@@ -269,23 +143,27 @@ def generate_text(
         + (", subject" if kind == "outreach_email" else "")
         + "."
     )
-    raw = query_default_llm(db, prompt, system=spec["system"], temperature=0.7, max_tokens=3500)
+    try:
+        raw = query_default_llm(db, prompt, system=spec["system"], temperature=0.7, max_tokens=3500)
+    except Exception:
+        raise HTTPException(502, "文字模型调用失败，请检查模型配置后重试") from None
     data = None
-    mock = False
     if raw:
         try:
             data = _extract_json(raw)
         except Exception:
             data = {"title": req.product_name, "body": raw, "tags": [kind], "subject": None}
 
-    if not data or _word_count(data.get("body") or "") < spec["min_words"] // 2:
-        data = _mock_text(kind, req.product_name, req.selling_points)
-        mock = True
+    if (not isinstance(data, dict) or not isinstance(data.get("body"), str)
+            or _word_count(data["body"]) < spec["min_words"]):
+        raise HTTPException(502, "模型没有返回符合所选类型长度要求的内容，请重试；本次未保存")
 
     title = data.get("title") or req.product_name
     body = data.get("body") or ""
     tags = data.get("tags") or []
-    extra = {"subject": data.get("subject"), "mock": mock or data.get("mock", False)}
+    if not isinstance(tags, list) or not all(isinstance(tag, str) for tag in tags):
+        tags = []
+    extra = {"subject": data.get("subject"), "mock": False}
 
     record = None
     if req.save:
@@ -344,6 +222,20 @@ def get_text(
     return _content_dict(item)
 
 
+@router.patch("/text/{content_id}")
+def update_text(content_id: int, body: TextEditRequest, user_id: int = Depends(get_current_user_id), db: Session = Depends(get_shared_db)):
+    record = db.query(MarketingContent).filter(
+        MarketingContent.id == content_id, MarketingContent.user_id == user_id,
+        MarketingContent.content_type != "image",
+    ).first()
+    if not record:
+        raise HTTPException(404, "内容不存在")
+    record.title, record.body = body.title, body.body
+    db.commit()
+    db.refresh(record)
+    return _content_dict(record)
+
+
 @router.post("/images/generate")
 def generate_image(
     req: ImageGenRequest,
@@ -352,33 +244,39 @@ def generate_image(
 ):
     preset = IMAGE_PRESETS.get(req.preset, IMAGE_PRESETS["product_scene"])
     prompt = req.prompt or f"{req.product_name or 'industrial product'}, {preset}"
-    result = _generate_image_url(prompt, req.resolution or "1024*1024")
-    if result.get("success") is False:
-        raise HTTPException(502, result.get("error") or "image generation failed")
+    url = generate_image_url(prompt, req.resolution or "1024*1024")
 
     record = None
     if req.save:
+        path = store_image(url)
         record = MarketingContent(
             user_id=user_id,
             content_type="image",
             product_name=req.product_name,
             title=req.product_name or req.preset,
             body=prompt,
-            image_url=result.get("url"),
+            image_url=None,
             prompt=prompt,
-            extra={"preset": req.preset, "mock": result.get("mock", False), "msg": result.get("msg")},
+            extra={"preset": req.preset, "mock": False, "image_file": path.name},
         )
-        db.add(record)
-        db.commit()
-        db.refresh(record)
+        try:
+            db.add(record)
+            db.flush()
+            url = f"/api/v1/marketing/images/{record.id}/file"
+            record.image_url = url
+            db.commit()
+            db.refresh(record)
+        except Exception:
+            db.rollback()
+            path.unlink(missing_ok=True)
+            raise HTTPException(500, "图片记录保存失败，请重试") from None
 
     return {
         "id": record.id if record else None,
-        "url": result.get("url"),
+        "url": url,
         "prompt": prompt,
         "preset": req.preset,
-        "mock": result.get("mock", False),
-        "msg": result.get("msg"),
+        "mock": False,
         "created_at": record.created_at.isoformat() if record else datetime.now().isoformat(),
     }
 
@@ -399,6 +297,23 @@ def list_images(
     return {"items": [_content_dict(c) for c in items]}
 
 
+@router.get("/images/{content_id}/file")
+def image_file(content_id: int, user_id: int = Depends(get_current_user_id), db: Session = Depends(get_shared_db)):
+    record = db.query(MarketingContent).filter(
+        MarketingContent.id == content_id, MarketingContent.user_id == user_id,
+        MarketingContent.content_type == "image",
+    ).first()
+    if not record:
+        raise HTTPException(404, "图片不存在")
+    filename = (record.extra or {}).get("image_file")
+    if not isinstance(filename, str) or not re.fullmatch(r"[a-f0-9]{32}\.(png|jpg|webp)", filename):
+        raise HTTPException(404, "该历史图片没有本地文件，请重新生成")
+    path = (IMAGE_ROOT / filename).resolve()
+    if not path.is_relative_to(IMAGE_ROOT.resolve()) or not path.is_file():
+        raise HTTPException(404, "图片文件不存在")
+    return FileResponse(path, headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
+
+
 @router.post("/publish")
 def publish(
     req: PublishRequest,
@@ -408,7 +323,9 @@ def publish(
     platform = (req.platform or "").lower().strip()
     if platform in ("twitter",):
         platform = "x"
-    if platform in ("website", "wp"):
+    if platform == "website":
+        raise HTTPException(503, "自建独立站尚未接入，请先提供站点代码与发布接口")
+    if platform == "wp":
         platform = "wordpress"
 
     payload = {
@@ -423,6 +340,8 @@ def publish(
             result = wp_publish(req.title, req.content, status=req.wp_status)
         except Exception as exc:
             raise HTTPException(502, str(exc))
+        if result.get("mode") != "live":
+            raise HTTPException(503, "WordPress 尚未配置，本次未发布")
         job = RPAJob(
             user_id=user_id,
             platform="wordpress",
@@ -593,6 +512,9 @@ def _content_dict(c: MarketingContent) -> dict:
         "product_name": c.product_name,
         "title": c.title,
         "body": c.body,
+        "word_count": _word_count(c.body),
+        "subject": (c.extra or {}).get("subject"),
+        "mock": (c.extra or {}).get("mock", False),
         "tags": c.tags or [],
         "image_url": c.image_url,
         "prompt": c.prompt,

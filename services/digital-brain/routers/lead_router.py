@@ -8,7 +8,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -26,38 +26,65 @@ def _user(payload: dict, db: Session) -> User:
     user = db.query(User).filter(User.id == payload["id"]).first()
     if not user:
         raise HTTPException(401, "用户不存在")
+    if not user.organization_id:
+        raise HTTPException(403, "请先加入企业组织，再访问线索池")
     return user
 
 
 class LeadIn(BaseModel):
-    source: Optional[str] = "Website AI Chat"
-    email: Optional[str] = None
-    name: Optional[str] = None
-    company: Optional[str] = None
-    country: Optional[str] = None
-    phone: Optional[str] = None
-    products: Optional[str] = None
+    model_config = ConfigDict(extra="forbid")
+    source: Optional[str] = Field(default="Website AI Chat", max_length=200)
+    email: Optional[str] = Field(default=None, max_length=254)
+    name: Optional[str] = Field(default=None, max_length=200)
+    company: Optional[str] = Field(default=None, max_length=300)
+    country: Optional[str] = Field(default=None, max_length=100)
+    phone: Optional[str] = Field(default=None, max_length=100)
+    products: Optional[str] = Field(default=None, max_length=2000)
     intent_json: Optional[dict] = None
-    conversation: Optional[str] = None
-    session_uuid: Optional[str] = None
-    language: Optional[str] = None
+    conversation: Optional[str] = Field(default=None, max_length=20000)
+    session_uuid: Optional[str] = Field(default=None, max_length=128)
+    language: Optional[str] = Field(default=None, max_length=40)
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value):
+        value = (value or "").strip().lower()
+        if value and (value.count("@") != 1 or any(char.isspace() for char in value) or not all(value.split("@"))):
+            raise ValueError("邮箱格式不正确")
+        return value or None
+
+    @model_validator(mode="after")
+    def require_identity(self):
+        if not any((value or "").strip() for value in (self.email, self.name, self.company, self.session_uuid)):
+            raise ValueError("请至少填写邮箱、联系人或公司")
+        return self
 
 
-class StatusIn(BaseModel):
-    status: str
+class LeadPatch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    status: Optional[str] = None
+    email: Optional[str] = Field(default=None, max_length=254)
+    name: Optional[str] = Field(default=None, max_length=200)
+    company: Optional[str] = Field(default=None, max_length=300)
+    country: Optional[str] = Field(default=None, max_length=100)
+    phone: Optional[str] = Field(default=None, max_length=100)
+    products: Optional[str] = Field(default=None, max_length=2000)
+    conversation: Optional[str] = Field(default=None, max_length=20000)
+
+    normalize_email = field_validator("email")(LeadIn.normalize_email.__func__)
 
 
 def upsert_lead(db: Session, organization_id: Optional[int], data: dict) -> Lead:
-    """同组织 + 同邮箱去重：已存在则合并更新。无组织时仍按邮箱去重。"""
+    """所有去重查询严格限定同组织，未归属记录只能与未归属记录合并。"""
+    data = dict(data)
     email = (data.get("email") or "").strip().lower() or None
+    data["email"] = email
     existing = None
     if email:
-        q = db.query(Lead).filter(Lead.email == email)
-        if organization_id is not None:
-            q = q.filter(Lead.organization_id == organization_id)
+        q = db.query(Lead).filter(func.lower(func.trim(Lead.email)) == email, Lead.organization_id == organization_id)
         existing = q.order_by(Lead.id.asc()).first()
     if existing is None and data.get("session_uuid"):
-        existing = db.query(Lead).filter(Lead.session_uuid == data["session_uuid"]).first()
+        existing = db.query(Lead).filter(Lead.session_uuid == data["session_uuid"], Lead.organization_id == organization_id).first()
 
     if existing:
         for k, v in data.items():
@@ -224,9 +251,14 @@ def export_csv(payload: dict = Depends(get_current_user), db: Session = Depends(
     rows = query.order_by(Lead.id.desc()).all()
     buf = io.StringIO()
     writer = csv.writer(buf)
+    def safe_cell(value):
+        # Opening a visitor-supplied value in Excel must not execute a formula.
+        if isinstance(value, str) and value.lstrip().startswith(("=", "+", "-", "@", "\t", "\r")):
+            return "'" + value
+        return value
     writer.writerow(["id", "status", "source", "name", "company", "email", "country", "phone", "products", "language", "created_at"])
     for r in rows:
-        writer.writerow([r.id, r.status, r.source, r.name, r.company, r.email, r.country, r.phone, r.products, r.language, r.created_at])
+        writer.writerow([safe_cell(v) for v in [r.id, r.status, r.source, r.name, r.company, r.email, r.country, r.phone, r.products, r.language, r.created_at]])
     buf.seek(0)
     return StreamingResponse(
         iter([buf.getvalue()]),
@@ -236,16 +268,25 @@ def export_csv(payload: dict = Depends(get_current_user), db: Session = Depends(
 
 
 @router.patch("/{lead_id}")
-def update_status(lead_id: int, body: StatusIn, payload: dict = Depends(get_current_user), db: Session = Depends(get_shared_db)):
-    if body.status not in VALID_STATUS:
+def update_lead(lead_id: int, body: LeadPatch, payload: dict = Depends(get_current_user), db: Session = Depends(get_shared_db)):
+    changes = body.model_dump(exclude_unset=True)
+    if "status" in changes and body.status not in VALID_STATUS:
         raise HTTPException(400, f"非法状态，可选：{sorted(VALID_STATUS)}")
     user = _user(payload, db)
-    lead = db.query(Lead).filter(Lead.id == lead_id).first()
+    lead = db.query(Lead).filter(Lead.id == lead_id, Lead.organization_id == user.organization_id).first()
     if not lead:
         raise HTTPException(404, "线索不存在")
-    if user.organization_id and lead.organization_id not in (user.organization_id, None):
-        raise HTTPException(403, "无权操作")
-    lead.status = body.status
+    if changes.get("email") and db.query(Lead.id).filter(
+        Lead.organization_id == user.organization_id, Lead.id != lead_id,
+        func.lower(func.trim(Lead.email)) == changes["email"],
+    ).first():
+        raise HTTPException(409, "该邮箱已有线索，请编辑已有记录")
+    for key, value in changes.items():
+        setattr(lead, key, value)
+    if not any((value or "").strip() for value in (lead.email, lead.name, lead.company, lead.session_uuid)):
+        raise HTTPException(422, "请至少保留邮箱、联系人或公司")
     lead.updated_at = datetime.now()
+    db.flush()
+    enqueue_lead_sync(db, lead)
     db.commit()
     return _to_dict(lead)

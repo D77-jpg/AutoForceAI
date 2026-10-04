@@ -21,11 +21,29 @@ from database.shared_models import KnowledgeChunk, KnowledgeDoc
 
 logger = logging.getLogger(__name__)
 
-_TOKEN_RE = re.compile(r"[A-Za-z0-9\u4e00-\u9fff]{2,}")
+_TOKEN_RE = re.compile(r"[A-Za-z0-9]{2,}|[\u4e00-\u9fff]{2,}")
+_ENGLISH_STOP_WORDS = frozenset({
+    'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'can', 'do', 'does',
+    'for', 'from', 'how', 'in', 'is', 'it', 'of', 'on', 'or', 'please',
+    'that', 'the', 'this', 'to', 'was', 'were', 'what', 'when', 'where',
+    'which', 'who', 'with', 'would', 'you', 'your',
+    'according', 'cite', 'citing', 'document', 'documents', 'uploaded', 'source', 'sources',
+})
 
 
 def _tokenize(q: str) -> List[str]:
-    return [t.lower() for t in _TOKEN_RE.findall(q or "")]
+    tokens = []
+    for token in _TOKEN_RE.findall(q or ''):
+        token = token.lower()
+        if token in _ENGLISH_STOP_WORDS:
+            continue
+        # Chinese questions do not have spaces. Matching the whole sentence
+        # made lexical retrieval miss facts present in an uploaded document.
+        if '\u4e00' <= token[0] <= '\u9fff':
+            tokens.extend(token[index:index + 2] for index in range(len(token) - 1))
+        else:
+            tokens.append(token)
+    return list(dict.fromkeys(tokens))
 
 
 def _lexical_score(chunk_text: str, tokens: List[str]) -> float:
@@ -122,7 +140,14 @@ class KnowledgeRetriever:
         scored = []
         for c in chunks:
             vec = c.embedding
-            if not vec or not isinstance(vec, (list, tuple)):
+            # pgvector returns numpy arrays even when stored in SQLite. Their
+            # truth value is ambiguous; checking it caused all vector searches
+            # to fall back to lexical matching after successful embedding.
+            if vec is None:
+                continue
+            if hasattr(vec, "tolist"):
+                vec = vec.tolist()
+            if not isinstance(vec, (list, tuple)) or len(vec) == 0:
                 continue
             n = min(len(vec), len(qvec))
             if n == 0:
@@ -166,7 +191,9 @@ class KnowledgeRetriever:
         threshold: float,
     ) -> List[Dict[str, Any]]:
         by_id: Dict[Any, Dict[str, Any]] = {}
-        for src, weight in ((vector, 1.0), (lexical, 0.65)):
+        # A vector preference is only meaningful when vector hits exist.
+        # Penalizing the only available retrieval mode hid relevant documents.
+        for src, weight in ((vector, 1.0), (lexical, 0.65 if vector else 1.0)):
             for hit in src:
                 key = (hit.get("doc_id"), hit.get("content", "")[:80])
                 score = float(hit.get("score") or 0) * weight

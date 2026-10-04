@@ -12,7 +12,7 @@ from pptx import Presentation
 
 from core.db_manager import get_shared_db
 from core.dependencies import get_current_user
-from database.shared_models import SharedBase, Organization, User, KnowledgeBase, KnowledgeDoc, KnowledgeChunk
+from database.shared_models import SharedBase, Organization, User, KnowledgeBase, KnowledgeDoc, KnowledgeChunk, LLMModel
 from routers import solution_router as solution
 
 
@@ -25,6 +25,7 @@ def fixture_app():
         db.add_all([Organization(id=1, name='Our Org'), Organization(id=2, name='Other Org')])
         db.add_all([User(id=1, username='member', organization_id=1), User(id=2, username='other', organization_id=2), User(id=3, username='orphan')])
         db.add_all([KnowledgeBase(id=11, name='Own KB', organization_id=1), KnowledgeBase(id=22, name='Secret KB', organization_id=2), KnowledgeBase(id=33, name='Shared legacy KB')])
+        db.add(LLMModel(name='configured-gateway', type='LLM', is_active=True, is_default=True))
         db.add(KnowledgeDoc(id=101, kb_id=11, filename='Own source', status='indexed', chunk_count=1))
         db.add(KnowledgeChunk(id=201, doc_id=101, chunk_index=0, chunk_text='Product: sample lead time ten days.'))
         db.commit()
@@ -74,49 +75,33 @@ def test_malformed_kb_id_rejected(fixture_app, bad_id):
 
 def test_empty_kb_and_no_model_are_honest(fixture_app):
     client, _ = fixture_app
-    with patch.object(solution, 'QwenClient') as qwen, patch.object(solution.KnowledgeRetriever, 'search_multi_kb', return_value=[]):
-        qwen.return_value.api_key = None
+    with patch.object(solution, 'get_default_llm_model', return_value=None), patch.object(solution.KnowledgeRetriever, 'search_multi_kb', return_value=[]):
         result = client.post('/api/v1/solution/context', json={'topic': 'sample', 'kb_ids': [11]})
-        assert result.status_code == 200
-        assert result.json()['items'] == []
+        assert result.status_code == 200 and result.json()['items'] == []
         assert [log['step'] for log in result.json()['logs']] == ['Scope Validation', 'Retrieval Completed']
-        outline = client.post('/api/v1/solution/outline', json={'topic': 'sample', 'kb_ids': [11]}).json()
-        page = client.post('/api/v1/solution/page/content', json={'topic': 'sample', 'kb_ids': [11], 'page_title': 'intro'}).json()
-    for value in [outline, page]:
-        assert value['generation_mode'] == 'fallback'
-        assert value['fallback_reason'] == 'model_not_configured'
-        assert value['knowledge_used'] is False
-        assert value['sources'] == []
-    assert len(outline['pages']) > 0
-    assert page['bullets'] == []  # Never export template claims as generated facts.
+        outline = client.post('/api/v1/solution/outline', json={'topic': 'sample', 'kb_ids': [11]})
+        page = client.post('/api/v1/solution/page/content', json={'topic': 'sample', 'kb_ids': [11], 'page_title': 'intro'})
+    assert outline.status_code == page.status_code == 503
+    assert 'pages' not in outline.json() and 'bullets' not in page.json()
 
 
 def test_model_failures_never_claim_success(fixture_app):
     client, _ = fixture_app
-    from types import SimpleNamespace
-    response = SimpleNamespace(status_code=200, output=SimpleNamespace(
-        choices=[SimpleNamespace(message=SimpleNamespace(content='{"reasoning":"Qwen API Error: leaked"}'))]))
-    with patch.object(solution, 'QwenClient') as qwen, patch('dashscope.Generation.call', return_value=response), patch.object(solution.KnowledgeRetriever, 'search_multi_kb', return_value=[]):
-        qwen.return_value.api_key = 'test-key'
-        outline = client.post('/api/v1/solution/outline', json={'topic': 'sample'}).json()
-        page = client.post('/api/v1/solution/page/content', json={'topic': 'sample', 'page_title': 'intro'}).json()
-    assert outline['generation_mode'] == page['generation_mode'] == 'fallback'
-    assert 'leaked' not in str(outline) and 'leaked' not in str(page)
+    with patch.object(solution, 'query_default_llm', return_value='{"reasoning":"provider error private-key"}'), patch.object(solution.KnowledgeRetriever, 'search_multi_kb', return_value=[]):
+        outline = client.post('/api/v1/solution/outline', json={'topic': 'sample'})
+        page = client.post('/api/v1/solution/page/content', json={'topic': 'sample', 'page_title': 'intro'})
+    assert outline.status_code == page.status_code == 502
+    assert 'private-key' not in outline.text + page.text
 
 
 def test_configured_model_reports_real_generation_and_only_real_sources(fixture_app):
-    from types import SimpleNamespace
     client, _ = fixture_app
     outline_reply = '[{"page":1,"title":"Proposal","type":"cover"}]'
     content_reply = '{"title":"Proposal","bullets":["Ten-day sample delivery"],"speaker_notes":"Check terms"}'
-    results = [SimpleNamespace(status_code=200, output=SimpleNamespace(
-        choices=[SimpleNamespace(message=SimpleNamespace(content=text))]))
-        for text in (outline_reply, content_reply)]
-    with patch.object(solution, 'QwenClient') as qwen, patch('dashscope.Generation.call', side_effect=results), patch.object(
+    with patch.object(solution, 'query_default_llm', side_effect=[outline_reply, content_reply]), patch.object(
         solution.KnowledgeRetriever, 'search_multi_kb', return_value=[
             {'doc_id': 101, 'doc_name': 'Untrusted name', 'content': 'Ten-day sample delivery', 'score': 0.86}]
     ):
-        qwen.return_value.api_key = 'test-key'
         outline = client.post('/api/v1/solution/outline', json={
             'topic': 'proposal', 'target_audience': 'Buyer', 'style': 'Formal', 'kb_ids': [11]}).json()
         page = client.post('/api/v1/solution/page/content', json={
@@ -140,7 +125,47 @@ def test_generated_citations_are_validated_against_organization(fixture_app):
     assert response.status_code == 200
     assert response.content[:2] == b'PK'
     presentation = Presentation(io.BytesIO(response.content))
-    assert len(presentation.slides) >= 1
+    assert len(presentation.slides) == 1
+
+
+def test_export_preserves_edited_cover_end_bullets_and_notes(fixture_app):
+    client, _ = fixture_app
+    pages = [
+        {'title': 'Reviewed cover', 'type': 'cover', 'bullets': ['MOQ 73 units'],
+         'speaker_notes': 'Reviewed remarks', 'data_source': 'Own source'},
+        {'title': 'Reviewed closing', 'type': 'end', 'bullets': ['Lead time 19 days']},
+    ]
+    response = client.post('/api/v1/solution/generate', json={'topic': 'Original topic', 'pages': pages})
+    assert response.status_code == 200
+    deck = Presentation(io.BytesIO(response.content))
+    assert len(deck.slides) == 2
+    text = ['\n'.join(s.text for s in slide.shapes if s.has_text_frame) for slide in deck.slides]
+    assert 'Reviewed cover' in text[0] and 'MOQ 73 units' in text[0]
+    assert 'Reviewed closing' in text[1] and 'Lead time 19 days' in text[1]
+    assert 'Reviewed remarks' in deck.slides[0].notes_slide.notes_text_frame.text
+    assert 'Source: Own source' in deck.slides[0].notes_slide.notes_text_frame.text
+
+
+def test_custom_template_keeps_layouts_without_example_slides(fixture_app, tmp_path, monkeypatch):
+    client, _ = fixture_app
+    directory = tmp_path / 'storage' / 'ppt_templates'
+    directory.mkdir(parents=True)
+    template = Presentation()
+    example = template.slides.add_slide(template.slide_layouts[0])
+    example.shapes.title.text = 'TEMPLATE EXAMPLE MUST NOT APPEAR'
+    template.save(directory / 'Example.pptx')
+    monkeypatch.setattr(solution, '__file__', str(tmp_path / 'routers' / 'solution_router.py'))
+    response = client.post('/api/v1/solution/generate', json={
+        'topic': 'Fictional terms', 'template_id': 'Example.pptx',
+        'pages': [{'title': 'Reviewed terms', 'type': 'content', 'bullets': ['MOQ 73 units']}],
+    })
+    assert response.status_code == 200
+    deck = Presentation(io.BytesIO(response.content))
+    assert len(deck.slides) == 1 and len(deck.slide_layouts) == len(template.slide_layouts)
+    shapes = [shape for shape in deck.slides[0].shapes if shape.has_text_frame and shape.text]
+    assert 'TEMPLATE EXAMPLE' not in '\n'.join(shape.text for shape in shapes)
+    assert 'MOQ 73 units' in '\n'.join(shape.text for shape in shapes)
+    assert all(shape.left >= 0 and shape.left + shape.width <= deck.slide_width for shape in shapes)
 
 
 def test_ppt_requires_org_and_pages(fixture_app):
@@ -149,3 +174,27 @@ def test_ppt_requires_org_and_pages(fixture_app):
     assert client.post('/api/v1/solution/generate', json={'topic': 'test', 'pages': [{'title': 'x'}]}).status_code == 403
     identity['id'] = 1
     assert client.post('/api/v1/solution/generate', json={'topic': 'test', 'pages': []}).status_code == 422
+
+
+def test_draft_save_edit_reload_and_scope(fixture_app):
+    client, identity = fixture_app
+    state = {'settings': {'topic': 'Fictional product', 'kb_ids': [11]}, 'pages': [
+        {'id': '1', 'outline': {'page': 1, 'title': 'Terms', 'type': 'content'},
+         'content': {'title': 'Terms', 'bullets': ['MOQ 73', 'Lead time 19 days'],
+                     'sources': [{'doc_id': 101, 'doc_name': 'Own source', 'content': 'Public fixture', 'score': 1}]}}
+    ]}
+    response = client.post('/api/v1/solution/drafts', json=state)
+    assert response.status_code == 201
+    draft_id = response.json()['id']
+    assert client.get('/api/v1/solution/drafts').json()['items'][0]['id'] == draft_id
+    state['pages'][0]['content']['title'] = 'Reviewed terms'
+    assert client.put(f'/api/v1/solution/drafts/{draft_id}', json=state).status_code == 200
+    restored = client.get(f'/api/v1/solution/drafts/{draft_id}').json()['state']
+    assert restored['pages'][0]['content']['title'] == 'Reviewed terms'
+    assert restored['pages'][0]['content']['bullets'] == ['MOQ 73', 'Lead time 19 days']
+    state['pages'][0]['content']['sources'][0]['doc_id'] = 999
+    assert client.put(f'/api/v1/solution/drafts/{draft_id}', json=state).status_code == 403
+    identity['id'] = 2
+    assert client.get('/api/v1/solution/drafts').json()['items'] == []
+    assert client.get(f'/api/v1/solution/drafts/{draft_id}').status_code == 404
+    assert client.put(f'/api/v1/solution/drafts/{draft_id}', json=state).status_code == 404

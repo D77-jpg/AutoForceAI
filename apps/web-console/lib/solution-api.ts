@@ -1,3 +1,5 @@
+import { expireAuthSession } from './auth-session';
+
 const API = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
 export type ContextItem = { doc_id: string | number; doc_name: string; content: string; score: number };
 export type Settings = { topic: string; target_audience: string; style: string; kb_ids: number[] };
@@ -7,7 +9,9 @@ export type OutlinePage = { page: number; title: string; type: string; key_point
 export type OutlineResult = Generation & { topic: string; pages: OutlinePage[]; sources?: ContextItem[] };
 export type PageContent = Generation & { page?: number; title: string; type: string; bullets: string[]; image_suggestion: string | null; speaker_notes: string | null; data_source: string | null; sources: ContextItem[] };
 export type DraftPage = { id: string; outline: OutlinePage; content?: PageContent; error?: string };
-export type RequestOptions = { signal?: AbortSignal; timeoutMs?: number };
+export type RequestOptions = { signal?: AbortSignal; timeoutMs?: number; method?: 'PUT' };
+export type SolutionState = { settings: Settings; context: ContextResult | null; outline: OutlineResult | null; pages: DraftPage[] };
+export type SavedSolution = { id: number; title: string; updated_at: string; state: SolutionState };
 
 export class SolutionApiError extends Error {
   constructor(message: string, public status?: number) { super(message); this.name = 'SolutionApiError'; }
@@ -23,11 +27,12 @@ async function request<T>(path: string, body: unknown, options: RequestOptions =
   const timer = setTimeout(() => { timedOut = true; controller.abort(); }, options.timeoutMs ?? 120000);
   try {
     const response = await fetch(`${API}/api/v1/${path}`, {
-      method: body === undefined ? 'GET' : 'POST',
+      method: options.method || (body === undefined ? 'GET' : 'POST'),
       headers: { Authorization: `Bearer ${token}`, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
       body: body === undefined ? undefined : JSON.stringify(body), signal: controller.signal,
     });
     if (!response.ok) {
+      if (response.status === 401) expireAuthSession(token);
       let detail = '';
       try {
         const payload = await response.json();
@@ -55,6 +60,15 @@ export function settingsPayload(settings: Settings): Settings {
 }
 export async function listKnowledgeBases(options?: RequestOptions): Promise<{ items: { id: number; name: string }[] }> {
   return request('solution/knowledge-bases', undefined, options);
+}
+export async function listSolutionDrafts(options?: RequestOptions): Promise<{ items: Pick<SavedSolution, 'id' | 'title' | 'updated_at'>[] }> {
+  return request('solution/drafts', undefined, options);
+}
+export async function getSolutionDraft(id: number, options?: RequestOptions): Promise<SavedSolution> {
+  return request(`solution/drafts/${id}`, undefined, options);
+}
+export async function saveSolutionDraft(state: SolutionState, id: number | null, options?: RequestOptions): Promise<SavedSolution> {
+  return request(id === null ? 'solution/drafts' : `solution/drafts/${id}`, state, id === null ? options : { ...options, method: 'PUT' });
 }
 export async function retrieveContext(settings: Settings, options?: RequestOptions): Promise<ContextResult> {
   return request('solution/context', settingsPayload(settings), options);
