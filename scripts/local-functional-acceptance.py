@@ -26,6 +26,7 @@ def run():
     parser.add_argument('--serve', action='store_true')
     parser.add_argument('--real-llm', action='store_true', help='Explicitly enable the configured model call with synthetic data only')
     parser.add_argument('--external-services', action='store_true', help='Test Beijing embedding and Wanx plus Serper using public facts only')
+    parser.add_argument('--documents', action='store_true', help='Verify real PDF/DOCX facts, reindex, invalid input and tenant isolation')
     parser.add_argument('--solution', action='store_true', help='Test real presentation outline/content, saved draft and PPTX export')
     parser.add_argument('--crm', action='store_true', help='Real isolated Genesis fixture required; run through local-genesis-acceptance.cjs')
     parser.add_argument('--model-name', help='Explicit model override in the isolated acceptance DB only; source configuration is unchanged')
@@ -33,7 +34,7 @@ def run():
     parser.add_argument('--allowed-model-origin', help='Approved model origin, required with --real-llm; rejects a different configured destination')
     parser.add_argument('--port', type=int, default=8011)
     args = parser.parse_args()
-    if args.crm and (not os.getenv('ACCEPTANCE_CRM_TOKEN') or args.external_services or args.solution):
+    if args.crm and (not os.getenv('ACCEPTANCE_CRM_TOKEN') or args.external_services or args.solution or args.documents):
         raise RuntimeError('CRM acceptance requires the isolated Genesis launcher')
     if args.solution and (not args.real_llm or args.external_services):
         raise RuntimeError('Solution acceptance requires the approved real LLM and the synthetic product fixture')
@@ -162,6 +163,9 @@ def run():
                             hits = retriever._vector_search([library['id']], '法国的首都是哪座城市？', 5)
                             assert hits and 'Paris' in hits[0]['content']
                             print(json.dumps({'embedding': 'passed', 'dimensions': 1024, 'semantic_only_hits': len(hits)}), flush=True)
+                if args.documents:
+                    from knowledge_documents_acceptance import verify_documents
+                    verify_documents(client, checked, SharedSessionLocal, args, library['id'])
                 if not args.crm:
                     question = 'According to the uploaded document, what is the capital of France? Cite the source.' if args.external_services else 'What are the MOQ and lead time for Acceptance_widget? Cite the uploaded document.'
                     response = client.post('/api/v1/brain/chat', json={'query': question, 'kb_ids': [library['id']]})
