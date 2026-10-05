@@ -105,6 +105,16 @@ def verify_crm(client, checked, factory, args, kb_id):
         assert db.query(CrmOutcomeEvent).count() == 1
     won = next(item for item in checked(client.get('/api/v1/leads'))['items'] if item['id'] == lead['id'])
     assert won['status'] == 'converted' and won['crm']['remote_status'] == 'won'
+    # Lost is a CRM summary, not a command to overwrite the local lead state.
+    retry_row = next(item for item in checked(client.get('/api/v1/leads'))['items'] if item['id'] == failure_lead['id'])
+    change = httpx.put(base + f"/customers/{retry_row['crm']['remote_customer_id']}", headers=sales_headers, json={'status': 'lost'}, timeout=15)
+    assert change.status_code == 200
+    with factory() as db:
+        assert poll_all_outcomes(db, 'acceptance-outcome') == 1
+        assert poll_all_outcomes(db, 'acceptance-outcome') == 0
+        assert db.query(CrmOutcomeEvent).count() == 2
+    lost = next(item for item in checked(client.get('/api/v1/leads'))['items'] if item['id'] == failure_lead['id'])
+    assert lost['crm']['remote_status'] == 'lost' and lost['status'] == retry_row['status']
     summary = checked(client.get('/api/v1/leads/summary'))
     assert summary['total'] == 2 and summary['by_status']['converted'] == 1
     csv_rows = list(csv.DictReader(io.StringIO(client.get('/api/v1/leads/export.csv').text)))
@@ -113,7 +123,8 @@ def verify_crm(client, checked, factory, args, kb_id):
     assert checked(client.get(f"/api/v1/crm/quotations/{quote['quotationId']}"))['quotation']['totalAmount'] == 182.5
     project_branding_verified = 'Fictional test supplier' in extracted
     receipt = {'crm': 'passed', 'real_genesis_http': True, 'real_mongodb': True, 'mock_used': False, 'lead_dedup': True,
-               'delivery_failure_retry_recovery': True, 'outcome_won_replayed_once': True, 'quotation_idempotent': True,
+               'delivery_failure_retry_recovery': True, 'outcome_won_replayed_once': True, 'outcome_lost_replayed_once': True,
+               'lost_preserves_local_status': True, 'quotation_idempotent': True,
                'quotation_restored': True, 'quotation_total': 182.5, 'pdf_bytes': len(pdf.content), 'pdf_pages': len(reader.pages),
                'pdf_etag_304': True, 'ai_proposal_verified': args.real_llm, 'external_publish_or_mail_sent': False,
                'pdf_project_branding_verified': project_branding_verified,
