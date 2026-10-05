@@ -28,8 +28,20 @@ def extract_text_from_path(path: str) -> str:
         return "\n".join((page.extract_text() or "") for page in reader.pages).strip()
     if lower.endswith(".docx"):
         from docx import Document
+        from docx.oxml.ns import qn
+        from docx.table import Table
+        from docx.text.paragraph import Paragraph
         doc = Document(path)
-        return "\n".join(p.text for p in doc.paragraphs).strip()
+        blocks = []
+        # Specifications often live in tables. Preserve their position among
+        # paragraphs so the index does not silently lose prices or delivery terms.
+        for element in doc.element.body:
+            if element.tag == qn('w:p'):
+                blocks.append(Paragraph(element, doc).text)
+            elif element.tag == qn('w:tbl'):
+                for row in Table(element, doc).rows:
+                    blocks.append('\t'.join(cell.text for cell in row.cells))
+        return "\n".join(blocks).strip()
     with open(path, "r", encoding="utf-8", errors="ignore") as f:
         return f.read().strip()
 
