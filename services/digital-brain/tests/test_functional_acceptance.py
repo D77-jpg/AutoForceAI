@@ -236,6 +236,45 @@ def test_provider_exception_is_sanitized_and_missing_image_key_is_not_success(en
         assert db.query(MarketingContent).count() == 0
 
 
+@pytest.mark.parametrize('finish', ['stop', 'length', None, 'timeout'])
+def test_marketing_persists_only_complete_provider_stream(env, monkeypatch, finish):
+    from types import SimpleNamespace as NS
+    from core.llm.factory import ModelFactory
+    client, factory, _ = env
+    monkeypatch.setattr(ModelFactory, '_instances', {})
+    body = 'Fictional MOQ 73 and lead time 19 days. ' + 'Buyer review required. ' * 40
+    payload = json.dumps({'title': 'Test outreach', 'body': body, 'tags': [], 'subject': 'Test only'})
+
+    class Chunks:
+        def __enter__(self):
+            def chunks():
+                yield NS(model='served-model', choices=[NS(delta=NS(content=payload), finish_reason=None)])
+                if finish == 'timeout':
+                    raise TimeoutError('private-provider-detail')
+                if finish:
+                    yield NS(model='served-model', choices=[NS(delta=NS(content=None), finish_reason=finish)])
+            return chunks()
+
+        def __exit__(self, *args):
+            pass
+
+    def create(**params):
+        assert params['stream'] is True
+        return Chunks()
+
+    provider = NS(chat=NS(completions=NS(create=create)))
+    provider.with_options = lambda **kwargs: provider
+    monkeypatch.setattr('core.llm.providers.openai_generic.OpenAI', lambda **kwargs: provider)
+    response = client.post('/api/v1/marketing/text/generate', json={'content_type': 'outreach_email', 'product_name': 'fictional'})
+    assert response.status_code == (200 if finish == 'stop' else 502)
+    assert 'private-provider-detail' not in response.text
+    with factory() as db:
+        assert db.query(MarketingContent).count() == (1 if finish == 'stop' else 0)
+    if finish == 'stop':
+        saved = client.get(f"/api/v1/marketing/text/{response.json()['id']}").json()
+        assert saved['body'] == body
+
+
 def test_saved_image_file_is_durable_and_owner_scoped(env, monkeypatch, tmp_path):
     client, factory, identity = env
     path = tmp_path / ('a' * 32 + '.png')
