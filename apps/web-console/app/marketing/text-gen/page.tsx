@@ -69,7 +69,7 @@ export default function TextGenPage() {
         selling_points: sellingPoints,
         audience,
         language: "en",
-      }, { timeout: 90000 });
+      }, { timeout: 120000 });
       setResult(res.data);
       setEditing(false);
       showToast("英文内容已生成并保存", "success");

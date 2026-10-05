@@ -27,6 +27,8 @@ def run():
     parser.add_argument('--real-llm', action='store_true', help='Explicitly enable the configured model call with synthetic data only')
     parser.add_argument('--external-services', action='store_true', help='Test Beijing embedding and Wanx plus Serper using public facts only')
     parser.add_argument('--documents', action='store_true', help='Verify real PDF/DOCX facts, reindex, invalid input and tenant isolation')
+    parser.add_argument('--marketing-only', action='store_true', help='Test text generation/edit/history without image, search or knowledge calls')
+    parser.add_argument('--marketing-kind', choices=['product_article', 'linkedin_post', 'seo_blog', 'outreach_email'], action='append')
     parser.add_argument('--solution', action='store_true', help='Test real presentation outline/content, saved draft and PPTX export')
     parser.add_argument('--crm', action='store_true', help='Real isolated Genesis fixture required; run through local-genesis-acceptance.cjs')
     parser.add_argument('--model-name', help='Explicit model override in the isolated acceptance DB only; source configuration is unchanged')
@@ -34,6 +36,10 @@ def run():
     parser.add_argument('--allowed-model-origin', help='Approved model origin, required with --real-llm; rejects a different configured destination')
     parser.add_argument('--port', type=int, default=8011)
     args = parser.parse_args()
+    if args.marketing_kind and not args.marketing_only:
+        parser.error('--marketing-kind requires --marketing-only')
+    if args.marketing_only and (not args.real_llm or args.external_services or args.documents or args.solution or args.crm or args.serve):
+        raise RuntimeError('Marketing-only acceptance requires only the approved real LLM')
     if args.crm and (not os.getenv('ACCEPTANCE_CRM_TOKEN') or args.external_services or args.solution or args.documents):
         raise RuntimeError('CRM acceptance requires the isolated Genesis launcher')
     if args.solution and (not args.real_llm or args.external_services):
@@ -139,6 +145,10 @@ def run():
                 membership = checked(client.post('/auth/organization/create', json={'name': 'Isolated local acceptance'}))
                 client.headers['Authorization'] = 'Bearer ' + membership['access_token']
                 checked(client.post('/auth/login', json={'email': 'acceptance@example.invalid', 'password': 'Local-Acceptance-only!2026'}))
+                if args.marketing_only:
+                    from marketing_text_acceptance import verify_marketing_text
+                    verify_marketing_text(client, checked, args)
+                    return
                 project = checked(client.post('/agents/projects', json={'name': 'Acceptance project'}), 201)
                 employee = checked(client.post(f"/agents/{project['id']}/employees/from-template", json={'template_key': 'lead_researcher', 'name': 'Acceptance researcher'}))
                 checked(client.patch(f"/agents/{project['id']}/employees/{employee['id']}", json={'name': 'Saved researcher'}))

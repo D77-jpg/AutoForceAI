@@ -144,7 +144,9 @@ def generate_text(
         + "."
     )
     try:
-        raw = query_default_llm(db, prompt, system=spec["system"], temperature=0.7, max_tokens=3500)
+        # Accumulate a complete stream within the provider's bounded deadline.
+        # Buffered gateway calls may time out twice before the page can respond.
+        raw = query_default_llm(db, prompt, system=spec["system"], temperature=0.7, max_tokens=3500, stream=True)
     except Exception:
         raise HTTPException(502, "文字模型调用失败，请检查模型配置后重试") from None
     data = None
