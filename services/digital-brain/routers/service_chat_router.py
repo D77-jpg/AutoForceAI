@@ -26,7 +26,27 @@ def _user(payload: dict, db: Session) -> User:
     user = db.query(User).filter(User.id == payload["id"]).first()
     if not user:
         raise HTTPException(401, "用户不存在")
+    if user.organization_id is None:
+        raise HTTPException(403, "请先创建或加入企业组织")
     return user
+
+
+def _validate_kb(db: Session, kb_id: Optional[int], organization_id: int):
+    if kb_id is None:
+        return None
+    kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == kb_id).first()
+    if not kb or not (
+        kb.organization_id == organization_id
+        or (kb.organization_id is None and kb.is_public)
+    ):
+        raise HTTPException(404, "知识库不存在或无权绑定")
+    return kb
+
+
+def _sessions_for_org(db: Session, organization_id: int):
+    return db.query(ChatSession).join(Bot, Bot.id == ChatSession.bot_id).filter(
+        Bot.organization_id == organization_id
+    )
 
 
 # ---------- Bots ----------
@@ -44,9 +64,7 @@ class BotIn(BaseModel):
 @router.get("/bots")
 def list_bots(payload: dict = Depends(get_current_user), db: Session = Depends(get_shared_db)):
     user = _user(payload, db)
-    q = db.query(Bot)
-    if user.organization_id:
-        q = q.filter(Bot.organization_id == user.organization_id)
+    q = db.query(Bot).filter(Bot.organization_id == user.organization_id)
     rows = q.order_by(Bot.id.desc()).all()
     return {"items": [
         {
@@ -60,6 +78,7 @@ def list_bots(payload: dict = Depends(get_current_user), db: Session = Depends(g
 @router.post("/bots")
 def create_bot(body: BotIn, payload: dict = Depends(get_current_user), db: Session = Depends(get_shared_db)):
     user = _user(payload, db)
+    _validate_kb(db, body.kb_id, user.organization_id)
     bot = Bot(
         organization_id=user.organization_id,
         name=body.name,
@@ -83,11 +102,10 @@ def create_bot(body: BotIn, payload: dict = Depends(get_current_user), db: Sessi
 @router.patch("/bots/{bot_id}")
 def update_bot(bot_id: int, body: BotIn, payload: dict = Depends(get_current_user), db: Session = Depends(get_shared_db)):
     user = _user(payload, db)
-    bot = db.query(Bot).filter(Bot.id == bot_id).first()
+    bot = db.query(Bot).filter(Bot.id == bot_id, Bot.organization_id == user.organization_id).first()
     if not bot:
         raise HTTPException(404, "机器人不存在")
-    if user.organization_id and bot.organization_id != user.organization_id:
-        raise HTTPException(403, "无权操作")
+    _validate_kb(db, body.kb_id, user.organization_id)
     for k, v in body.model_dump().items():
         setattr(bot, k, v)
     db.commit()
@@ -110,14 +128,19 @@ class WidgetChatIn(BaseModel):
 
 
 def _get_bot(db: Session, bot_id: Optional[int]) -> Optional[Bot]:
-    if bot_id:
-        return db.query(Bot).filter(Bot.id == bot_id, Bot.is_active == True).first()  # noqa: E712
-    return db.query(Bot).filter(Bot.is_active == True).order_by(Bot.id.asc()).first()
+    if bot_id is None:
+        return None
+    return db.query(Bot).filter(
+        Bot.id == bot_id, Bot.is_active.is_(True), Bot.organization_id.is_not(None)
+    ).first()
 
 
 @router.post("/widget/start")
 def widget_start(body: WidgetStartIn, db: Session = Depends(get_shared_db)):
     bot = _get_bot(db, body.bot_id)
+    if not bot:
+        raise HTTPException(404, "机器人不存在或已停用")
+    _validate_kb(db, bot.kb_id, bot.organization_id)
     sess = ChatSession(
         session_uuid=str(uuid.uuid4()),
         bot_id=bot.id if bot else None,
@@ -143,9 +166,8 @@ def _reply_with_kb(db: Session, bot: Optional[Bot], user_text: str) -> str:
     lang = detect_language(user_text)
     kb_ids = []
     if bot and bot.kb_id:
+        _validate_kb(db, bot.kb_id, bot.organization_id)
         kb_ids = [bot.kb_id]
-    else:
-        kb_ids = [k.id for k in db.query(KnowledgeBase).filter(KnowledgeBase.is_public == True).all()]  # noqa: E712
 
     context = ""
     if kb_ids:
@@ -190,6 +212,10 @@ def widget_chat(body: WidgetChatIn, db: Session = Depends(get_shared_db)):
     sess = db.query(ChatSession).filter(ChatSession.session_uuid == body.session_uuid).first()
     if not sess:
         raise HTTPException(404, "会话不存在")
+    bot = _get_bot(db, sess.bot_id)
+    if not bot:
+        raise HTTPException(404, "机器人不存在或已停用")
+    _validate_kb(db, bot.kb_id, bot.organization_id)
     if body.visitor_email:
         sess.visitor_email = body.visitor_email
     if body.visitor_name:
@@ -198,7 +224,6 @@ def widget_chat(body: WidgetChatIn, db: Session = Depends(get_shared_db)):
     db.add(ChatMessage(session_id=sess.id, role="user", content=body.message, meta_data={}))
     db.commit()
 
-    bot = db.query(Bot).filter(Bot.id == sess.bot_id).first() if sess.bot_id else _get_bot(db, None)
     try:
         answer = _reply_with_kb(db, bot, body.message)
     except Exception as exc:
@@ -251,8 +276,8 @@ def widget_history(session_uuid: str, db: Session = Depends(get_shared_db)):
 
 @router.get("/sessions")
 def list_sessions(payload: dict = Depends(get_current_user), db: Session = Depends(get_shared_db)):
-    _user(payload, db)
-    rows = db.query(ChatSession).order_by(ChatSession.id.desc()).limit(200).all()
+    user = _user(payload, db)
+    rows = _sessions_for_org(db, user.organization_id).order_by(ChatSession.id.desc()).limit(200).all()
     return {"items": [
         {
             "id": s.id,
@@ -272,6 +297,9 @@ def list_sessions(payload: dict = Depends(get_current_user), db: Session = Depen
 
 @router.get("/sessions/{session_uuid}")
 def session_detail(session_uuid: str, payload: dict = Depends(get_current_user), db: Session = Depends(get_shared_db)):
+    user = _user(payload, db)
+    if not _sessions_for_org(db, user.organization_id).filter(ChatSession.session_uuid == session_uuid).first():
+        raise HTTPException(404, "会话不存在")
     return widget_history(session_uuid, db)
 
 
@@ -307,7 +335,9 @@ def create_rule(body: RuleIn, payload: dict = Depends(get_current_user), db: Ses
 
 @router.get("/stats")
 def service_stats(payload: dict = Depends(get_current_user), db: Session = Depends(get_shared_db)):
-    total = db.query(ChatSession).count()
-    active = db.query(ChatSession).filter(ChatSession.status == "active").count()
-    leads = db.query(Lead).count()
+    user = _user(payload, db)
+    sessions = _sessions_for_org(db, user.organization_id)
+    total = sessions.count()
+    active = sessions.filter(ChatSession.status == "active").count()
+    leads = db.query(Lead).filter(Lead.organization_id == user.organization_id).count()
     return {"sessions": total, "active": active, "leads": leads}
