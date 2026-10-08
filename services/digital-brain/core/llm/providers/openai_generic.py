@@ -43,6 +43,8 @@ class OpenAIGenericLLM(BaseLLM):
             "temperature": temperature,
             "max_tokens": max_tokens
         }
+        if model.lower().startswith("deepseek") and kwargs.get("thinking") is not None:
+            params["extra_body"] = {"thinking": {"type": "enabled" if kwargs["thinking"] else "disabled"}}
 
         try:
             if kwargs.get('stream'):

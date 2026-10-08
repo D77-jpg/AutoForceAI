@@ -212,6 +212,26 @@ npx next dev --webpack -p 3051
 - 两个提交的 npm 锁文件重新审计通过（高风险/严重项为零）；主前端仍有 3 个中等风险报告，未宣称所有等级漏洞清零。
 - 按新锁文件 `npm ci` 后，前端 **42 项测试**、TypeScript 检查和 webpack 生产构建通过。该补丁须在 PR #29 合并后更新并重建 3050；当前 main 验收站仍是 `6c5164a`。
 
+## 2026-10-08 DeepSeek 接入与真实验收
+
+- 用户授权接入 `https://api.deepseek.com`；实际 `/models` 返回 `deepseek-flash`、`deepseek-v4-pro`。本地模型库已将 `deepseek-flash` 设置为默认文字及知识问答模型，密钥仅保存在忽略的服务端环境文件和现有本地模型库，不提交。
+- 初次营销验收四种类型均触发完整性保护：默认思考占用了输出预算。相同虚构开发信、3500 token 上限的对照调用中，默认模式返回 `finish_reason: length`（思考 12,849 字符、正文 515 字符，13.0 秒）；直接输出返回 `stop`（正文 1,064 字符，2.0 秒）。这不是成功记录或额度不足。
+- 营销任务现在显式选择 DeepSeek 的直接输出模式，输出预算、总期限及完整性校验继续生效；知识问答的思考输出保持原行为，其他模型不收到 DeepSeek 专用字段。另明确最小正文词数按词计算，不将标题/标签计入正文，并要求未知规格以采购核验问题展开。
+- 最终真实营销回执：开发信 2.8 秒/219 词、LinkedIn 2.6 秒/247 词、产品文章 7.0 秒/840 词、SEO 博文 11.1 秒/1,340 词。四种均通过最小正文长度、MOQ 73/交期 19 保留、标题/正文编辑及历史恢复，`mock: false`。这些词数是实测值，不代表全部符合提示中的建议长度区间；正文仍可人工审阅修改。
+- 知识问答真实回答上传资料并引用 1 个来源，保存/历史恢复通过。方案生成 5 页提纲、实际生成并编辑 3 页内容、来源与草稿恢复通过，导出 39,596 字节的 3 页 PPTX；本轮未重新验证浏览器下载或桌面 PowerPoint 打开。
+- 本分支基于 `6c5164a`，完整后端回归 **303 passed、0 skipped**（包含 4 项实际 SDK 请求序列化测试）；最后的正文提示修改又通过 25 项相关回归。该结果记录合并前的分支状态；PR #29 的 310 项结果不能与这 303 项重复相加作为统一回归数。
+- 合并 main `b21a5ea` 后，统一完整后端回归 **314 passed、0 skipped**（86.94 秒），两份前端锁文件的高风险/严重级别安全审计通过。
+- PR #29 的依赖补丁 `4a40540` 已在 GitHub **7 项检查全绿**，并以 `b21a5ea` 合入 main。PR #30 已合并这一版 main，保留账号、安全依赖和 DeepSeek 三批验收记录。DeepSeek 配置已保存在本机；营销兼容代码须合并并重启后才进入 8010/3050。3050 浏览器当前需要用户重新登录，页面复核尚未完成。
+
+证据保存在验收输出目录 `output/deepseek-20261008/marketing/marketing-text-receipt.json`（初次失败）、`marketing-fixed/marketing-text-receipt.json`（SEO 最小词数失败）、`marketing-final/marketing-text-receipt.json`（最终四种通过）、`solution/solution-api-receipt.json` 与 `solution/local-acceptance-solution.pptx`。
+
+```powershell
+& services/digital-brain/venv/Scripts/python.exe scripts/local-functional-acceptance.py --marketing-only --real-llm --allowed-model-origin https://api.deepseek.com --evidence-dir <本地证据目录>
+& services/digital-brain/venv/Scripts/python.exe scripts/local-functional-acceptance.py --solution --real-llm --allowed-model-origin https://api.deepseek.com --evidence-dir <本地证据目录>
+```
+
+所有外部模型调用仅使用虚构产品 MOQ 73、交期 19 天资料，不复制真实业务记录，不发送邮件或发布内容。依据：[DeepSeek 思考模式及开关](https://api-docs.deepseek.com/guides/thinking_mode/)。
+
 ## 完整业务矩阵
 
 | 功能 | 必须验证的完整链路 | 当前状态 / 下一步 |

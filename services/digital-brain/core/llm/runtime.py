@@ -35,6 +35,7 @@ def query_default_llm_with_attribution(
     temperature: float = 0.6,
     max_tokens: int = 2500,
     stream: bool = False,
+    thinking: Optional[bool] = None,
 ) -> LLMAttribution:
     """Call the configured model and attribute only the actual provider response.
 
@@ -57,6 +58,8 @@ def query_default_llm_with_attribution(
         try:
             llm = ModelFactory.get_provider(model.name, **kwargs)
             options = {"temperature": temperature, "max_tokens": max_tokens}
+            if thinking is not None and model.name.lower().startswith("deepseek"):
+                options["thinking"] = thinking
             if stream:
                 options["stream"] = True
             response = llm.chat(messages, **options)
@@ -117,8 +120,10 @@ def query_default_llm(
     temperature: float = 0.6,
     max_tokens: int = 2500,
     stream: bool = False,
+    thinking: Optional[bool] = None,
 ) -> str:
     """Return content from the metered attributed call; never invent a mock."""
     return query_default_llm_with_attribution(
         db, prompt, system=system, temperature=temperature, max_tokens=max_tokens, stream=stream,
+        thinking=thinking,
     ).content

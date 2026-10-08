@@ -142,11 +142,18 @@ def generate_text(
         "Return ONLY valid JSON with keys: title, body, tags (array of strings)"
         + (", subject" if kind == "outreach_email" else "")
         + "."
+        + f"\nThe body field alone must contain at least {spec['min_words']} English words. "
+          "Count words, not tokens; exclude title, tags and subject from this count. "
+          "Develop each requested section fully. For missing specifications, discuss buyer checks "
+          "and questions to confirm instead of inventing product facts."
     )
     try:
         # Accumulate a complete stream within the provider's bounded deadline.
         # Buffered gateway calls may time out twice before the page can respond.
-        raw = query_default_llm(db, prompt, system=spec["system"], temperature=0.7, max_tokens=3500, stream=True)
+        # DeepSeek defaults to thinking mode, which shares the output token budget.
+        # This bounded final-copy task needs the budget for the complete article.
+        raw = query_default_llm(db, prompt, system=spec["system"], temperature=0.7,
+                                max_tokens=3500, stream=True, thinking=False)
     except Exception:
         raise HTTPException(502, "文字模型调用失败，请检查模型配置后重试") from None
     data = None
