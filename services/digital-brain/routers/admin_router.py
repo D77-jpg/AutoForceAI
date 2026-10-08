@@ -8,7 +8,22 @@ from core.db_manager import get_shared_db
 from database.shared_models import User, Organization, UserRole
 from core.dependencies import get_current_user_id
 
-router = APIRouter(prefix="/api/v1/admin", tags=["System Administration"])
+def require_admin(
+    current_user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_shared_db),
+):
+    user = db.query(User).filter(User.id == current_user_id).first()
+    if not user or not user.is_active:
+        raise HTTPException(status_code=401, detail="User not found")
+    if user.role == UserRole.ADMIN.value:
+        return user
+    if user.role == UserRole.ENTERPRISE_ADMIN.value and user.organization_id is not None:
+        return user
+    raise HTTPException(status_code=403, detail="Admin permission required")
+
+
+router = APIRouter(prefix="/api/v1/admin", tags=["System Administration"],
+                   dependencies=[Depends(require_admin)])
 
 # --- Schemas ---
 
@@ -109,7 +124,7 @@ def list_users(
             "organization_id": u.organization_id,
             "organization_name": org_name,
             "created_at": u.created_at,
-            "is_active": True # Default to true for now
+            "is_active": u.is_active
         })
     return result
 
@@ -147,7 +162,7 @@ def get_user(
         "organization_id": user.organization_id,
         "organization_name": org_name,
         "created_at": user.created_at,
-        "is_active": user.is_active or True
+        "is_active": user.is_active
     }
 
 @router.patch("/users/{user_id}", response_model=UserSchema)
@@ -272,8 +287,11 @@ def list_organizations(
 @router.post("/organizations", response_model=OrganizationSchema)
 def create_organization(
     org_in: OrganizationCreate,
+    current_user: User = Depends(require_admin),
     db: Session = Depends(get_shared_db)
 ):
+    if current_user.role != UserRole.ADMIN.value:
+        raise HTTPException(status_code=403, detail="System admin permission required")
     # Check if name exists
     existing = db.query(Organization).filter(Organization.name == org_in.name).first()
     if existing:
@@ -363,6 +381,10 @@ def set_organization_admin(
     # Ensure target user belongs to the organization
     if user.organization_id != org_id:
          raise HTTPException(status_code=400, detail="Target user is not in this organization")
+    if user.role == UserRole.ADMIN.value:
+        raise HTTPException(status_code=403, detail="Cannot replace a system administrator's role")
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="Cannot assign an inactive organization administrator")
     
     # Logic: Set user to this org and upgrade role
     # 1. Downgrade existing admins of this org to normal members
@@ -472,7 +494,7 @@ def get_organization_users(
             "organization_id": u.organization_id,
             "organization_name": org.name,
             "created_at": u.created_at,
-            "is_active": True
+            "is_active": u.is_active
         })
     return result
 
@@ -504,6 +526,11 @@ def remove_user_from_organization(
     # Check if user is actually in that org
     if not user_to_remove or user_to_remove.organization_id != org_id:
         raise HTTPException(status_code=404, detail="User not found in this organization")
+    if user_to_remove.id == current_user.id:
+        raise HTTPException(status_code=400, detail="不能移出自己的账号，请先交接管理员")
+    if (current_user.role != UserRole.ADMIN.value
+            and user_to_remove.role == UserRole.ADMIN.value):
+        raise HTTPException(status_code=403, detail="Insufficient permission")
 
     # Reset user
     user_to_remove.organization_id = None

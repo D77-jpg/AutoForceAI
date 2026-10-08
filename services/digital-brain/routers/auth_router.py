@@ -4,6 +4,7 @@ import uuid
 import json  # Added json import
 import random # Added random
 import string # Added string
+from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -58,6 +59,15 @@ class LoginResponse(BaseModel):
     organization_id: Optional[int] = None
     organization_name: Optional[str] = None
     invite_code: Optional[str] = None # Added invite code for admins
+
+
+class CurrentUserResponse(LoginResponse):
+    id: int
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    bio: Optional[str] = None
+    is_wechat_bound: bool
+    created_at: datetime
 
 # --- Endpoints ---
 
@@ -146,6 +156,7 @@ def email_login(request: EmailLoginRequest, http_request: Request, db: Session =
     return _build_login_response(user, db)
 
 
+@router.post("/organization", response_model=LoginResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 @router.post("/organization/create", response_model=LoginResponse)
 def create_organization(
     request: OrganizationCreateRequest,
@@ -181,13 +192,14 @@ def create_organization(
     
     # Assign User
     user.organization_id = new_org.id
-    user.role = UserRole.ENTERPRISE_ADMIN.value
+    if user.role != UserRole.ADMIN.value:
+        user.role = UserRole.ENTERPRISE_ADMIN.value
     db.commit()
     
     # Refresh the token's organization and role after membership changes.
     return _build_login_response(user, db)
 
-@router.get("/me", response_model=LoginResponse)
+@router.get("/me", response_model=CurrentUserResponse)
 def get_current_user_info(
     current_user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_shared_db)
@@ -196,21 +208,11 @@ def get_current_user_info(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
         
-    org = None
-    if user.organization_id:
-        org = db.query(Organization).filter(Organization.id == user.organization_id).first()
-        
     return {
-        "access_token": "valid_session", # Mock token just to satisfy schema
-        "token_type": "bearer",
-        "user_id": user.id,
-        "username": user.username,
-        "nickname": user.nickname,
-        "role": user.role,
-        "organization_id": user.organization_id,
-        "organization_name": org.name if org else None,
-        "avatar": user.avatar,
-        "invite_code": org.invite_code if org and user.role == UserRole.ENTERPRISE_ADMIN.value else None
+        **_build_login_response(user, db), "id": user.id,
+        "email": user.email, "phone": user.phone, "bio": user.bio,
+        "is_wechat_bound": bool(user.wechat_openid or user.wechat_unionid),
+        "created_at": user.created_at,
     }
 
 @router.post("/organization/join", response_model=LoginResponse)
@@ -234,20 +236,10 @@ def join_organization(
         raise HTTPException(status_code=403, detail="无效的邀请码")
         
     user.organization_id = org.id
-    user.role = UserRole.USER.value
+    if user.role != UserRole.ADMIN.value:
+        user.role = UserRole.USER.value
     db.commit()
-    
-    return {
-        "access_token": "valid_session",
-        "token_type": "bearer",
-        "user_id": user.id,
-        "username": user.username,
-        "nickname": user.nickname,
-        "role": user.role,
-        "organization_id": org.id,
-        "organization_name": org.name,
-        "avatar": user.avatar
-    }
+    return _build_login_response(user, db)
 
 @router.get("/wechat/url")
 def get_wechat_auth_url():
@@ -427,90 +419,12 @@ def wechat_login(request: WeChatLoginRequest, db: Session = Depends(get_shared_d
         "invite_code": invite_code
     }
 
-@router.post("/organization", status_code=status.HTTP_201_CREATED)
-def create_organization(
-    request: OrganizationCreateRequest, 
-    user_id: int = Depends(get_current_user_id),
-    db: Session = Depends(get_shared_db)
-):
-    """Create a new Organization and properly assign the Creator as Enterprise Admin."""
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-        
-    if user.organization_id:
-        raise HTTPException(status_code=400, detail="User already belongs to an organization")
-
-    # Create Org
-    new_org = Organization(
-        name=request.name,
-        description=request.description
-    )
-    db.add(new_org)
-    db.commit()
-    db.refresh(new_org)
-
-    # Update User
-    user.organization_id = new_org.id
-    user.role = UserRole.ENTERPRISE_ADMIN
-    db.commit()
-
-    return {"msg": "Organization created", "organization_id": new_org.id, "role": user.role}
-
-@router.post("/organization/join")
-def join_organization(
-    request: OrganizationJoinRequest,
-    user_id: int = Depends(get_current_user_id),
-    db: Session = Depends(get_shared_db)
-):
-    """User joins an existing organization."""
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    if user.organization_id:
-        raise HTTPException(status_code=400, detail="User already belongs to an organization")
-
-    org = db.query(Organization).filter(Organization.id == request.organization_id).first()
-    if not org:
-        raise HTTPException(status_code=404, detail="该组织不存在")
-    
-    user.organization_id = org.id
-    # Default role stays USER
-    db.commit()
-
-    return {"msg": f"Joined organization {org.name}", "organization_id": org.id}
-
 class UserProfileUpdate(BaseModel):
     nickname: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
     bio: Optional[str] = None # Will serve as Signature
     avatar: Optional[str] = None
-
-@router.get("/me")
-def get_current_user_profile(
-    user_id: int = Depends(get_current_user_id),
-    db: Session = Depends(get_shared_db)
-):
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    return {
-        "id": user.id,
-        "username": user.username,
-        "nickname": user.nickname, # Added
-        "avatar": user.avatar,     # Added
-        "email": user.email,
-        "phone": user.phone,
-        "bio": user.bio,
-        "role": user.role,
-        "is_wechat_bound": bool(user.wechat_openid or user.wechat_unionid),
-        "organization_id": user.organization_id,
-        "organization_name": user.organization.name if user.organization else None,
-        "created_at": user.created_at
-    }
 
 @router.patch("/profile")
 def update_user_profile(
@@ -522,10 +436,16 @@ def update_user_profile(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
+    if profile.email is not None:
+        email = profile.email.strip().lower()
+        if not email or "@" not in email or "." not in email.split("@")[-1]:
+            raise HTTPException(status_code=400, detail="邮箱格式不正确")
+        conflict = db.query(User).filter(User.email == email, User.id != user_id).first()
+        if conflict:
+            raise HTTPException(status_code=409, detail="该邮箱已被其他账号使用")
+        user.email = email
     if profile.nickname is not None:
         user.nickname = profile.nickname
-    if profile.email is not None:
-        user.email = profile.email
     if profile.phone is not None:
         user.phone = profile.phone
     if profile.bio is not None:
