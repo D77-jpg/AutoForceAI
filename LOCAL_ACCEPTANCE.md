@@ -205,6 +205,13 @@ cd apps/web-console
 npx next dev --webpack -p 3051
 ```
 
+## 2026-10-08 PR #29 依赖安全检查修复
+
+- CI 的 `security-audit / node-dependencies` 失败可用同一审计脚本复现，涉及 Next.js、sharp 与 source-map-js；账号功能回归门禁此前通过。
+- 主前端依赖锁定 Next.js / eslint-config-next `16.3.8`、sharp `0.35.5`，锁文件中的 source-map-js 更新至 `1.2.2`。不修改审计等级或漏洞例外，不升级到 Next.js 16.4 或 Tailwind 4。
+- 两个提交的 npm 锁文件重新审计通过（高风险/严重项为零）；主前端仍有 3 个中等风险报告，未宣称所有等级漏洞清零。
+- 按新锁文件 `npm ci` 后，前端 **42 项测试**、TypeScript 检查和 webpack 生产构建通过。该补丁须在 PR #29 合并后更新并重建 3050；当前 main 验收站仍是 `6c5164a`。
+
 ## 完整业务矩阵
 
 | 功能 | 必须验证的完整链路 | 当前状态 / 下一步 |
